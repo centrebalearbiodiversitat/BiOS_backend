@@ -1,0 +1,12 @@
+version: '3'
+
+services:
+  django:
+    build: .
+    volumes:
+      - .:/code
+    environment:
+      - DJANGO_SETTINGS_MODULE=cbb.settings.base
+#    command: "/usr/local/bin/gunicorn cbb.wsgi:application -w 2 -b 0.0.0.0:8000 -u root --pid /tmp/gunicorn.pid"
+    command: /usr/local/bin/python /code/manage.py runserver 0.0.0.0:8000
+    env_file: .env

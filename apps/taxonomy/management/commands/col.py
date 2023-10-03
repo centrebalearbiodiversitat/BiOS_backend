@@ -17,7 +17,7 @@ SUBSPECIES, AUTH_SUBSPECIES, SOURCE_SUBSPECIES, SOURCE_ORIGIN_SUBSPECIES = range
 
 
 def create_tax_level(line, model, batch: Batch, idx_name, parent_key, parent, idx_author, idx_source, idx_source_origin):
-    auth, _ = Authorship.objects.update_or_create(line[idx_author])
+    auth, _ = Authorship.objects.update_or_create(name=line[idx_author])
     defaults = {
         'authorship': auth,
     }

@@ -1,6 +1,7 @@
 import csv
 
 from django.core.management.base import BaseCommand
+from django.db import transaction
 
 from apps.taxonomy.models import Kingdom, Authorship, Phylum, Class, Order, Family, Genus, Species, Subspecies
 from apps.versioning.models import Batch, Source
@@ -16,15 +17,20 @@ SUBSPECIES, AUTH_SUBSPECIES, SOURCE_SUBSPECIES, SOURCE_ORIGIN_SUBSPECIES = range
 
 
 def create_tax_level(line, model, batch: Batch, idx_name, parent_key, parent, idx_author, idx_source, idx_source_origin):
+    auth, _ = Authorship.objects.update_or_create(line[idx_author])
+    defaults = {
+        'authorship': auth,
+    }
+
+    if parent_key:
+        defaults[parent_key] = parent
+
     parent, _ = model.objects.update_or_create(
         name=line[idx_name],
-        defaults={
-            'authorship': Authorship.objects.update_or_create(line[idx_author]),
-            parent_key: parent
-        }
+        defaults=defaults
     )
 
-    parent.references(batch)
+    parent.references.add(batch)
     source, _ = Source.objects.update_or_create(
         name=line[idx_source],
         defaults={
@@ -36,6 +42,7 @@ def create_tax_level(line, model, batch: Batch, idx_name, parent_key, parent, id
     return parent
 
 
+@transaction.atomic
 class Command(BaseCommand):
     help = "Loads from taxonomy from csv"
 
@@ -45,10 +52,11 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         file_name = options['file']
         with open(file_name) as file:
-            tsv_file = csv.reader(file)
-            print(tsv_file[:3])
+            csv_file = csv.reader(file)
             batch = Batch.objects.create()
-            for line in tsv_file[1:]:
+            next(csv_file)
+            for line in csv_file:
+                print(line)
                 parent = create_tax_level(line, Kingdom, batch, KINGDOM, None, None, AUTH_KINGDOM, SOURCE_KINGDOM, SOURCE_ORIGIN_KINGDOM)
                 parent = create_tax_level(line, Phylum, batch, PHYLUM, 'kingdom', parent, AUTH_PHYLUM, SOURCE_PHYLUM, SOURCE_ORIGIN_PHYLUM)
                 parent = create_tax_level(line, Class, batch, CLASS, 'phylum', parent, AUTH_CLASS, SOURCE_CLASS, SOURCE_ORIGIN_CLASS)

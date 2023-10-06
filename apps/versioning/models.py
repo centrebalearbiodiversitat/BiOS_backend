@@ -1,4 +1,5 @@
 from django.db import models
+from polymorphic.models import PolymorphicModel
 
 
 class Source(models.Model):
@@ -59,7 +60,7 @@ class Batch(models.Model):
         verbose_name_plural = "batches"
 
 
-class ModelWithReferences(models.Model):
+class ModelWithReferences(PolymorphicModel):
     references = models.ManyToManyField(Batch)
 
     class Meta:

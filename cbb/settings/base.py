@@ -49,10 +49,12 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     # 'rest_framework',
     # 'rest_framework_api_key',
+    'polymorphic',
     'apps.genetics',
     'apps.occurrences',
     'apps.taxonomy',
     'apps.versioning',
+    'apps.synonyms',
 ]
 
 REST_FRAMEWORK = {

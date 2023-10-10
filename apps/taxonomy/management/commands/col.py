@@ -16,6 +16,20 @@ FAM, AUTH_FAM, SOURCE_FAM, SOURCE_ORIGIN_FAM = 'Family', 'familyAuthor', 'family
 GENUS, AUTH_GENUS, SOURCE_GENUS, SOURCE_ORIGIN_GENUS = 'Genus', 'genusAuthor', 'genusSource', 'genusOrigin'
 SPECIES, AUTH_SPECIES, SOURCE_SPECIES, SOURCE_ORIGIN_SPECIES = 'Species', 'speciesAuthor', 'speciesSource', 'speciesOrigin'
 SUBSPECIES, AUTH_SUBSPECIES, SOURCE_SUBSPECIES, SOURCE_ORIGIN_SUBSPECIES = 'Subspecies', 'subspeciesAuthor', 'subspeciesSource', 'subspeciesOrigin'
+TAXON_RANK = 'taxonRank'
+
+LEVELS = [KINGDOM, PHYLUM, CLASS, ORDER, FAM, GENUS, SPECIES, SUBSPECIES]
+
+LEVELS_PARAMS = {
+    KINGDOM: [Kingdom, KingdomSynonym, AUTH_KINGDOM, SOURCE_KINGDOM, SOURCE_ORIGIN_KINGDOM],
+    PHYLUM: [Phylum, PhylumSynonym, AUTH_PHYLUM, SOURCE_PHYLUM, SOURCE_ORIGIN_PHYLUM],
+    CLASS: [Class, ClassSynonym, AUTH_CLASS, SOURCE_CLASS, SOURCE_ORIGIN_CLASS],
+    ORDER: [Order, OrderSynonym, AUTH_ORDER, SOURCE_ORDER, SOURCE_ORIGIN_ORDER],
+    FAM: [Family, FamilySynonym, AUTH_FAM, SOURCE_FAM, SOURCE_ORIGIN_FAM],
+    GENUS: [Genus, GenusSynonym, AUTH_GENUS, SOURCE_GENUS, SOURCE_ORIGIN_GENUS],
+    SPECIES: [Species, SpeciesSynonym, AUTH_SPECIES, SOURCE_SPECIES, SOURCE_ORIGIN_SPECIES],
+    SUBSPECIES: [Subspecies, SubspeciesSynonym, AUTH_SUBSPECIES, SOURCE_SUBSPECIES, SOURCE_ORIGIN_SUBSPECIES]
+}
 
 
 def create_tax_level(line, model, syn_model, batch: Batch, idx_name, parent, idx_author, idx_source, idx_source_origin):
@@ -27,8 +41,8 @@ def create_tax_level(line, model, syn_model, batch: Batch, idx_name, parent, idx
         auth.synonyms.add(auth_syn)
         auth.references.add(batch)
 
-    taxon_syn, _ = syn_model.objects.get_or_create(name=line[idx_name])
-    if parent:
+    taxon_syn, _ = syn_model.objects.get_or_create(name=line[idx_name] if line[idx_name] else 'Unknown')
+    if parent:  # Kingdom does not have parent
         child, _ = model.objects.get_or_create(
             accepted=taxon_syn,
             parent=parent,
@@ -45,6 +59,9 @@ def create_tax_level(line, model, syn_model, batch: Batch, idx_name, parent, idx
         )
     child.synonyms.add(taxon_syn)
     child.references.add(batch)
+
+    if not line[idx_source]:
+        raise Exception('All records must have a source')
 
     source, _ = Source.objects.get_or_create(
         name=line[idx_source],
@@ -66,19 +83,16 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         file_name = options['file']
-        with open(file_name) as file:
+        with open(file_name, encoding='utf-8') as file:
             csv_file = csv.DictReader(file)
             batch = Batch.objects.create()
+            line: dict
             for line in csv_file:
-                print(line)
-                parent = create_tax_level(line, Kingdom, KingdomSynonym, batch, KINGDOM, None, AUTH_KINGDOM, SOURCE_KINGDOM, SOURCE_ORIGIN_KINGDOM)
-                parent = create_tax_level(line, Phylum, PhylumSynonym, batch, PHYLUM, parent, AUTH_PHYLUM, SOURCE_PHYLUM, SOURCE_ORIGIN_PHYLUM)
-                parent = create_tax_level(line, Class, ClassSynonym, batch, CLASS, parent, AUTH_CLASS, SOURCE_CLASS, SOURCE_ORIGIN_CLASS)
-                parent = create_tax_level(line, Order, OrderSynonym, batch, ORDER, parent, AUTH_ORDER, SOURCE_ORDER, SOURCE_ORIGIN_ORDER)
-                parent = create_tax_level(line, Family, FamilySynonym, batch, FAM, parent, AUTH_FAM, SOURCE_FAM, SOURCE_ORIGIN_FAM)
-                parent = create_tax_level(line, Genus, GenusSynonym, batch, GENUS, parent, AUTH_GENUS, SOURCE_GENUS, SOURCE_ORIGIN_GENUS)
-                parent = create_tax_level(line, Species, SpeciesSynonym, batch, SPECIES, parent, AUTH_SPECIES, SOURCE_SPECIES, SOURCE_ORIGIN_SPECIES)
-                parent = create_tax_level(line, Subspecies, SubspeciesSynonym, batch, SUBSPECIES, parent, AUTH_SUBSPECIES, SOURCE_SUBSPECIES, SOURCE_ORIGIN_SUBSPECIES)
-
-
-
+                # print(line)
+                parent = None
+                for level in LEVELS:
+                    params = LEVELS_PARAMS[level]
+                    print(line)
+                    parent = create_tax_level(line, params[0], params[1], batch, level, parent, params[2], params[3], params[4])
+                    if level.lower() == line[TAXON_RANK]:
+                        break

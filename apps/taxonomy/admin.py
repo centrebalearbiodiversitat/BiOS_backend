@@ -1,10 +1,13 @@
 from django.contrib import admin
 
-from apps.taxonomy.models import Authorship, Kingdom, Genus, Family, Species, Phylum, Order, Class, Subspecies
+from apps.taxonomy.models import Authorship, Kingdom, Genus, Family, Species, Phylum, Order, Class, Subspecies, TaxonomicLevel
 
 
 class BaseTaxonLevelAdmin(admin.ModelAdmin):
 	list_display = ['name', 'sources', 'num_references', 'num_children']
+
+	def get_queryset(self, request):
+		return super().get_queryset(request).filter(rank=self.model.RANK)
 
 	def name(self, obj):
 		return obj

@@ -1,16 +1,15 @@
 from django.db import models
-from polymorphic.models import PolymorphicModel
 
 # class TaxonIDs(models.Model):
 # 	name = models.CharField(max_length=256, unique=True)
 
 
-class Synonym(PolymorphicModel):
+class SynonymAbstract(models.Model):
 	name = models.CharField(max_length=256, unique=True)
 
 	def clean(self):
 		super().clean()
-		self.name = self.name.strip()
+		self.name = " ".join(self.name.split())
 
 	def __str__(self):
 		return self.name
@@ -19,37 +18,9 @@ class Synonym(PolymorphicModel):
 		abstract = True
 
 
-class AuthorshipSynonym(Synonym):
+class Synonym(SynonymAbstract):
 	pass
 
 
-class KingdomSynonym(Synonym):
-	pass
-
-
-class PhylumSynonym(Synonym):
-	pass
-
-
-class ClassSynonym(Synonym):
-	pass
-
-
-class OrderSynonym(Synonym):
-	pass
-
-
-class FamilySynonym(Synonym):
-	pass
-
-
-class GenusSynonym(Synonym):
-	pass
-
-
-class SpeciesSynonym(Synonym):
-	pass
-
-
-class SubspeciesSynonym(Synonym):
+class AuthorSynonym(SynonymAbstract):
 	pass

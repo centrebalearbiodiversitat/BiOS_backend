@@ -3,9 +3,9 @@ import csv
 from django.core.management.base import BaseCommand
 from django.db import transaction
 
-from apps.synonyms.models import KingdomSynonym, PhylumSynonym, ClassSynonym, OrderSynonym, FamilySynonym, GenusSynonym, \
-    SpeciesSynonym, SubspeciesSynonym, AuthorshipSynonym
-from apps.taxonomy.models import Kingdom, Authorship, Phylum, Class, Order, Family, Genus, Species, Subspecies
+from apps.synonyms.models import Synonym, AuthorSynonym
+from apps.taxonomy.models import Kingdom, Authorship, Phylum, Class, Order, Family, Genus, Species, Subspecies, \
+    TaxonomicLevel
 from apps.versioning.models import Batch, Source
 
 KINGDOM, AUTH_KINGDOM, SOURCE_KINGDOM, SOURCE_ORIGIN_KINGDOM = 'Kingdom', 'kingdomAuthor', 'kingdomSource', 'kingdomOrigin'
@@ -21,21 +21,21 @@ TAXON_RANK = 'taxonRank'
 LEVELS = [KINGDOM, PHYLUM, CLASS, ORDER, FAM, GENUS, SPECIES, SUBSPECIES]
 
 LEVELS_PARAMS = {
-    KINGDOM: [Kingdom, KingdomSynonym, AUTH_KINGDOM, SOURCE_KINGDOM, SOURCE_ORIGIN_KINGDOM],
-    PHYLUM: [Phylum, PhylumSynonym, AUTH_PHYLUM, SOURCE_PHYLUM, SOURCE_ORIGIN_PHYLUM],
-    CLASS: [Class, ClassSynonym, AUTH_CLASS, SOURCE_CLASS, SOURCE_ORIGIN_CLASS],
-    ORDER: [Order, OrderSynonym, AUTH_ORDER, SOURCE_ORDER, SOURCE_ORIGIN_ORDER],
-    FAM: [Family, FamilySynonym, AUTH_FAM, SOURCE_FAM, SOURCE_ORIGIN_FAM],
-    GENUS: [Genus, GenusSynonym, AUTH_GENUS, SOURCE_GENUS, SOURCE_ORIGIN_GENUS],
-    SPECIES: [Species, SpeciesSynonym, AUTH_SPECIES, SOURCE_SPECIES, SOURCE_ORIGIN_SPECIES],
-    SUBSPECIES: [Subspecies, SubspeciesSynonym, AUTH_SUBSPECIES, SOURCE_SUBSPECIES, SOURCE_ORIGIN_SUBSPECIES]
+    KINGDOM: [Kingdom, Synonym, AUTH_KINGDOM, SOURCE_KINGDOM, SOURCE_ORIGIN_KINGDOM],
+    PHYLUM: [Phylum, Synonym, AUTH_PHYLUM, SOURCE_PHYLUM, SOURCE_ORIGIN_PHYLUM],
+    CLASS: [Class, Synonym, AUTH_CLASS, SOURCE_CLASS, SOURCE_ORIGIN_CLASS],
+    ORDER: [Order, Synonym, AUTH_ORDER, SOURCE_ORDER, SOURCE_ORIGIN_ORDER],
+    FAM: [Family, Synonym, AUTH_FAM, SOURCE_FAM, SOURCE_ORIGIN_FAM],
+    GENUS: [Genus, Synonym, AUTH_GENUS, SOURCE_GENUS, SOURCE_ORIGIN_GENUS],
+    SPECIES: [Species, Synonym, AUTH_SPECIES, SOURCE_SPECIES, SOURCE_ORIGIN_SPECIES],
+    SUBSPECIES: [Subspecies, Synonym, AUTH_SUBSPECIES, SOURCE_SUBSPECIES, SOURCE_ORIGIN_SUBSPECIES]
 }
 
 
 def create_tax_level(line, model, syn_model, batch: Batch, idx_name, parent, idx_author, idx_source, idx_source_origin):
     auth = None
     if line[idx_author]:
-        auth_syn, _ = AuthorshipSynonym.objects.get_or_create(name=line[idx_author])
+        auth_syn, _ = AuthorSynonym.objects.get_or_create(name=line[idx_author])
 
         auth, _ = Authorship.objects.get_or_create(accepted=auth_syn)
         auth.synonyms.add(auth_syn)
@@ -47,6 +47,7 @@ def create_tax_level(line, model, syn_model, batch: Batch, idx_name, parent, idx
             accepted=taxon_syn,
             parent=parent,
             defaults={
+                'rank': TaxonomicLevel.TRANSLATE_RANK[idx_name.lower()],
                 'authorship': auth,
             }
         )
@@ -54,6 +55,7 @@ def create_tax_level(line, model, syn_model, batch: Batch, idx_name, parent, idx
         child, _ = model.objects.get_or_create(
             accepted=taxon_syn,
             defaults={
+                'rank': TaxonomicLevel.TRANSLATE_RANK[idx_name.lower()],
                 'authorship': auth,
             }
         )

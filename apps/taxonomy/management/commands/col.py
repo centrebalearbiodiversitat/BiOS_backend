@@ -3,7 +3,7 @@ import csv
 from django.core.management.base import BaseCommand
 from django.db import transaction
 
-from apps.synonyms.models import Synonym, AuthorSynonym
+from apps.synonyms.models import Synonym
 from apps.taxonomy.models import Kingdom, Authorship, Phylum, Class, Order, Family, Genus, Species, Subspecies, \
     TaxonomicLevel
 from apps.versioning.models import Batch, Source
@@ -35,7 +35,7 @@ LEVELS_PARAMS = {
 def create_tax_level(line, model, syn_model, batch: Batch, idx_name, parent, idx_author, idx_source, idx_source_origin):
     auth = None
     if line[idx_author]:
-        auth_syn, _ = AuthorSynonym.objects.get_or_create(name=line[idx_author])
+        auth_syn, _ = Synonym.objects.get_or_create(name=line[idx_author])
 
         auth, _ = Authorship.objects.get_or_create(accepted=auth_syn)
         auth.synonyms.add(auth_syn)

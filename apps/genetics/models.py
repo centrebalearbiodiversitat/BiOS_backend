@@ -1,19 +1,26 @@
 from django.db import models
 
+from apps.synonyms.models import ModelWithSynonyms
 from apps.versioning.models import ModelWithReferences
 
 
-class Gene(ModelWithReferences):
-    name = models.CharField(max_length=255)
+class Gene(ModelWithReferences, ModelWithSynonyms):
+    pass
 
 
-class Product(ModelWithReferences):
-    name = models.CharField(max_length=255)
+class Product(ModelWithReferences, ModelWithSynonyms):
+    pass
 
 
 class Produces(ModelWithReferences):
-    gene = models.ForeignKey(Gene, on_delete=models.CASCADE)
-    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    gene = models.ForeignKey(Gene, on_delete=models.CASCADE, null=True)
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, null=True)
+
+    def __str__(self):
+        return f'{self.gene} -> {self.product}'
+
+    class Meta:
+        verbose_name_plural = 'Produces'
 
 
 class GeneticFeatures(ModelWithReferences):
@@ -23,16 +30,11 @@ class GeneticFeatures(ModelWithReferences):
     definition = models.TextField()
     voucher = models.CharField(max_length=255)
     data_file_division = models.CharField(max_length=255)
-    date = models.DateField()
+    published_date = models.DateField()
+    collection_date = models.DateField()
     molecule_type = models.CharField(max_length=255)
     sequence_version = models.PositiveIntegerField()
+    products = models.ManyToManyField(Produces)
 
-
-class GenInGeneticFeature(ModelWithReferences):
-    genetic_features = models.ForeignKey(GeneticFeatures, on_delete=models.CASCADE)
-    gene = models.ForeignKey(Gene, on_delete=models.CASCADE)
-
-
-class ProductInGeneticFeature(ModelWithReferences):
-    genetic_features = models.ForeignKey(GeneticFeatures, on_delete=models.CASCADE)
-    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    class Meta:
+        verbose_name_plural = 'Genetic Features'

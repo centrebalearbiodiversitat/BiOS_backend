@@ -1,26 +1,37 @@
 from django.db import models
 
-# class TaxonIDs(models.Model):
-# 	name = models.CharField(max_length=256, unique=True)
+from common import utils
 
 
-class SynonymAbstract(models.Model):
+class Synonym(models.Model):
 	name = models.CharField(max_length=256, unique=True)
 
 	def clean(self):
 		super().clean()
-		self.name = " ".join(self.name.split())
+		self.name = utils.compact(self.name)
 
 	def __str__(self):
 		return self.name
 
 	class Meta:
+		indexes = []
+
+
+class ThirdPartyID(models.Model):
+	taxon_id = models.CharField(max_length=256, unique=True)
+	synonym = models.ForeignKey(Synonym, on_delete=models.CASCADE)
+
+	def clean(self):
+		super().clean()
+		self.taxon_id = utils.compact(self.taxon_id)
+
+
+class ModelWithSynonyms(models.Model):
+	synonyms = models.ManyToManyField(Synonym, related_name='+')
+	accepted = models.ForeignKey(Synonym, on_delete=models.PROTECT, related_name='+')
+
+	def __str__(self):
+		return str(self.accepted)
+
+	class Meta:
 		abstract = True
-
-
-class Synonym(SynonymAbstract):
-	pass
-
-
-class AuthorSynonym(SynonymAbstract):
-	pass

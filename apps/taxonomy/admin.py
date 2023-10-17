@@ -4,7 +4,12 @@ from apps.taxonomy.models import Authorship, Kingdom, Genus, Family, Species, Ph
 
 
 class BaseTaxonLevelAdmin(admin.ModelAdmin):
-	list_display = ['name', 'sources', 'num_references', 'num_children']
+	list_display = ['name', 'upper_taxon', 'num_references', 'num_children']
+
+	def formfield_for_manytomany(self, db_field, request, **kwargs):
+		if db_field.name == 'synonyms':
+			kwargs["queryset"] = TaxonomicLevel.objects.filter(rank=self.model.RANK)
+		return super().formfield_for_manytomany(db_field, request, **kwargs)
 
 	def get_queryset(self, request):
 		return super().get_queryset(request).filter(rank=self.model.RANK)
@@ -27,13 +32,6 @@ class BaseTaxonLevelAdmin(admin.ModelAdmin):
 	def num_children(self, obj):
 		return obj.children.all().count()
 
-
-admin.site.register(Kingdom, BaseTaxonLevelAdmin)
-
-
-class TaxonLevelAdmin(BaseTaxonLevelAdmin):
-	list_display = ['name', 'upper_taxon', 'sources', 'num_references']
-
 	def upper_taxon(self, obj):
 		taxon = ''
 		current = obj
@@ -44,12 +42,13 @@ class TaxonLevelAdmin(BaseTaxonLevelAdmin):
 		return taxon if len(taxon) < 3 else taxon[3:]
 
 
-admin.site.register(Phylum, TaxonLevelAdmin)
-admin.site.register(Genus, TaxonLevelAdmin)
-admin.site.register(Family, TaxonLevelAdmin)
-admin.site.register(Species, TaxonLevelAdmin)
-admin.site.register(Subspecies, TaxonLevelAdmin)
-admin.site.register(Order, TaxonLevelAdmin)
-admin.site.register(Class, TaxonLevelAdmin)
+admin.site.register(Kingdom, BaseTaxonLevelAdmin)
+admin.site.register(Phylum, BaseTaxonLevelAdmin)
+admin.site.register(Genus, BaseTaxonLevelAdmin)
+admin.site.register(Family, BaseTaxonLevelAdmin)
+admin.site.register(Species, BaseTaxonLevelAdmin)
+admin.site.register(Subspecies, BaseTaxonLevelAdmin)
+admin.site.register(Order, BaseTaxonLevelAdmin)
+admin.site.register(Class, BaseTaxonLevelAdmin)
 
 admin.site.register(Authorship)

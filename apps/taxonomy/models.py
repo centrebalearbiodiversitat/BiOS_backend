@@ -1,19 +1,15 @@
+from django.core.exceptions import ValidationError
 from django.db import models
 
-from apps.occurrences.models import Occurrence
-from apps.synonyms.models import Synonym, AuthorSynonym
+from apps.synonyms.models import Synonym, ModelWithSynonyms
 from apps.versioning.models import ModelWithReferences
 
 
-class Authorship(ModelWithReferences):
-    synonyms = models.ManyToManyField(AuthorSynonym, related_name='+')
-    accepted = models.ForeignKey(AuthorSynonym, on_delete=models.PROTECT, related_name='+')
-
-    def __str__(self):
-        return str(self.accepted)
+class Authorship(ModelWithReferences, ModelWithSynonyms):
+    pass
 
 
-class TaxonomicLevel(ModelWithReferences):
+class TaxonomicLevel(ModelWithReferences, ModelWithSynonyms):
     KINGDOM = 0
     PHYLUM = 1
     CLASS = 2
@@ -66,19 +62,20 @@ class TaxonomicLevel(ModelWithReferences):
 
     rank = models.PositiveSmallIntegerField(choices=RANK_CHOICES)
     authorship = models.ForeignKey(Authorship, on_delete=models.SET_NULL, null=True, default=None, blank=True)
-    occurrences = models.ManyToManyField(Occurrence, blank=True)
-    parent = models.ForeignKey('TaxonomicLevel', on_delete=models.SET_NULL, null=True, default=None, blank=True, related_name='children')
-    synonyms = models.ManyToManyField(Synonym, related_name='+')
-    accepted = models.ForeignKey(Synonym, on_delete=models.PROTECT, related_name='+')
+    parent = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, default=None, blank=True, related_name='children')
 
     def __str__(self):
         if self.authorship:
             return f'{self.accepted} {self.authorship}'
-        else:
-            return str(self.accepted)
+
+        return super().__str__()
 
     def clean(self):
         super().clean()
+        if not (self.rank == TaxonomicLevel.KINGDOM and self.parent == None or
+                self.parent and self.rank == self.parent.rank + 1):
+            raise ValidationError('Parent taxonomic level error')
+
         if TaxonomicLevel.RANK_CAPITALIZE[self.rank]:
             self.accepted.name = self.accepted.name.capitalize()
         else:
@@ -86,8 +83,11 @@ class TaxonomicLevel(ModelWithReferences):
 
         self.accepted.save()
 
-    class MetaUnique:
+    class Meta:
         unique_together = ('parent', 'accepted')
+        indexes = [
+            models.Index(fields=['rank'], name='rank_idx'),
+        ]
 
 
 class Kingdom(TaxonomicLevel):

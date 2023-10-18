@@ -1,3 +1,4 @@
+from django.core.exceptions import ValidationError
 from django.db import models
 
 from common import utils
@@ -32,6 +33,10 @@ class ModelWithSynonyms(models.Model):
 
 	def __str__(self):
 		return str(self.accepted)
+
+	def save(self, force_insert=False, force_update=False, using=None, update_fields=None):
+		super().save(force_insert, force_update, using, update_fields)
+		self.synonyms.add(self.accepted)
 
 	class Meta:
 		abstract = True

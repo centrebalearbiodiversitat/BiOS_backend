@@ -1,15 +1,15 @@
 from django.db import models
 
-from apps.synonyms.models import ModelWithSynonyms
+from apps.synonyms.models import ModelWithSynonyms, Synonym
 from apps.versioning.models import ModelWithReferences
 
 
 class Gene(ModelWithReferences, ModelWithSynonyms):
-    pass
+    accepted = models.ForeignKey(Synonym, on_delete=models.PROTECT, related_name='+', unique=True)
 
 
 class Product(ModelWithReferences, ModelWithSynonyms):
-    pass
+    accepted = models.ForeignKey(Synonym, on_delete=models.PROTECT, related_name='+', unique=True)
 
 
 class Produces(ModelWithReferences):
@@ -25,13 +25,12 @@ class Produces(ModelWithReferences):
 
 class GeneticFeatures(ModelWithReferences):
     sample_id = models.CharField(max_length=255)
-    isolate = models.CharField(max_length=255)
+    isolate = models.CharField(max_length=255, null=True, blank=True)
     bp = models.PositiveIntegerField()
     definition = models.TextField()
-    voucher = models.CharField(max_length=255)
     data_file_division = models.CharField(max_length=255)
-    published_date = models.DateField()
-    collection_date = models.DateField()
+    published_date = models.DateField(blank=True, null=True)
+    collection_date = models.DateField(blank=True, null=True)
     molecule_type = models.CharField(max_length=255)
     sequence_version = models.PositiveIntegerField()
     products = models.ManyToManyField(Produces)

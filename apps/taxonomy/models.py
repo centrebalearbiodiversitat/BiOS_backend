@@ -9,7 +9,20 @@ class Authorship(ModelWithReferences, ModelWithSynonyms):
     pass
 
 
+class TaxonomicLevelManager(models.Manager):
+    def find(self, taxon):
+        levels: list = taxon.split()
+        assert len(levels) > 0, f'Invalid taxon string'
+        query = self.filter(synonyms__name=levels[0])
+        for level in levels[1:]:
+            query = self.filter(parent__in=query, synonyms__name=level)
+
+        return query
+
+
 class TaxonomicLevel(ModelWithReferences, ModelWithSynonyms):
+    objects = TaxonomicLevelManager()
+
     KINGDOM = 0
     PHYLUM = 1
     CLASS = 2
@@ -65,10 +78,24 @@ class TaxonomicLevel(ModelWithReferences, ModelWithSynonyms):
     parent = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, default=None, blank=True, related_name='children')
 
     def __str__(self):
-        if self.authorship:
-            return f'{self.accepted} {self.authorship}'
+        name = super().__str__()
 
+        if self.authorship:
+            name = f'{name} {self.authorship}'
+
+        return name
+
+    def simple_name(self):
         return super().__str__()
+
+    def binomial_scientific_name(self):
+        current = self
+        full_name = self.simple_name()
+        while current.parent and current.rank > TaxonomicLevel.GENUS:
+            full_name = f'{current.parent.simple_name()} {full_name}'
+            current = current.parent
+
+        return full_name
 
     def clean(self):
         super().clean()

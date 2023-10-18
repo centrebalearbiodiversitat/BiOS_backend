@@ -1,15 +1,17 @@
 from django.contrib import admin
 
+from apps.synonyms.models import Synonym
 from apps.taxonomy.models import Authorship, Kingdom, Genus, Family, Species, Phylum, Order, Class, Subspecies, TaxonomicLevel
 
 
 class BaseTaxonLevelAdmin(admin.ModelAdmin):
 	list_display = ['name', 'upper_taxon', 'num_references', 'num_children']
 
-	def formfield_for_manytomany(self, db_field, request, **kwargs):
-		if db_field.name == 'synonyms':
-			kwargs["queryset"] = TaxonomicLevel.objects.filter(rank=self.model.RANK)
-		return super().formfield_for_manytomany(db_field, request, **kwargs)
+	# def formfield_for_manytomany(self, db_field, request, **kwargs):
+	# 	if db_field.name == 'synonyms':
+	# 		TaxonomicLevel.objects.filter(rank=self.model.RANK)
+	# 		kwargs["queryset"] = Synonym.objects.filter()
+	# 	return super().formfield_for_manytomany(db_field, request, **kwargs)
 
 	def get_queryset(self, request):
 		return super().get_queryset(request).filter(rank=self.model.RANK)

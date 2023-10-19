@@ -8,6 +8,7 @@ class Source(models.Model):
     AI = 3
     WEB_PAGE = 4
     DOCUMENT = 5
+
     ORIGIN_CHOICES = (
         (DATABASE, 'database'),
         (JOURNAL_ARTICLE, 'journal_article'),

@@ -5,11 +5,13 @@ from apps.versioning.models import ModelWithReferences
 
 
 class Gene(ModelWithReferences, ModelWithSynonyms):
-    accepted = models.ForeignKey(Synonym, on_delete=models.PROTECT, related_name='+', unique=True)
+    SYNONYM_TYPE_OF = Synonym.GENE
+    accepted = models.OneToOneField(Synonym, on_delete=models.PROTECT, related_name='+')
 
 
 class Product(ModelWithReferences, ModelWithSynonyms):
-    accepted = models.ForeignKey(Synonym, on_delete=models.PROTECT, related_name='+', unique=True)
+    SYNONYM_TYPE_OF = Synonym.PRODUCT
+    accepted = models.OneToOneField(Synonym, on_delete=models.PROTECT, related_name='+')
 
 
 class Produces(ModelWithReferences):

@@ -64,14 +64,14 @@ class Command(BaseCommand):
                     gene = None
                     product = None
                     if production['gene']:
-                        genesyn, _ = Synonym.objects.get_or_create(name=production['gene'])
+                        genesyn, _ = Synonym.objects.get_or_create(name=production['gene'], type_of=Synonym.GENE)
                         gene = Gene.objects.filter(synonyms=genesyn).first()
                         if not gene:
                             gene = Gene.objects.create(accepted=genesyn)
                         # gene, _ = Gene.objects.get_or_create(synonyms=genesyn, defaults={'accepted': genesyn})
                         gene.references.add(batch)
                     if production['product']:
-                        prodsyn, _ = Synonym.objects.get_or_create(name=production['product'])
+                        prodsyn, _ = Synonym.objects.get_or_create(name=production['product'], type_of=Synonym.PRODUCT)
                         product = Product.objects.filter(synonyms=prodsyn).first()
                         if not product:
                             product = Product.objects.create(accepted=prodsyn)

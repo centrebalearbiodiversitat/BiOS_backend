@@ -1,11 +1,39 @@
-from django.core.exceptions import ValidationError
+from polymorphic.models import PolymorphicModel
+
 from django.db import models
 
 from common import utils
 
 
-class Synonym(models.Model):
-	name = models.CharField(max_length=256, unique=True)
+class Synonym(PolymorphicModel):
+	KINGDOM = 0
+	PHYLUM = 1
+	CLASS = 2
+	ORDER = 3
+	FAMILY = 4
+	GENUS = 5
+	SPECIES = 6
+	SUBSPECIES = 7
+	GENE = 8
+	PRODUCT = 9
+	AUTHORSHIP = 10
+
+	SYN_TYPES = (
+		(KINGDOM, 'Kingdom'),
+		(PHYLUM, 'Phylum'),
+		(CLASS, 'Class'),
+		(ORDER, 'Order'),
+		(FAMILY, 'Family'),
+		(GENUS, 'Genus'),
+		(SPECIES, 'Species'),
+		(SUBSPECIES, 'Subspecies'),
+		(GENE, 'Gene'),
+		(PRODUCT, 'Product'),
+		(AUTHORSHIP, 'Authorship'),
+	)
+
+	name = models.CharField(max_length=256)
+	type_of = models.PositiveSmallIntegerField(choices=SYN_TYPES)
 
 	def clean(self):
 		super().clean()
@@ -16,18 +44,11 @@ class Synonym(models.Model):
 
 	class Meta:
 		indexes = []
-
-
-class ThirdPartyID(models.Model):
-	taxon_id = models.CharField(max_length=256, unique=True)
-	synonym = models.ForeignKey(Synonym, on_delete=models.CASCADE)
-
-	def clean(self):
-		super().clean()
-		self.taxon_id = utils.compact(self.taxon_id)
+		unique_together = ('name', 'type_of')
 
 
 class ModelWithSynonyms(models.Model):
+	SYNONYM_TYPE_OF = None
 	synonyms = models.ManyToManyField(Synonym, related_name='+')
 	accepted = models.ForeignKey(Synonym, on_delete=models.PROTECT, related_name='+')
 

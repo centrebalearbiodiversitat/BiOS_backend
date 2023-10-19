@@ -21,27 +21,27 @@ TAXON_RANK = 'taxonRank'
 LEVELS = [KINGDOM, PHYLUM, CLASS, ORDER, FAM, GENUS, SPECIES, SUBSPECIES]
 
 LEVELS_PARAMS = {
-    KINGDOM: [Kingdom, Synonym, AUTH_KINGDOM, SOURCE_KINGDOM, SOURCE_ORIGIN_KINGDOM],
-    PHYLUM: [Phylum, Synonym, AUTH_PHYLUM, SOURCE_PHYLUM, SOURCE_ORIGIN_PHYLUM],
-    CLASS: [Class, Synonym, AUTH_CLASS, SOURCE_CLASS, SOURCE_ORIGIN_CLASS],
-    ORDER: [Order, Synonym, AUTH_ORDER, SOURCE_ORDER, SOURCE_ORIGIN_ORDER],
-    FAM: [Family, Synonym, AUTH_FAM, SOURCE_FAM, SOURCE_ORIGIN_FAM],
-    GENUS: [Genus, Synonym, AUTH_GENUS, SOURCE_GENUS, SOURCE_ORIGIN_GENUS],
-    SPECIES: [Species, Synonym, AUTH_SPECIES, SOURCE_SPECIES, SOURCE_ORIGIN_SPECIES],
-    SUBSPECIES: [Subspecies, Synonym, AUTH_SUBSPECIES, SOURCE_SUBSPECIES, SOURCE_ORIGIN_SUBSPECIES]
+    KINGDOM: [Kingdom, Synonym.KINGDOM, AUTH_KINGDOM, SOURCE_KINGDOM, SOURCE_ORIGIN_KINGDOM],
+    PHYLUM: [Phylum, Synonym.PHYLUM, AUTH_PHYLUM, SOURCE_PHYLUM, SOURCE_ORIGIN_PHYLUM],
+    CLASS: [Class, Synonym.CLASS, AUTH_CLASS, SOURCE_CLASS, SOURCE_ORIGIN_CLASS],
+    ORDER: [Order, Synonym.ORDER, AUTH_ORDER, SOURCE_ORDER, SOURCE_ORIGIN_ORDER],
+    FAM: [Family, Synonym.FAMILY, AUTH_FAM, SOURCE_FAM, SOURCE_ORIGIN_FAM],
+    GENUS: [Genus, Synonym.GENUS, AUTH_GENUS, SOURCE_GENUS, SOURCE_ORIGIN_GENUS],
+    SPECIES: [Species, Synonym.SPECIES, AUTH_SPECIES, SOURCE_SPECIES, SOURCE_ORIGIN_SPECIES],
+    SUBSPECIES: [Subspecies, Synonym.SUBSPECIES, AUTH_SUBSPECIES, SOURCE_SUBSPECIES, SOURCE_ORIGIN_SUBSPECIES]
 }
 
 
 def create_tax_level(line, model, syn_model, batch: Batch, idx_name, parent, idx_author, idx_source, idx_source_origin):
     auth = None
     if line[idx_author]:
-        auth_syn, _ = Synonym.objects.get_or_create(name=line[idx_author])
+        auth_syn, _ = Synonym.objects.get_or_create(name=line[idx_author], type_of=Synonym.AUTHORSHIP)
 
         auth, _ = Authorship.objects.get_or_create(accepted=auth_syn)
         auth.synonyms.add(auth_syn)
         auth.references.add(batch)
 
-    taxon_syn, _ = syn_model.objects.get_or_create(name=line[idx_name] if line[idx_name] else 'Unknown')
+    taxon_syn, _ = Synonym.objects.get_or_create(name=line[idx_name] if line[idx_name] else 'Unknown', type_of=syn_model)
     if parent:  # Kingdom does not have parent
         child, _ = model.objects.get_or_create(
             accepted=taxon_syn,
@@ -76,13 +76,13 @@ def create_tax_level(line, model, syn_model, batch: Batch, idx_name, parent, idx
     return child
 
 
-@transaction.atomic
 class Command(BaseCommand):
     help = "Loads from taxonomy from csv"
 
     def add_arguments(self, parser):
         parser.add_argument("file", type=str)
 
+    @transaction.atomic
     def handle(self, *args, **options):
         file_name = options['file']
         with open(file_name, encoding='utf-8') as file:

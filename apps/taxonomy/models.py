@@ -1,12 +1,12 @@
 from django.core.exceptions import ValidationError
 from django.db import models
 
-from apps.synonyms.models import Synonym, ModelWithSynonyms
+from apps.synonyms.models import ModelWithSynonyms, Synonym
 from apps.versioning.models import ModelWithReferences
 
 
 class Authorship(ModelWithReferences, ModelWithSynonyms):
-    pass
+    SYNONYM_TYPE_OF = Synonym.AUTHORSHIP
 
 
 class TaxonomicLevelManager(models.Manager):
@@ -23,14 +23,14 @@ class TaxonomicLevelManager(models.Manager):
 class TaxonomicLevel(ModelWithReferences, ModelWithSynonyms):
     objects = TaxonomicLevelManager()
 
-    KINGDOM = 0
-    PHYLUM = 1
-    CLASS = 2
-    ORDER = 3
-    FAMILY = 4
-    GENUS = 5
-    SPECIES = 6
-    SUBSPECIES = 7
+    KINGDOM = Synonym.KINGDOM
+    PHYLUM = Synonym.PHYLUM
+    CLASS = Synonym.CLASS
+    ORDER = Synonym.ORDER
+    FAMILY = Synonym.FAMILY
+    GENUS = Synonym.GENUS
+    SPECIES = Synonym.SPECIES
+    SUBSPECIES = Synonym.SUBSPECIES
 
     RANK_CHOICES = (
         (KINGDOM, 'Kingdom'),
@@ -70,8 +70,6 @@ class TaxonomicLevel(ModelWithReferences, ModelWithSynonyms):
         SUBSPECIES: 'subspecies',
         'subspecies': SUBSPECIES,
     }
-
-    capitalize = False
 
     rank = models.PositiveSmallIntegerField(choices=RANK_CHOICES)
     authorship = models.ForeignKey(Authorship, on_delete=models.SET_NULL, null=True, default=None, blank=True)
@@ -118,8 +116,7 @@ class TaxonomicLevel(ModelWithReferences, ModelWithSynonyms):
 
 
 class Kingdom(TaxonomicLevel):
-    capitalize = True
-    RANK = TaxonomicLevel.KINGDOM
+    SYNONYM_TYPE_OF = RANK = TaxonomicLevel.KINGDOM
 
     class Meta:
         proxy = True
@@ -127,7 +124,7 @@ class Kingdom(TaxonomicLevel):
 
 
 class Phylum(TaxonomicLevel):
-    RANK = TaxonomicLevel.PHYLUM
+    SYNONYM_TYPE_OF = RANK = TaxonomicLevel.PHYLUM
 
     class Meta:
         proxy = True
@@ -135,7 +132,7 @@ class Phylum(TaxonomicLevel):
 
 
 class Class(TaxonomicLevel):
-    RANK = TaxonomicLevel.CLASS
+    SYNONYM_TYPE_OF = RANK = TaxonomicLevel.CLASS
 
     class Meta:
         proxy = True
@@ -143,7 +140,7 @@ class Class(TaxonomicLevel):
 
 
 class Order(TaxonomicLevel):
-    RANK = TaxonomicLevel.ORDER
+    SYNONYM_TYPE_OF = RANK = TaxonomicLevel.ORDER
 
     class Meta:
         proxy = True
@@ -151,7 +148,7 @@ class Order(TaxonomicLevel):
 
 
 class Family(TaxonomicLevel):
-    RANK = TaxonomicLevel.FAMILY
+    SYNONYM_TYPE_OF = RANK = TaxonomicLevel.FAMILY
 
     class Meta:
         proxy = True
@@ -159,8 +156,7 @@ class Family(TaxonomicLevel):
 
 
 class Genus(TaxonomicLevel):
-    RANK = TaxonomicLevel.GENUS
-    capitalize = True
+    SYNONYM_TYPE_OF = RANK = TaxonomicLevel.GENUS
 
     class Meta:
         proxy = True
@@ -168,7 +164,7 @@ class Genus(TaxonomicLevel):
 
 
 class Species(TaxonomicLevel):
-    RANK = TaxonomicLevel.SPECIES
+    SYNONYM_TYPE_OF = RANK = TaxonomicLevel.SPECIES
 
     class Meta:
         proxy = True
@@ -176,7 +172,7 @@ class Species(TaxonomicLevel):
 
 
 class Subspecies(TaxonomicLevel):
-    RANK = TaxonomicLevel.SUBSPECIES
+    SYNONYM_TYPE_OF = RANK = TaxonomicLevel.SUBSPECIES
 
     class Meta:
         proxy = True

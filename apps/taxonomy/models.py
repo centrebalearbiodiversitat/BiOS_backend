@@ -31,6 +31,7 @@ class TaxonomicLevel(ModelWithReferences, ModelWithSynonyms):
     GENUS = Synonym.GENUS
     SPECIES = Synonym.SPECIES
     SUBSPECIES = Synonym.SUBSPECIES
+    VARIETY = Synonym.VARIETY
 
     RANK_CHOICES = (
         (KINGDOM, 'Kingdom'),
@@ -41,6 +42,7 @@ class TaxonomicLevel(ModelWithReferences, ModelWithSynonyms):
         (GENUS, 'Genus'),
         (SPECIES, 'Species'),
         (SUBSPECIES, 'Subspecies'),
+        (VARIETY, 'Variety'),
     )
     RANK_CAPITALIZE = {
         KINGDOM: True,
@@ -51,6 +53,7 @@ class TaxonomicLevel(ModelWithReferences, ModelWithSynonyms):
         GENUS: True,
         SPECIES: False,
         SUBSPECIES: False,
+        VARIETY: False,
     }
     TRANSLATE_RANK = {
         KINGDOM: 'kingdom',
@@ -69,6 +72,8 @@ class TaxonomicLevel(ModelWithReferences, ModelWithSynonyms):
         'species': SPECIES,
         SUBSPECIES: 'subspecies',
         'subspecies': SUBSPECIES,
+        VARIETY: 'variety',
+        'variety': VARIETY,
     }
 
     rank = models.PositiveSmallIntegerField(choices=RANK_CHOICES)
@@ -78,7 +83,9 @@ class TaxonomicLevel(ModelWithReferences, ModelWithSynonyms):
     def __str__(self):
         name = super().__str__()
 
-        if self.authorship:
+        if self.rank > TaxonomicLevel.GENUS:
+            return self.binomial_scientific_name()
+        elif self.authorship:
             name = f'{name} {self.authorship}'
 
         return name
@@ -92,7 +99,8 @@ class TaxonomicLevel(ModelWithReferences, ModelWithSynonyms):
         while current.parent and current.rank > TaxonomicLevel.GENUS:
             full_name = f'{current.parent.simple_name()} {full_name}'
             current = current.parent
-
+        if self.authorship:
+            full_name = f'{full_name} {self.authorship}'
         return full_name
 
     def clean(self):
@@ -117,6 +125,7 @@ class TaxonomicLevel(ModelWithReferences, ModelWithSynonyms):
 
 class Kingdom(TaxonomicLevel):
     SYNONYM_TYPE_OF = RANK = TaxonomicLevel.KINGDOM
+    PARENT = None
 
     class Meta:
         proxy = True
@@ -125,6 +134,7 @@ class Kingdom(TaxonomicLevel):
 
 class Phylum(TaxonomicLevel):
     SYNONYM_TYPE_OF = RANK = TaxonomicLevel.PHYLUM
+    PARENT = TaxonomicLevel.KINGDOM
 
     class Meta:
         proxy = True
@@ -133,6 +143,7 @@ class Phylum(TaxonomicLevel):
 
 class Class(TaxonomicLevel):
     SYNONYM_TYPE_OF = RANK = TaxonomicLevel.CLASS
+    PARENT = TaxonomicLevel.PHYLUM
 
     class Meta:
         proxy = True
@@ -141,6 +152,7 @@ class Class(TaxonomicLevel):
 
 class Order(TaxonomicLevel):
     SYNONYM_TYPE_OF = RANK = TaxonomicLevel.ORDER
+    PARENT = TaxonomicLevel.CLASS
 
     class Meta:
         proxy = True
@@ -149,6 +161,7 @@ class Order(TaxonomicLevel):
 
 class Family(TaxonomicLevel):
     SYNONYM_TYPE_OF = RANK = TaxonomicLevel.FAMILY
+    PARENT = TaxonomicLevel.ORDER
 
     class Meta:
         proxy = True
@@ -157,6 +170,7 @@ class Family(TaxonomicLevel):
 
 class Genus(TaxonomicLevel):
     SYNONYM_TYPE_OF = RANK = TaxonomicLevel.GENUS
+    PARENT = TaxonomicLevel.FAMILY
 
     class Meta:
         proxy = True
@@ -165,6 +179,7 @@ class Genus(TaxonomicLevel):
 
 class Species(TaxonomicLevel):
     SYNONYM_TYPE_OF = RANK = TaxonomicLevel.SPECIES
+    PARENT = TaxonomicLevel.GENUS
 
     class Meta:
         proxy = True
@@ -173,7 +188,17 @@ class Species(TaxonomicLevel):
 
 class Subspecies(TaxonomicLevel):
     SYNONYM_TYPE_OF = RANK = TaxonomicLevel.SUBSPECIES
+    PARENT = TaxonomicLevel.SPECIES
 
     class Meta:
         proxy = True
         verbose_name_plural = "8. Subspecies"
+
+
+class Variety(TaxonomicLevel):
+    SYNONYM_TYPE_OF = RANK = TaxonomicLevel.VARIETY
+    PARENT = TaxonomicLevel.SPECIES
+
+    class Meta:
+        proxy = True
+        verbose_name_plural = "8. Varieties"

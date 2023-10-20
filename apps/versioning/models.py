@@ -8,6 +8,7 @@ class Source(models.Model):
     AI = 3
     WEB_PAGE = 4
     DOCUMENT = 5
+    EXPERT = 6
 
     ORIGIN_CHOICES = (
         (DATABASE, 'database'),
@@ -16,6 +17,7 @@ class Source(models.Model):
         (AI, 'ai'),
         (WEB_PAGE, 'web_page'),
         (DOCUMENT, 'document'),
+        (EXPERT, 'expert'),
     )
     TRANSLATE_CHOICES = {
         DATABASE: 'database',
@@ -30,6 +32,8 @@ class Source(models.Model):
         'web_page': WEB_PAGE,
         DOCUMENT: 'document',
         'document': DOCUMENT,
+        EXPERT: 'expert',
+        'expert': EXPERT,
     }
 
     name = models.CharField(max_length=255, unique=True)

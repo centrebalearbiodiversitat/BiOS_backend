@@ -5,7 +5,7 @@ from django.db import transaction
 
 from apps.synonyms.models import Synonym
 from apps.taxonomy.models import Kingdom, Authorship, Phylum, Class, Order, Family, Genus, Species, Subspecies, \
-    TaxonomicLevel
+    TaxonomicLevel, Variety
 from apps.versioning.models import Batch, Source
 
 KINGDOM, AUTH_KINGDOM, SOURCE_KINGDOM, SOURCE_ORIGIN_KINGDOM = 'Kingdom', 'kingdomAuthor', 'kingdomSource', 'kingdomOrigin'
@@ -16,9 +16,10 @@ FAM, AUTH_FAM, SOURCE_FAM, SOURCE_ORIGIN_FAM = 'Family', 'familyAuthor', 'family
 GENUS, AUTH_GENUS, SOURCE_GENUS, SOURCE_ORIGIN_GENUS = 'Genus', 'genusAuthor', 'genusSource', 'genusOrigin'
 SPECIES, AUTH_SPECIES, SOURCE_SPECIES, SOURCE_ORIGIN_SPECIES = 'Species', 'speciesAuthor', 'speciesSource', 'speciesOrigin'
 SUBSPECIES, AUTH_SUBSPECIES, SOURCE_SUBSPECIES, SOURCE_ORIGIN_SUBSPECIES = 'Subspecies', 'subspeciesAuthor', 'subspeciesSource', 'subspeciesOrigin'
+VARIETY, AUTH_VARIETY, SOURCE_VARIETY, SOURCE_ORIGIN_VARIETY = 'Variety', 'varietyAuthor', 'varietySource', 'varietyOrigin'
 TAXON_RANK = 'taxonRank'
 
-LEVELS = [KINGDOM, PHYLUM, CLASS, ORDER, FAM, GENUS, SPECIES, SUBSPECIES]
+LEVELS = [KINGDOM, PHYLUM, CLASS, ORDER, FAM, GENUS, SPECIES, SUBSPECIES, VARIETY]
 
 LEVELS_PARAMS = {
     KINGDOM: [Kingdom, Synonym.KINGDOM, AUTH_KINGDOM, SOURCE_KINGDOM, SOURCE_ORIGIN_KINGDOM],
@@ -28,7 +29,8 @@ LEVELS_PARAMS = {
     FAM: [Family, Synonym.FAMILY, AUTH_FAM, SOURCE_FAM, SOURCE_ORIGIN_FAM],
     GENUS: [Genus, Synonym.GENUS, AUTH_GENUS, SOURCE_GENUS, SOURCE_ORIGIN_GENUS],
     SPECIES: [Species, Synonym.SPECIES, AUTH_SPECIES, SOURCE_SPECIES, SOURCE_ORIGIN_SPECIES],
-    SUBSPECIES: [Subspecies, Synonym.SUBSPECIES, AUTH_SUBSPECIES, SOURCE_SUBSPECIES, SOURCE_ORIGIN_SUBSPECIES]
+    SUBSPECIES: [Subspecies, Synonym.SUBSPECIES, AUTH_SUBSPECIES, SOURCE_SUBSPECIES, SOURCE_ORIGIN_SUBSPECIES],
+    VARIETY: [Variety, Synonym.VARIETY, AUTH_VARIETY, SOURCE_VARIETY, SOURCE_ORIGIN_VARIETY]
 }
 
 
@@ -90,11 +92,10 @@ class Command(BaseCommand):
             batch = Batch.objects.create()
             line: dict
             for line in csv_file:
-                # print(line)
+                print(line)
                 parent = None
                 for level in LEVELS:
                     params = LEVELS_PARAMS[level]
-                    print(line)
                     parent = create_tax_level(line, params[0], params[1], batch, level, parent, params[2], params[3], params[4])
                     if level.lower() == line[TAXON_RANK]:
                         break

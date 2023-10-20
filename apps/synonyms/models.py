@@ -17,6 +17,7 @@ class Synonym(PolymorphicModel):
 	GENE = 8
 	PRODUCT = 9
 	AUTHORSHIP = 10
+	VARIETY = 11
 
 	SYN_TYPES = (
 		(KINGDOM, 'Kingdom'),
@@ -30,6 +31,7 @@ class Synonym(PolymorphicModel):
 		(GENE, 'Gene'),
 		(PRODUCT, 'Product'),
 		(AUTHORSHIP, 'Authorship'),
+		(VARIETY, 'Variety'),
 	)
 
 	name = models.CharField(max_length=256)

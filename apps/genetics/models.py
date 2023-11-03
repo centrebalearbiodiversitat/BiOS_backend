@@ -1,17 +1,15 @@
 from django.db import models
 
-from apps.synonyms.models import ModelWithSynonyms, Synonym
+from apps.synonyms.models import ModelWithSynonyms
 from apps.versioning.models import ModelWithReferences
 
 
 class Gene(ModelWithReferences, ModelWithSynonyms):
-    SYNONYM_TYPE_OF = Synonym.GENE
-    accepted = models.OneToOneField(Synonym, on_delete=models.PROTECT, related_name='+')
+    pass
 
 
 class Product(ModelWithReferences, ModelWithSynonyms):
-    SYNONYM_TYPE_OF = Synonym.PRODUCT
-    accepted = models.OneToOneField(Synonym, on_delete=models.PROTECT, related_name='+')
+    pass
 
 
 class Produces(ModelWithReferences):

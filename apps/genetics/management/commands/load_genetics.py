@@ -7,7 +7,6 @@ from django.utils.dateparse import parse_datetime
 
 from apps.genetics.models import GeneticFeatures, Produces, Gene, Product
 from apps.occurrences.models import Occurrence
-from apps.synonyms.models import Synonym
 from apps.taxonomy.models import TaxonomicLevel
 from apps.versioning.models import Batch, Source
 
@@ -46,16 +45,18 @@ class Command(BaseCommand):
                 )
                 batch.sources.add(source)
 
-                gfs = GeneticFeatures.objects.create(
+                gfs, _ = GeneticFeatures.objects.get_or_create(
                     sample_id=line['sample_id'],
-                    isolate=line['isolate'],
-                    bp=line['bp'],
-                    definition=line['definition'],
-                    data_file_division=line['data_file_division'],
-                    published_date=parse_datetime(line['date']) if line['date'] else None,
-                    collection_date=parse_datetime(line['collection_date']) if line['collection_date'] else None,
-                    molecule_type=line['molecule_type'],
-                    sequence_version=line['sequence_version'],
+                    defaults={
+                        'isolate': line['isolate'],
+                        'bp': line['bp'],
+                        'definition': line['definition'],
+                        'data_file_division': line['data_file_division'],
+                        'published_date': parse_datetime(line['date']) if line['date'] else None,
+                        'collection_date': parse_datetime(line['collection_date']) if line['collection_date'] else None,
+                        'molecule_type': line['molecule_type'],
+                        'sequence_version': line['sequence_version'],
+                    }
                 )
 
                 gfs.references.add(batch)
@@ -64,18 +65,10 @@ class Command(BaseCommand):
                     gene = None
                     product = None
                     if production['gene']:
-                        genesyn, _ = Synonym.objects.get_or_create(name=production['gene'], type_of=Synonym.GENE)
-                        gene = Gene.objects.filter(synonyms=genesyn).first()
-                        if not gene:
-                            gene = Gene.objects.create(accepted=genesyn)
-                        # gene, _ = Gene.objects.get_or_create(synonyms=genesyn, defaults={'accepted': genesyn})
+                        gene, _ = Gene.objects.get_or_create(name=production['gene'])
                         gene.references.add(batch)
                     if production['product']:
-                        prodsyn, _ = Synonym.objects.get_or_create(name=production['product'], type_of=Synonym.PRODUCT)
-                        product = Product.objects.filter(synonyms=prodsyn).first()
-                        if not product:
-                            product = Product.objects.create(accepted=prodsyn)
-                        # product, _ = Product.objects.get_or_create(synonyms=prodsyn, defaults={'accepted': prodsyn})
+                        product, _ = Product.objects.get_or_create(name=production['product'])
                         product.references.add(batch)
                     prod_rel, _ = Produces.objects.get_or_create(
                         gene=gene,
@@ -88,13 +81,15 @@ class Command(BaseCommand):
 
                 assert taxonomy.count() == 1, f'Multiple taxonomy trees found for {line["taxon"]}'
 
-                occ = Occurrence.objects.create(
+                occ, _ = Occurrence.objects.get_or_create(
                     voucher=line['voucher'] or '',
-                    locality=line['locality'] or '',
-                    latitude=line['lat_lon'][0] if line['lat_lon'] else '',
-                    longitude=line['lat_lon'][1] if line['lat_lon'] else '',
-                    collection_date=parse_datetime(line['collection_date']) if line['collection_date'] else None,
-                    taxonomy=taxonomy.first(),
-                    genetic_features=gfs
+                    defaults={
+                        'locality': line['locality'] or '',
+                        'latitude': line['lat_lon'][0] if line['lat_lon'] else '',
+                        'longitude': line['lat_lon'][1] if line['lat_lon'] else '',
+                        'collection_date': parse_datetime(line['collection_date']) if line['collection_date'] else None,
+                        'taxonomy': taxonomy.first(),
+                        'genetic_features': gfs
+                    }
                 )
                 occ.references.add(batch)

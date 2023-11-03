@@ -3,9 +3,7 @@ import csv
 from django.core.management.base import BaseCommand
 from django.db import transaction
 
-from apps.synonyms.models import Synonym
-from apps.taxonomy.models import Kingdom, Authorship, Phylum, Class, Order, Family, Genus, Species, Subspecies, \
-    TaxonomicLevel, Variety
+from apps.taxonomy.models import Authorship, TaxonomicLevel
 from apps.versioning.models import Batch, Source
 
 KINGDOM, AUTH_KINGDOM, SOURCE_KINGDOM, SOURCE_ORIGIN_KINGDOM = 'Kingdom', 'kingdomAuthor', 'kingdomSource', 'kingdomOrigin'
@@ -22,46 +20,36 @@ TAXON_RANK = 'taxonRank'
 LEVELS = [KINGDOM, PHYLUM, CLASS, ORDER, FAM, GENUS, SPECIES, SUBSPECIES, VARIETY]
 
 LEVELS_PARAMS = {
-    KINGDOM: [Kingdom, Synonym.KINGDOM, AUTH_KINGDOM, SOURCE_KINGDOM, SOURCE_ORIGIN_KINGDOM],
-    PHYLUM: [Phylum, Synonym.PHYLUM, AUTH_PHYLUM, SOURCE_PHYLUM, SOURCE_ORIGIN_PHYLUM],
-    CLASS: [Class, Synonym.CLASS, AUTH_CLASS, SOURCE_CLASS, SOURCE_ORIGIN_CLASS],
-    ORDER: [Order, Synonym.ORDER, AUTH_ORDER, SOURCE_ORDER, SOURCE_ORIGIN_ORDER],
-    FAM: [Family, Synonym.FAMILY, AUTH_FAM, SOURCE_FAM, SOURCE_ORIGIN_FAM],
-    GENUS: [Genus, Synonym.GENUS, AUTH_GENUS, SOURCE_GENUS, SOURCE_ORIGIN_GENUS],
-    SPECIES: [Species, Synonym.SPECIES, AUTH_SPECIES, SOURCE_SPECIES, SOURCE_ORIGIN_SPECIES],
-    SUBSPECIES: [Subspecies, Synonym.SUBSPECIES, AUTH_SUBSPECIES, SOURCE_SUBSPECIES, SOURCE_ORIGIN_SUBSPECIES],
-    VARIETY: [Variety, Synonym.VARIETY, AUTH_VARIETY, SOURCE_VARIETY, SOURCE_ORIGIN_VARIETY]
+    KINGDOM: [TaxonomicLevel.KINGDOM, AUTH_KINGDOM, SOURCE_KINGDOM, SOURCE_ORIGIN_KINGDOM],
+    PHYLUM: [TaxonomicLevel.PHYLUM, AUTH_PHYLUM, SOURCE_PHYLUM, SOURCE_ORIGIN_PHYLUM],
+    CLASS: [TaxonomicLevel.CLASS, AUTH_CLASS, SOURCE_CLASS, SOURCE_ORIGIN_CLASS],
+    ORDER: [TaxonomicLevel.ORDER, AUTH_ORDER, SOURCE_ORDER, SOURCE_ORIGIN_ORDER],
+    FAM: [TaxonomicLevel.FAMILY, AUTH_FAM, SOURCE_FAM, SOURCE_ORIGIN_FAM],
+    GENUS: [TaxonomicLevel.GENUS, AUTH_GENUS, SOURCE_GENUS, SOURCE_ORIGIN_GENUS],
+    SPECIES: [TaxonomicLevel.SPECIES, AUTH_SPECIES, SOURCE_SPECIES, SOURCE_ORIGIN_SPECIES],
+    SUBSPECIES: [TaxonomicLevel.SUBSPECIES, AUTH_SUBSPECIES, SOURCE_SUBSPECIES, SOURCE_ORIGIN_SUBSPECIES],
+    VARIETY: [TaxonomicLevel.VARIETY, AUTH_VARIETY, SOURCE_VARIETY, SOURCE_ORIGIN_VARIETY]
 }
 
 
-def create_tax_level(line, model, syn_model, batch: Batch, idx_name, parent, idx_author, idx_source, idx_source_origin):
+def create_tax_level(line, parent, batch: Batch, idx_name, rank, idx_author, idx_source, idx_source_origin):
+    if not line[idx_name]:  # Unknown level yet
+        return parent
+
     auth = None
     if line[idx_author]:
-        auth_syn, _ = Synonym.objects.get_or_create(name=line[idx_author], type_of=Synonym.AUTHORSHIP)
-
-        auth, _ = Authorship.objects.get_or_create(accepted=auth_syn)
-        auth.synonyms.add(auth_syn)
+        auth, _ = Authorship.objects.get_or_create(name=line[idx_author], accepted=True)
         auth.references.add(batch)
 
-    taxon_syn, _ = Synonym.objects.get_or_create(name=line[idx_name] if line[idx_name] else 'Unknown', type_of=syn_model)
-    if parent:  # Kingdom does not have parent
-        child, _ = model.objects.get_or_create(
-            accepted=taxon_syn,
-            parent=parent,
-            defaults={
-                'rank': TaxonomicLevel.TRANSLATE_RANK[idx_name.lower()],
-                'authorship': auth,
-            }
-        )
-    else:
-        child, _ = model.objects.get_or_create(
-            accepted=taxon_syn,
-            defaults={
-                'rank': TaxonomicLevel.TRANSLATE_RANK[idx_name.lower()],
-                'authorship': auth,
-            }
-        )
-    child.synonyms.add(taxon_syn)
+    child, _ = TaxonomicLevel.objects.get_or_create(
+        parent=parent,
+        name=line[idx_name],
+        authorship=auth,
+        rank=rank,
+        defaults={
+            'accepted': line['originalName'] == line['colNamesAccepted'] if TaxonomicLevel.TRANSLATE_RANK[line[TAXON_RANK]] == rank else True,
+        }
+    )
     child.references.add(batch)
 
     if not line[idx_source]:
@@ -96,6 +84,6 @@ class Command(BaseCommand):
                 parent = None
                 for level in LEVELS:
                     params = LEVELS_PARAMS[level]
-                    parent = create_tax_level(line, params[0], params[1], batch, level, parent, params[2], params[3], params[4])
+                    parent = create_tax_level(line, parent, batch, level, *params)
                     if level.lower() == line[TAXON_RANK]:
                         break

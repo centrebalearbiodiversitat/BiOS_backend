@@ -1,19 +1,26 @@
 from django.contrib import admin
 
-from apps.taxonomy.models import Authorship, Kingdom, Genus, Family, Species, Phylum, Order, Class, Subspecies, \
-	TaxonomicLevel, Variety
-from common.admin import BaseSynonymAdmin
+from apps.taxonomy.models import Authorship, TaxonomicLevel
 
 
-class BaseTaxonLevelAdmin(BaseSynonymAdmin):
-	list_display = ['name', 'upper_taxon', 'num_references', 'num_children']
-
-	def get_queryset(self, request):
-		return super().get_queryset(request).filter(rank=self.model.RANK)
+class BaseTaxonLevelAdmin(admin.ModelAdmin):
+	list_display = ['scientific_name', 'rank', 'upper_taxon', 'num_references', 'num_children']
+	list_filter = ['rank']
+	fields = ['name', 'rank', 'authorship', 'parent', 'accepted', 'synonyms', 'references', ]
+	search_fields = ['name']
+	autocomplete_fields = ['parent', 'authorship', 'synonyms']
 
 	def formfield_for_foreignkey(self, db_field, request, **kwargs):
-		if db_field.name in ["parent"]:
-			kwargs["queryset"] = TaxonomicLevel.objects.filter(rank=self.model.PARENT)
+		# if db_field.name in ["parent"]:
+		# 	print(self.model.rank)
+		# 	if hasattr(self.model, 'PARENT'):
+		# 		if self.model.PARENT:
+		# 			kwargs["queryset"] = TaxonomicLevel.objects.filter(rank=self.model.PARENT)
+		# 		else:
+		# 			kwargs["queryset"] = TaxonomicLevel.objects.none()
+		# 	else:
+		# 		kwargs["queryset"] = TaxonomicLevel.objects.all()
+
 		return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
 	def name(self, obj):
@@ -44,14 +51,11 @@ class BaseTaxonLevelAdmin(BaseSynonymAdmin):
 		return taxon if len(taxon) < 3 else taxon[3:]
 
 
-admin.site.register(Kingdom, BaseTaxonLevelAdmin)
-admin.site.register(Phylum, BaseTaxonLevelAdmin)
-admin.site.register(Genus, BaseTaxonLevelAdmin)
-admin.site.register(Family, BaseTaxonLevelAdmin)
-admin.site.register(Species, BaseTaxonLevelAdmin)
-admin.site.register(Subspecies, BaseTaxonLevelAdmin)
-admin.site.register(Order, BaseTaxonLevelAdmin)
-admin.site.register(Class, BaseTaxonLevelAdmin)
-admin.site.register(Variety, BaseTaxonLevelAdmin)
+admin.site.register(TaxonomicLevel, BaseTaxonLevelAdmin)
 
-admin.site.register(Authorship)
+
+class AuthorshipAdmin(admin.ModelAdmin):
+	search_fields = ['name']
+
+
+admin.site.register(Authorship, AuthorshipAdmin)

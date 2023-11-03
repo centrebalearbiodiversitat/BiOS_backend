@@ -65,10 +65,10 @@ class Command(BaseCommand):
                     gene = None
                     product = None
                     if production['gene']:
-                        gene, _ = Gene.objects.get_or_create(name=production['gene'])
+                        gene, _ = Gene.objects.get_or_create(name=production['gene'], accepted=True)
                         gene.references.add(batch)
                     if production['product']:
-                        product, _ = Product.objects.get_or_create(name=production['product'])
+                        product, _ = Product.objects.get_or_create(name=production['product'], accepted=True)
                         product.references.add(batch)
                     prod_rel, _ = Produces.objects.get_or_create(
                         gene=gene,

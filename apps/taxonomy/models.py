@@ -79,7 +79,6 @@ class TaxonomicLevel(ModelWithReferences, ModelWithSynonyms):
     rank = models.PositiveSmallIntegerField(choices=RANK_CHOICES)
     authorship = models.ForeignKey(Authorship, on_delete=models.SET_NULL, null=True, default=None, blank=True)
     parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True, default=None, blank=True, related_name='children')
-    accepted = models.BooleanField(null=False, blank=False)
 
     def __str__(self):
         return self.scientific_name()

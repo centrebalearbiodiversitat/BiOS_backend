@@ -7,6 +7,7 @@ class ModelWithSynonyms(models.Model):
 	}
 	name = models.CharField(max_length=256)
 	synonyms = models.ManyToManyField('self', blank=True)
+	accepted = models.BooleanField(null=False, blank=False)
 
 	def __str__(self):
 		return str(self.name)

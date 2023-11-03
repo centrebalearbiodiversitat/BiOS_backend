@@ -44,10 +44,10 @@ def create_tax_level(line, parent, batch: Batch, idx_name, rank, idx_author, idx
     child, _ = TaxonomicLevel.objects.get_or_create(
         parent=parent,
         name=line[idx_name],
-        authorship=auth,
         rank=rank,
         defaults={
-            'accepted': line['originalName'] == line['colNamesAccepted'] if TaxonomicLevel.TRANSLATE_RANK[line[TAXON_RANK]] == rank else True,
+            'accepted': True,
+            'authorship': auth,
         }
     )
     child.references.add(batch)
@@ -85,5 +85,3 @@ class Command(BaseCommand):
                 for level in LEVELS:
                     params = LEVELS_PARAMS[level]
                     parent = create_tax_level(line, parent, batch, level, *params)
-                    if level.lower() == line[TAXON_RANK]:
-                        break

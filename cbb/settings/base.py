@@ -17,9 +17,6 @@ import sys
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
-MEDIA_URL = '/public/'
-MEDIA_ROOT = BASE_DIR / 'public'
-
 PROJECT_ROOT = os.path.dirname(__file__)
 sys.path.insert(0, os.path.join(PROJECT_ROOT, 'apps'))
 
@@ -52,7 +49,6 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     # 'rest_framework',
     # 'rest_framework_api_key',
-    'polymorphic',
     'apps.genetics',
     'apps.occurrences',
     'apps.taxonomy',
@@ -125,7 +121,7 @@ USE_I18N = True
 
 USE_TZ = True
 
-# Static files (CSS, JavaScript, Images)
+# Static files (CSS, JavaScript, Images)sa
 # https://docs.djangoproject.com/en/4.0/howto/static-files/
 
 

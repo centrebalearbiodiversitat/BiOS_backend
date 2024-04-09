@@ -47,7 +47,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    # 'rest_framework',
+    'rest_framework',
     # 'rest_framework_api_key',
     'apps.genetics',
     'apps.occurrences',
@@ -55,6 +55,7 @@ INSTALLED_APPS = [
     'apps.versioning',
     'apps.synonyms',
     'apps.geography',
+    'apps.API',
 ]
 
 REST_FRAMEWORK = {

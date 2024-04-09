@@ -12,10 +12,21 @@ class Authorship(ModelWithReferences, ModelWithSynonyms):
 class TaxonomicLevelManager(models.Manager):
     def find(self, taxon):
         levels: list = taxon.split()
-        assert len(levels) > 0, f'Invalid taxon string'
-        query = self.filter(name=levels[0])
+        assert len(levels) > 0, []
+
+        query = self.filter(name__iexact=levels[0])
         for level in levels[1:]:
-            query = self.filter(parent__in=query, name=level)
+            query = self.filter(parent__in=query, name__iexact=level)
+
+        return query
+
+    def contains(self, taxon):
+        levels: list = taxon.split()
+        assert len(levels) > 0, []
+
+        query = self.none()
+        for level in levels:
+            query |= self.filter(name__icontains=level)
 
         return query
 
@@ -82,6 +93,9 @@ class TaxonomicLevel(ModelWithReferences, ModelWithSynonyms):
 
     def __str__(self):
         return self.scientific_name()
+
+    def readable_rank(self):
+        return {'id': self.rank, 'redable': TaxonomicLevel.TRANSLATE_RANK[self.rank]}
 
     def scientific_name(self):
         current = self

@@ -1,4 +1,5 @@
 Django==4.2.5
+djangorestframework==3.15.1
 psycopg2-binary==2.9.5
 geopandas==0.14.3
 pydevd-pycharm

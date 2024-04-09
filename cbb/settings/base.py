@@ -54,6 +54,7 @@ INSTALLED_APPS = [
     'apps.taxonomy',
     'apps.versioning',
     'apps.synonyms',
+    'apps.geography',
 ]
 
 REST_FRAMEWORK = {

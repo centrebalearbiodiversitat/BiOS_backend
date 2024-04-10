@@ -34,8 +34,10 @@ class Command(BaseCommand):
 			'NAME_1', 'GID_1',
 			'NAME_2', 'GID_2',
 			'NAME_3', 'GID_3',
-			'NAME_4', 'GID_4']
-		)]
+			'NAME_4', 'GID_4',
+			'WATER_BODY_0', 'WBID_0',
+			'WATER_BODY_1', 'WBID_1',
+		])]
 
 		# parent = GeographicLevel.objects.get_or_create(name='Earth', gid="EARTH", accepted=True, rank=)
 		for i in range(len(levels)):

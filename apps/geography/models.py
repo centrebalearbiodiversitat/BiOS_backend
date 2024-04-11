@@ -47,4 +47,4 @@ class GeographicLevel(ModelWithReferences, ModelWithSynonyms):
 		return self.name
 
 	class Meta:
-		unique_together = ('parent', 'name', 'rank')
+		unique_together = ('parent', 'gid')

@@ -8,8 +8,7 @@ class BaseTaxonLevelAdmin(admin.ModelAdmin):
 	list_filter = ['rank', 'accepted']
 	fields = ['name', 'rank', 'authorship', 'parent', 'accepted', 'synonyms', 'references', ]
 	search_fields = ['name']
-	autocomplete_fields = ['parent', 'authorship']
-	filter_horizontal = ['synonyms']
+	autocomplete_fields = ['parent', 'authorship', 'synonyms']
 
 	def name(self, obj):
 		return obj

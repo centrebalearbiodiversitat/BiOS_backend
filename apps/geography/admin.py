@@ -7,7 +7,7 @@ class BaseTaxonLevelAdmin(admin.ModelAdmin):
 	list_filter = ['rank', 'accepted']
 	search_fields = ['name', 'gid']
 	list_display = ['name', 'gid', 'rank']
-	filter_horizontal = ['synonyms']
+	autocomplete_fields = ['synonyms']
 
 	def get_queryset(self, request):
 		return super().get_queryset(request)

@@ -39,7 +39,6 @@ class Command(BaseCommand):
 					if 'synonyms' in level:
 						synonyms = levels[level['synonyms']].iloc[i]
 					parent = self.load_geo_level(parent, levels[level['key']].iloc[i], levels[level['gid']].iloc[i], level['rank'], synonyms)
-		raise Exception
 
 	def load_geo_level(self, parent, name, gid, rank, synonyms):
 		# if synonyms:

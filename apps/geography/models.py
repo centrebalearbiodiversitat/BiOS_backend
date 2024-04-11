@@ -40,11 +40,11 @@ class GeographicLevel(ModelWithReferences, ModelWithSynonyms):
 	}
 
 	rank = models.PositiveSmallIntegerField(choices=RANK_CHOICES)
-	gid = models.CharField(max_length=256, unique=True)
+	gid = models.CharField(max_length=256)
 	parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True, default=None, blank=True, related_name='children')
 
 	def __str__(self):
 		return self.name
 
 	class Meta:
-		unique_together = ('parent', 'gid')
+		unique_together = ('parent', 'gid', 'name')

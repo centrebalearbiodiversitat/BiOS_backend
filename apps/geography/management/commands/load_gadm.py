@@ -41,14 +41,22 @@ class Command(BaseCommand):
 					parent = self.load_geo_level(parent, levels[level['key']].iloc[i], levels[level['gid']].iloc[i], level['rank'], synonyms)
 
 	def load_geo_level(self, parent, name, gid, rank, synonyms):
-		# if synonyms:
-		# 	print(synonyms)
 		name = str(name).strip()
 		gid = str(gid).strip()
 
 		if not (name and gid):
 			return parent
 
-		gl, _ = GeographicLevel.objects.get_or_create(gid=gid, parent=parent, defaults={'name': name, 'accepted': True, 'rank': rank})
+		print(name, gid)
+		gl, _ = GeographicLevel.objects.get_or_create(gid=gid, parent=parent, name=name, defaults={'accepted': True, 'rank': rank})
+
+		if synonyms:
+			synonyms = synonyms.split('|')
+			for syn in synonyms:
+				print('\t', syn)
+				syn = syn.strip()
+				if syn and syn != name:
+					gl_syn, _ = GeographicLevel.objects.get_or_create(gid=gid, parent=parent, name=syn, defaults={'accepted': False, 'rank': rank})
+					gl.synonyms.add(gl_syn)
 
 		return gl

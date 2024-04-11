@@ -95,13 +95,13 @@ class TaxonomicLevel(ModelWithReferences, ModelWithSynonyms):
         return self.scientific_name()
 
     def readable_rank(self):
-        return {'id': self.rank, 'redable': TaxonomicLevel.TRANSLATE_RANK[self.rank]}
+        return TaxonomicLevel.TRANSLATE_RANK[self.rank]
 
     def scientific_name(self):
         current = self
         full_name = super().__str__()
         while current.parent and current.rank in [TaxonomicLevel.SPECIES, TaxonomicLevel.SUBSPECIES, TaxonomicLevel.VARIETY]:
-            full_name = f'{current.parent} {full_name}'
+            full_name = f'{current.parent.name} {full_name}'
             current = current.parent
         # if self.authorship:
         #     full_name = f'{full_name} {self.authorship}'

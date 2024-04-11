@@ -5,23 +5,11 @@ from apps.taxonomy.models import Authorship, TaxonomicLevel
 
 class BaseTaxonLevelAdmin(admin.ModelAdmin):
 	list_display = ['scientific_name', 'rank', 'upper_taxon', 'num_references', 'num_children']
-	list_filter = ['rank']
+	list_filter = ['rank', 'accepted']
 	fields = ['name', 'rank', 'authorship', 'parent', 'accepted', 'synonyms', 'references', ]
 	search_fields = ['name']
-	autocomplete_fields = ['parent', 'authorship', 'synonyms']
-
-	def formfield_for_foreignkey(self, db_field, request, **kwargs):
-		# if db_field.name in ["parent"]:
-		# 	print(self.model.rank)
-		# 	if hasattr(self.model, 'PARENT'):
-		# 		if self.model.PARENT:
-		# 			kwargs["queryset"] = TaxonomicLevel.objects.filter(rank=self.model.PARENT)
-		# 		else:
-		# 			kwargs["queryset"] = TaxonomicLevel.objects.none()
-		# 	else:
-		# 		kwargs["queryset"] = TaxonomicLevel.objects.all()
-
-		return super().formfield_for_foreignkey(db_field, request, **kwargs)
+	autocomplete_fields = ['parent', 'authorship']
+	filter_horizontal = ['synonyms']
 
 	def name(self, obj):
 		return obj

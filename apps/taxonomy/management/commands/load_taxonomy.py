@@ -128,12 +128,14 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument("file", type=str)
+        parser.add_argument("-d", nargs='?', type=str, default=';')
 
     @transaction.atomic
     def handle(self, *args, **options):
         file_name = options['file']
+        delimiter = options['d']
         with open(file_name, encoding='utf-8') as file:
-            csv_file = csv.DictReader(file)
+            csv_file = csv.DictReader(file, delimiter=delimiter)
             batch = Batch.objects.create()
             line: dict
             for line in csv_file:

@@ -47,13 +47,16 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    # 'rest_framework',
+    'rest_framework',
     # 'rest_framework_api_key',
     'apps.genetics',
     'apps.occurrences',
     'apps.taxonomy',
     'apps.versioning',
     'apps.synonyms',
+    'apps.geography',
+    'apps.API',
+    'drf_yasg',
 ]
 
 REST_FRAMEWORK = {
@@ -61,6 +64,7 @@ REST_FRAMEWORK = {
     # 	"rest_framework_api_key.permissions.HasAPIKey",
     # ]
 }
+
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',

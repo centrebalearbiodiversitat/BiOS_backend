@@ -48,3 +48,4 @@ class GeographicLevel(ModelWithReferences, ModelWithSynonyms):
 
 	class Meta:
 		unique_together = ('parent', 'gid', 'name')
+		ordering = ['id']

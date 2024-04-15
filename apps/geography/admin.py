@@ -5,12 +5,10 @@ from apps.geography.models import GeographicLevel
 
 class BaseTaxonLevelAdmin(admin.ModelAdmin):
 	list_filter = ['rank', 'accepted']
-	search_fields = ['name', 'gid']
+	search_fields = ['name']
 	list_display = ['name', 'gid', 'rank']
 	autocomplete_fields = ['synonyms']
-
-	def get_queryset(self, request):
-		return super().get_queryset(request)
+	exclude = ['references']
 
 
 admin.site.register(GeographicLevel,  BaseTaxonLevelAdmin)

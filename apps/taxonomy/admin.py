@@ -9,6 +9,7 @@ class BaseTaxonLevelAdmin(admin.ModelAdmin):
 	fields = ['name', 'rank', 'authorship', 'parent', 'accepted', 'synonyms', 'references', ]
 	search_fields = ['name']
 	autocomplete_fields = ['parent', 'authorship', 'synonyms']
+	exclude = ['references']
 
 	def name(self, obj):
 		return obj

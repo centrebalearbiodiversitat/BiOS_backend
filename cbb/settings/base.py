@@ -56,6 +56,7 @@ INSTALLED_APPS = [
     'apps.synonyms',
     'apps.geography',
     'apps.API',
+    'drf_yasg',
 ]
 
 REST_FRAMEWORK = {
@@ -63,6 +64,7 @@ REST_FRAMEWORK = {
     # 	"rest_framework_api_key.permissions.HasAPIKey",
     # ]
 }
+
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',

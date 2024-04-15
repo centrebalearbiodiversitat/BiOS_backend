@@ -52,8 +52,7 @@ class Batch(models.Model):
         (ACCEPTED, 'Accepted'),
         (REJECTED, 'Rejected'),
     )
-
-    sources = models.ManyToManyField(Source, blank=True)
+    
     created_at = models.DateTimeField(auto_now_add=True, editable=False)
     status = models.PositiveSmallIntegerField(choices=STATUS_CHOICES, default=PENDING)
 
@@ -66,6 +65,7 @@ class Batch(models.Model):
 
 class ModelWithReferences(models.Model):
     references = models.ManyToManyField(Batch)
+    sources = models.ManyToManyField(Source, blank=True)
 
     class Meta:
         abstract = True

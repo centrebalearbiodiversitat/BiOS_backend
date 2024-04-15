@@ -100,3 +100,5 @@ docker-compose.*.yml
 !docker-compose.production.yml
 !docker-compose.template.yml
 !docker-compose.yml
+
+.vscode

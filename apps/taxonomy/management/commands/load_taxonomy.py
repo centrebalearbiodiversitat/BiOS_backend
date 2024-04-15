@@ -1,7 +1,7 @@
 import csv
 
 from django.core.management.base import BaseCommand
-from django.db import transaction
+from django.db import transaction, models
 
 from apps.taxonomy.models import Authorship, TaxonomicLevel
 from apps.versioning.models import Batch, Source
@@ -33,26 +33,85 @@ LEVELS_PARAMS = {
 }
 
 
-def create_tax_level(line, parent, batch: Batch, idx_name, rank, idx_author, idx_source, idx_source_origin):
-    if not line[idx_name]:  # Unknown level yet
+def create_taxonomic_level(line, parent, batch, idx_name, rank, idx_author, idx_source, idx_source_origin):
+    if not line[idx_name]:
         return parent
 
-    auth = None
+    if rank != 0 and line[TAXON_RANK] != KINGDOM:
+        try:
+            try:
+                parent_taxa = TaxonomicLevel.objects.get(name=parent.name)
+            except TaxonomicLevel.DoesNotExist:
+                parent_taxa = TaxonomicLevel.objects.get(name=parent.parent.name)
+        except TaxonomicLevel.DoesNotExist:
+            raise Exception(f'The taxon cannot be stored as its parent taxon ({parent.name}) has not been found in the database.')
+
+        if line['taxonRank'] == idx_name.lower():
+            auth = get_or_create_authorship(line, idx_author, batch)
+            source = get_or_create_source(line, idx_source, idx_source_origin)
+            child, _ = TaxonomicLevel.objects.get_or_create(
+                parent=parent_taxa,
+                name=line[idx_name],
+                rank=rank,
+                defaults={
+                    'accepted': True,
+                    'authorship': auth,
+                }
+            )
+            child.sources.set([source])
+            child.references.add(batch)
+            child.save()
+            return child
+        else:
+            auth = get_or_create_authorship(line, idx_author, batch)
+            child = TaxonomicLevel(
+                parent=parent,
+                name=line[idx_name],
+                rank=rank,
+                accepted=True,
+                authorship=auth
+            )
+            return child
+
+    elif line['taxonRank'] == 'kingdom':
+        auth = get_or_create_authorship(line, idx_author, batch)
+        source = get_or_create_source(line, idx_source, idx_source_origin)
+        child, _ = TaxonomicLevel.objects.get_or_create(
+            parent=parent,
+            name=line[idx_name],
+            rank=rank,
+            defaults={
+                'accepted': True,
+                'authorship': auth,
+            }
+        )
+        child.sources.set([source])
+        child.references.add(batch)
+        child.save()
+        return child
+    else:
+        auth = get_or_create_authorship(line, idx_author, batch)
+        child = TaxonomicLevel(
+            parent=parent,
+            name=line[idx_name],
+            rank=rank,
+            accepted=True,
+            authorship=auth
+        )
+        return child
+
+
+def get_or_create_authorship(line, idx_author, batch):
     if line[idx_author]:
         auth, _ = Authorship.objects.get_or_create(name=line[idx_author], accepted=True)
         auth.references.add(batch)
+        auth.save()
+        return auth
+    else:
+        return None
 
-    child, _ = TaxonomicLevel.objects.get_or_create(
-        parent=parent,
-        name=line[idx_name],
-        rank=rank,
-        defaults={
-            'accepted': True,
-            'authorship': auth,
-        }
-    )
-    child.references.add(batch)
 
+def get_or_create_source(line, idx_source, idx_source_origin):
     if not line[idx_source]:
         raise Exception('All records must have a source')
 
@@ -62,10 +121,7 @@ def create_tax_level(line, parent, batch: Batch, idx_name, rank, idx_author, idx
             'origin': Source.TRANSLATE_CHOICES[line[idx_source_origin]]
         }
     )
-    batch.sources.add(source)
-
-    return child
-
+    return source
 
 class Command(BaseCommand):
     help = "Loads from taxonomy from csv"
@@ -85,6 +141,8 @@ class Command(BaseCommand):
             for line in csv_file:
                 print(line)
                 parent = None
-                for level in LEVELS:
+
+                for i in range(LEVELS.index(line['taxonRank'].capitalize()) + 1):
+                    level = LEVELS[i]
                     params = LEVELS_PARAMS[level]
-                    parent = create_tax_level(line, parent, batch, level, *params)
+                    parent = create_taxonomic_level(line, parent, batch, level, *params)

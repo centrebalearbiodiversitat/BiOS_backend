@@ -43,6 +43,7 @@ class TaxonomicLevel(ModelWithReferences, ModelWithSynonyms):
     SPECIES = 6
     SUBSPECIES = 7
     VARIETY = 8
+    LIFE = 9
 
     RANK_CHOICES = (
         (KINGDOM, 'Kingdom'),
@@ -54,18 +55,8 @@ class TaxonomicLevel(ModelWithReferences, ModelWithSynonyms):
         (SPECIES, 'Species'),
         (SUBSPECIES, 'Subspecies'),
         (VARIETY, 'Variety'),
+        (LIFE, 'Life'),
     )
-    RANK_CAPITALIZE = {
-        KINGDOM: True,
-        PHYLUM: True,
-        CLASS: True,
-        ORDER: True,
-        FAMILY: True,
-        GENUS: True,
-        SPECIES: False,
-        SUBSPECIES: False,
-        VARIETY: False,
-    }
     TRANSLATE_RANK = {
         KINGDOM: 'kingdom',
         'kingdom': KINGDOM,
@@ -85,6 +76,8 @@ class TaxonomicLevel(ModelWithReferences, ModelWithSynonyms):
         'subspecies': SUBSPECIES,
         VARIETY: 'variety',
         'variety': VARIETY,
+        LIFE: 'life',
+        'life': LIFE,
     }
 
     rank = models.PositiveSmallIntegerField(choices=RANK_CHOICES)

@@ -6,7 +6,7 @@ from apps.geography.models import GeographicLevel
 class BaseTaxonLevelAdmin(admin.ModelAdmin):
 	list_filter = ['rank', 'accepted']
 	search_fields = ['name']
-	list_display = ['name', 'gid', 'rank']
+	list_display = ['name', 'rank']
 	autocomplete_fields = ['synonyms']
 	exclude = ['references']
 

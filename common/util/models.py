@@ -1,11 +1,27 @@
 from django.core.exceptions import ValidationError
 from django.db import models
 
+from apps.versioning.models import Batch, Source
 
-class ModelWithSynonyms(models.Model):
-	SYNONYMS_FILTERS = {
-		'rank': 0
-	}
+
+class LatLonModel(models.Model):
+	latitude = models.DecimalField(max_digits=8, decimal_places=5, null=True, blank=True)
+	longitude = models.DecimalField(max_digits=8, decimal_places=5, null=True, blank=True)
+	coordinatesUncertainty = models.PositiveIntegerField(null=True, blank=True)
+
+	class Meta:
+		abstract = True
+
+
+class ReferencedModel(models.Model):
+	references = models.ManyToManyField(Batch)
+	sources = models.ManyToManyField(Source, blank=True)
+
+	class Meta:
+		abstract = True
+
+
+class SynonymModel(models.Model):
 	name = models.CharField(max_length=256)
 	synonyms = models.ManyToManyField('self', blank=True)
 	accepted = models.BooleanField(null=False, blank=False)

@@ -1,25 +1,24 @@
 from django.db import models
 
-from apps.synonyms.models import ModelWithSynonyms
-from apps.versioning.models import ModelWithReferences
+from common.util.models import ReferencedModel, SynonymModel
 
 
-class GeographicLevel(ModelWithReferences, ModelWithSynonyms):
+class GeographicLevel(ReferencedModel, SynonymModel):
 	CONTINENT = 0
 	COUNTRY = 1
-	STATE_PROVINCE = 2
-	COUNTY = 3
+	AC = 2
+	ISLAND = 3
 	MUNICIPALITY = 4
-	LOCALITY = 5
+	TOWN = 5
 	WATER_BODY = 6
 
 	RANK_CHOICES = (
 		(CONTINENT, 'Continent'),
 		(COUNTRY, 'Country'),
-		(STATE_PROVINCE, 'State province'),
-		(COUNTY, 'County'),
+		(AC, 'Autonomous community'),
+		(ISLAND, 'Island'),
 		(MUNICIPALITY, 'Municipality'),
-		(LOCALITY, 'Locality'),
+		(TOWN, 'Town'),
 		(WATER_BODY, 'Water body'),
 	)
 
@@ -28,24 +27,24 @@ class GeographicLevel(ModelWithReferences, ModelWithSynonyms):
 		'continent': CONTINENT,
 		COUNTRY: 'country',
 		'country': COUNTRY,
-		STATE_PROVINCE: 'stateProvince',
-		'state_province': STATE_PROVINCE,
-		COUNTY: 'county',
-		'county': COUNTY,
+		AC: 'autonomous_community',
+		'autonomous_community': AC,
+		ISLAND: 'island',
+		'island': ISLAND,
+		MUNICIPALITY: 'municipality',
 		'municipality': MUNICIPALITY,
-		LOCALITY: 'locality',
-		'locality': LOCALITY,
+		TOWN: 'town',
+		'town': TOWN,
 		WATER_BODY: 'waterBody',
 		'water_body': WATER_BODY,
 	}
 
 	rank = models.PositiveSmallIntegerField(choices=RANK_CHOICES)
-	gid = models.CharField(max_length=256)
 	parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True, default=None, blank=True, related_name='children')
 
 	def __str__(self):
 		return self.name
 
 	class Meta:
-		unique_together = ('parent', 'gid', 'name')
+		unique_together = ('parent', 'name')
 		ordering = ['id']

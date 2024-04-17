@@ -1,11 +1,10 @@
 from django.core.exceptions import ValidationError
 from django.db import models
 
-from apps.synonyms.models import ModelWithSynonyms
-from apps.versioning.models import ModelWithReferences
+from common.util.models import ReferencedModel, SynonymModel
 
 
-class Authorship(ModelWithReferences, ModelWithSynonyms):
+class Authorship(ReferencedModel, SynonymModel):
     pass
 
 
@@ -31,7 +30,7 @@ class TaxonomicLevelManager(models.Manager):
         return query
 
 
-class TaxonomicLevel(ModelWithReferences, ModelWithSynonyms):
+class TaxonomicLevel(ReferencedModel, SynonymModel):
     objects = TaxonomicLevelManager()
 
     KINGDOM = 0

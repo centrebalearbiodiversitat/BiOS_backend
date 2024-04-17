@@ -61,11 +61,3 @@ class Batch(models.Model):
 
     class Meta:
         verbose_name_plural = "batches"
-
-
-class ModelWithReferences(models.Model):
-    references = models.ManyToManyField(Batch)
-    sources = models.ManyToManyField(Source, blank=True)
-
-    class Meta:
-        abstract = True

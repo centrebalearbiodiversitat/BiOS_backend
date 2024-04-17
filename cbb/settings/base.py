@@ -53,7 +53,6 @@ INSTALLED_APPS = [
     'apps.occurrences',
     'apps.taxonomy',
     'apps.versioning',
-    'apps.synonyms',
     'apps.geography',
     'apps.API',
     'drf_yasg',

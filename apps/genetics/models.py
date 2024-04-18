@@ -1,6 +1,6 @@
 from django.db import models
 
-from common.util.models import ReferencedModel, SynonymModel
+from common.utils.models import ReferencedModel, SynonymModel
 
 
 class Gene(ReferencedModel, SynonymModel):

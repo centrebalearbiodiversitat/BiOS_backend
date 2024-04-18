@@ -6,8 +6,6 @@ from django.db import transaction
 from apps.geography.models import GeographicLevel
 
 LEVELS = [
-	{'key': 'CONTINENT', 'rank': GeographicLevel.CONTINENT},
-	{'key': 'COUNTRY', 'synonyms': 'VARNAME_0', 'rank': GeographicLevel.COUNTRY},
 	{'key': 'AC', 'synonyms': 'VARNAME_1', 'rank': GeographicLevel.AC},
 	{'key': 'ISLAND', 'synonyms': 'VARNAME_2', 'rank': GeographicLevel.ISLAND},
 	{'key': 'MUNICIPALI', 'synonyms': 'VARNAME_3', 'rank': GeographicLevel.MUNICIPALITY},

@@ -1,11 +1,9 @@
 from django.db import models
 
-from common.util.models import ReferencedModel, SynonymModel
+from common.utils.models import ReferencedModel, SynonymModel
 
 
 class GeographicLevel(ReferencedModel, SynonymModel):
-	CONTINENT = 0
-	COUNTRY = 1
 	AC = 2
 	ISLAND = 3
 	MUNICIPALITY = 4
@@ -13,8 +11,6 @@ class GeographicLevel(ReferencedModel, SynonymModel):
 	WATER_BODY = 6
 
 	RANK_CHOICES = (
-		(CONTINENT, 'Continent'),
-		(COUNTRY, 'Country'),
 		(AC, 'Autonomous community'),
 		(ISLAND, 'Island'),
 		(MUNICIPALITY, 'Municipality'),
@@ -23,10 +19,6 @@ class GeographicLevel(ReferencedModel, SynonymModel):
 	)
 
 	TRANSLATE_RANK = {
-		CONTINENT: 'continent',
-		'continent': CONTINENT,
-		COUNTRY: 'country',
-		'country': COUNTRY,
 		AC: 'autonomous_community',
 		'autonomous_community': AC,
 		ISLAND: 'island',

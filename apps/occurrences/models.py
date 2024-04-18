@@ -3,7 +3,7 @@ from django.db import models
 from apps.genetics.models import GeneticFeatures
 from apps.geography.models import GeographicLevel
 from apps.taxonomy.models import TaxonomicLevel
-from common.util.models import LatLonModel, ReferencedModel
+from common.utils.models import LatLonModel, ReferencedModel
 
 
 class Occurrence(ReferencedModel, LatLonModel):

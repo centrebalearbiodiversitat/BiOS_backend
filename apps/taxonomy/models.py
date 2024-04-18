@@ -1,7 +1,7 @@
 from django.core.exceptions import ValidationError
 from django.db import models
 
-from common.util.models import ReferencedModel, SynonymModel
+from common.utils.models import ReferencedModel, SynonymModel
 
 
 class Authorship(ReferencedModel, SynonymModel):

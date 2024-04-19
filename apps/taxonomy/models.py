@@ -1,14 +1,14 @@
 from django.core.exceptions import ValidationError
 from django.db import models
 
-from common.utils.models import ReferencedModel, SynonymModel
+from common.utils.models import ReferencedModel, SynonymModel, SynonymManager
 
 
 class Authorship(ReferencedModel, SynonymModel):
     pass
 
 
-class TaxonomicLevelManager(models.Manager):
+class TaxonomicLevelManager(SynonymManager):
     def find(self, taxon):
         levels: list = taxon.split()
         assert len(levels) > 0, []
@@ -82,6 +82,12 @@ class TaxonomicLevel(ReferencedModel, SynonymModel):
     rank = models.PositiveSmallIntegerField(choices=RANK_CHOICES)
     authorship = models.ForeignKey(Authorship, on_delete=models.SET_NULL, null=True, default=None, blank=True)
     parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True, default=None, blank=True, related_name='children')
+
+    def save(self, force_insert=False, force_update=False, using=None, update_fields=None):
+        if self.rank == TaxonomicLevel.SPECIES and len(self.name.split()) != 1:
+            raise ValidationError('Species level must be epithet separated of genus.')
+
+        super().save(force_insert, force_update, using, update_fields)
 
     def __str__(self):
         return self.scientific_name()

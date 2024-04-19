@@ -40,6 +40,7 @@ class Command(BaseCommand):
                 source, _ = Source.objects.get_or_create(
                     name=line['geneticSource'],
                     defaults={
+                        'accepted': True,
                         'origin': Source.TRANSLATE_CHOICES[line['geneticOrigin']]
                     }
                 )

@@ -87,15 +87,15 @@ def create_taxonomic_level(line, parent, batch, idx_name, rank, idx_author, idx_
 		)
 
 		if child.count() == 0:
-			raise Exception(f'Higher taxonomy must exist before loading a new taxon parent={parent} rank={TaxonomicLevel.TRANSLATE_RANK[rank]} name={line[idx_name]}.\n{line}')
+			raise Exception(f'Higher taxonomy must exist before loading a new taxon parent={parent} rank={TaxonomicLevel.TRANSLATE_RANK[rank]} name={line[idx_name]}\n{line}')
 		elif child.count() > 1:
-			raise Exception(f'Found {child.count()} possible parent nodes {child} when loading a new taxon.\n{line}')
+			raise Exception(f'Found {child.count()} possible parent nodes {child} when loading a new taxon\n{line}')
 
 		child = child.first()
 		if not child.accepted:
-			raise Exception(f'Higher taxonomy must be accepted {child.readable_rank()}:{child.name}.\n{line}')
+			raise Exception(f'Higher taxonomy must be accepted {child.readable_rank()}:{child.name}\n{line}')
 		elif child.authorship != auth:
-			raise Exception(f'Trying to update higher taxonomy author for {child.readable_rank()}:{child.name}. Original: {child.auth.name} New: {auth.name}.\n{line}')
+			raise Exception(f'Trying to update higher taxonomy author for {child.readable_rank()}:{child.name}. Original: {child.authorship or "None"} New: {auth or "None"}\n{line}')
 
 	child.sources.add(source)
 	child.references.add(batch)
@@ -108,7 +108,13 @@ def get_or_create_authorship(line, idx_author, batch):
 	if not line[idx_author]:
 		return None
 
-	auth, _ = Authorship.objects.get_or_create(name=line[idx_author], accepted=True)
+	auth, _ = Authorship.objects.get_or_create(
+		name__iexact=line[idx_author],
+		defaults={
+			'name': line[idx_author],
+			'accepted': True,
+		}
+	)
 	auth.references.add(batch)
 	auth.save()
 
@@ -120,13 +126,20 @@ def get_or_create_source(line, idx_source, idx_source_origin):
 		raise Exception('All records must have a source')
 
 	source, _ = Source.objects.get_or_create(
-		name=line[idx_source],
+		name__iexact=line[idx_source],
 		defaults={
+			'name': line[idx_source],
+			'accepted': True,
 			'origin': Source.TRANSLATE_CHOICES[line[idx_source_origin]]
 		}
 	)
 
 	return source
+
+
+def clean_up_input_line(line):
+	for key in line.keys():
+		line[key] = line[key].strip()
 
 
 class Command(BaseCommand):
@@ -140,12 +153,13 @@ class Command(BaseCommand):
 	def handle(self, *args, **options):
 		file_name = options['file']
 		delimiter = options['d']
-		with open(file_name, encoding='utf-8') as file:
+		with open(file_name, encoding='utf-8-sig') as file:
 			csv_file = csv.DictReader(file, delimiter=delimiter)
 			biota, _ = TaxonomicLevel.objects.get_or_create(
-				name="Biota",
+				name__iexact="Biota",
 				rank=TaxonomicLevel.LIFE,
 				defaults={
+					'name': "Biota",
 					'accepted': True,
 					'authorship': None,
 					'parent': None,
@@ -155,6 +169,7 @@ class Command(BaseCommand):
 			for line in csv_file:
 				parent = biota
 				print(line[ORIGINAL_NAME])
+				# clean_up_input_line(line)
 
 				for level in LEVELS:
 					parent = create_taxonomic_level(line, parent, batch, level, *LEVELS_PARAMS[level])

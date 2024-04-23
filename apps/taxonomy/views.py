@@ -1,54 +1,135 @@
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework.generics import ListAPIView
+from .forms import TaxonomicLevelForms
+from drf_yasg import openapi
+from drf_yasg.utils import swagger_auto_schema
 
 from apps.taxonomy.models import TaxonomicLevel
 from apps.taxonomy.serializers import TaxonomicLevelSerializer
 
 
-class SearchTaxonByName(APIView):
-	def get(self, request):
-		query = request.GET.get('taxon')
-		exact = request.GET.get('exact', False)
+class TaxonSearch(APIView):
+    @swagger_auto_schema(
+        operation_description="Search for a taxon by name.",
+        manual_parameters=[
+            openapi.Parameter('name', openapi.IN_QUERY, description="Name of the taxon to search for.",
+                              type=openapi.TYPE_STRING, required=True),
+            openapi.Parameter('exact', openapi.IN_QUERY,
+                              description="Indicates whether to search for an exact match. Defaults to False.", type=openapi.TYPE_BOOLEAN),
+        ],
+        responses={
+            200: 'Success',
+            400: 'Bad Request',
+        },
+    )
+    def get(self, request):
+        taxon_form = TaxonomicLevelForms(request.GET)
 
-		if not query:
-			return Response(status=400)
+        filters = {}
+        print(taxon_form.is_valid())
 
-		if exact:
-			results = TaxonomicLevel.objects.find(query)
-		else:
-			results = TaxonomicLevel.objects.contains(query)
+        if not taxon_form.is_valid():
+            return Response(taxon_form.errors, status=400)
 
-		return Response(
-			TaxonomicLevelSerializer(
-				results,
-				many=True
-			).data
-		)
+        if taxon_form.is_valid():
+            query = taxon_form.cleaned_data.get('name')
+            exact = taxon_form.cleaned_data.get('exact', False)
+
+        if exact:
+            filters['name__iexact'] = query
+        else:
+            filters['name__icontains'] = query
+
+        results = TaxonomicLevel.objects.filter(**filters)
+
+        return Response(
+            TaxonomicLevelSerializer(
+                results,
+                many=True
+            ).data
+        )
+
+
+class TaxonList(ListAPIView):
+
+    serializer_class = TaxonomicLevelSerializer
+
+    @swagger_auto_schema(
+        operation_description="Get a list of taxa, with optional filtering.",
+        manual_parameters=[
+            openapi.Parameter('name', openapi.IN_QUERY,
+                              description="Name of the taxon to search for.", type=openapi.TYPE_STRING),
+            openapi.Parameter('rank', openapi.IN_QUERY,
+                              description="Rank of the taxon to search for.", type=openapi.TYPE_STRING),
+            openapi.Parameter('authorship', openapi.IN_QUERY,
+                              description="Authorship of the taxon to search for.", type=openapi.TYPE_STRING),
+            openapi.Parameter('parent_level', openapi.IN_QUERY,
+                              description="Parent level of the taxon to search for.", type=openapi.TYPE_STRING),
+            openapi.Parameter('exact', openapi.IN_QUERY,
+                              description="Indicates whether to search for an exact match. Defaults to False.", type=openapi.TYPE_BOOLEAN),
+        ],
+        responses={
+            200: 'Success',
+            400: 'Bad Request',
+        },
+    )
+    def filter_queryset(self, queryset):
+        filters = {}
+        taxon_form = TaxonomicLevelForms(self.request.GET)
+        taxon_form.is_valid()
+        print(taxon_form.cleaned_data)
+        exact = self.request.GET.get('exact', False)
+        exact = exact.lower() == 'true' if isinstance(exact, str) else False
+
+        char_fields = ['name', 'rank', 'authorship']
+        fk_fields = ['parent_level']
+
+        for param in char_fields:
+            value = self.request.query_params.get(param)
+            if value:
+                if exact:
+                    param = f'{param}__iexact'
+                    filters[param] = value
+                else:
+                    param = f'{param}__icontains'
+                    filters[param] = value
+
+        for param in fk_fields:
+            value = self.request.query_params.get(param)
+            if value:
+                filters[param] = value
+
+        return queryset.filter(**filters)
+
+    def get_queryset(self):
+        queryset = TaxonomicLevel.objects.all()
+        return self.filter_queryset(queryset)
 
 
 class TaxonCRUD(APIView):
-	def get(self, request, id):
-		taxon = TaxonomicLevelSerializer(
-			TaxonomicLevel.objects.filter(id=id).first()
-		)
+    def get(self, request, id):
+        taxon = TaxonomicLevelSerializer(
+            TaxonomicLevel.objects.filter(id=id).first()
+        )
 
-		return Response(taxon.data)
+        return Response(taxon.data)
 
 
 class TaxonParent(APIView):
-	def get(self, request, id):
-		taxon = TaxonomicLevelSerializer(
-			TaxonomicLevel.objects.filter(id=id).first().parent
-		)
+    def get(self, request, id):
+        taxon = TaxonomicLevelSerializer(
+            TaxonomicLevel.objects.filter(id=id).first().parent
+        )
 
-		return Response(taxon.data)
+        return Response(taxon.data)
 
 
 class TaxonChildren(APIView):
-	def get(self, request, id):
-		taxon = TaxonomicLevelSerializer(
-			TaxonomicLevel.objects.filter(id=id).first().children,
-			many=True
-		)
+    def get(self, request, id):
+        taxon = TaxonomicLevelSerializer(
+            TaxonomicLevel.objects.filter(id=id).first().children,
+            many=True
+        )
 
-		return Response(taxon.data)
+        return Response(taxon.data)

@@ -27,19 +27,14 @@ class TaxonSearch(APIView):
         taxon_form = TaxonomicLevelForms(request.GET)
 
         filters = {}
-        print(taxon_form.is_valid())
 
         if not taxon_form.is_valid():
             return Response(taxon_form.errors, status=400)
 
-        if taxon_form.is_valid():
-            query = taxon_form.cleaned_data.get('name')
-            exact = taxon_form.cleaned_data.get('exact', False)
+        query = taxon_form.cleaned_data.get('name')
+        exact = taxon_form.cleaned_data.get('exact', False)
 
-        if exact:
-            filters['name__iexact'] = query
-        else:
-            filters['name__icontains'] = query
+        filters['name__iexact' if exact else 'name__icontains'] = query
 
         results = TaxonomicLevel.objects.filter(**filters)
 
@@ -64,8 +59,8 @@ class TaxonList(ListAPIView):
                               description="Rank of the taxon to search for.", type=openapi.TYPE_STRING),
             openapi.Parameter('authorship', openapi.IN_QUERY,
                               description="Authorship of the taxon to search for.", type=openapi.TYPE_STRING),
-            openapi.Parameter('parent_level', openapi.IN_QUERY,
-                              description="Parent level of the taxon to search for.", type=openapi.TYPE_STRING),
+            openapi.Parameter('parent', openapi.IN_QUERY,
+                              description="Parent id of the taxon to search for.", type=openapi.TYPE_STRING),
             openapi.Parameter('exact', openapi.IN_QUERY,
                               description="Indicates whether to search for an exact match. Defaults to False.", type=openapi.TYPE_BOOLEAN),
         ],
@@ -75,32 +70,30 @@ class TaxonList(ListAPIView):
         },
     )
     def filter_queryset(self, queryset):
-        filters = {}
         taxon_form = TaxonomicLevelForms(self.request.GET)
-        taxon_form.is_valid()
-        print(taxon_form.cleaned_data)
-        exact = self.request.GET.get('exact', False)
-        exact = exact.lower() == 'true' if isinstance(exact, str) else False
+
+        if not taxon_form.is_valid():
+            return Response(taxon_form.errors, status=400)
+
+        exact = taxon_form.cleaned_data.get('exact', False)
 
         char_fields = ['name', 'rank', 'authorship']
-        fk_fields = ['parent_level']
+        fk_fields = ['parent']
 
         for param in char_fields:
             value = self.request.query_params.get(param)
+
             if value:
-                if exact:
-                    param = f'{param}__iexact'
-                    filters[param] = value
-                else:
-                    param = f'{param}__icontains'
-                    filters[param] = value
+                param = f'{param}__iexact' if exact else f'{param}__icontains'
+                queryset = queryset.filter(**{param: value})
 
         for param in fk_fields:
             value = self.request.query_params.get(param)
-            if value:
-                filters[param] = value
 
-        return queryset.filter(**filters)
+            if value:
+                queryset = queryset.filter(**{param: value})
+
+        return queryset
 
     def get_queryset(self):
         queryset = TaxonomicLevel.objects.all()

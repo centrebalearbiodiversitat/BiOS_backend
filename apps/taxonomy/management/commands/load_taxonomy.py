@@ -67,12 +67,14 @@ def create_taxonomic_level(line, parent, batch, idx_name, rank, idx_author, idx_
 
 		if not accepted:
 			accepted_candidates = TaxonomicLevel.objects.find(taxon=line[COL_NAME_ACCEPTED])
-			accepted_tl = None
+			if accepted_candidates.count() != 1:
+				raise Exception(f'More than one potential candidates found for synonyms linking')
+			accepted_tl = accepted_candidates.first()
 
-			for candidate in accepted_candidates:
-				if candidate.parent == parent and candidate.rank == rank:
-					accepted_tl = candidate
-					break
+			# for candidate in accepted_candidates:
+			# 	# if candidate.parent == parent and candidate.rank == rank:
+			# 		accepted_tl = candidate
+			# 		break
 
 			if not accepted_tl:
 				raise Exception(f'{parent} {rank} Accepted taxonomic level not found for {line[COL_NAME_ACCEPTED]}. Accepted taxon must be inserted first.')

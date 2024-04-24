@@ -22,7 +22,7 @@ def parse_line(line: dict):
 
 
 class Command(BaseCommand):
-    help = "Loads from taxonomy from csv"
+    help = "Loads occurrences from csv"
 
     def add_arguments(self, parser):
         parser.add_argument("file", type=str)

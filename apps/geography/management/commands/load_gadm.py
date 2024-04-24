@@ -27,32 +27,49 @@ class Command(BaseCommand):
 		print(file_name)
 		db = gpd.read_file(file_name)
 		levels = db.loc[:]
+		print(levels)
 
 		for i in range(len(levels)):
 			parent = None
 			for level in LEVELS:
-				synonyms = None
 				if level['key'] in levels:
 					# if 'synonyms' in level:
 					# 	synonyms = levels[level['synonyms']].iloc[i]
-					parent = self.load_geo_level(parent, levels[level['key']].iloc[i], level['rank'], synonyms)
+					parent = self.load_geo_level(parent, levels[level['key']].iloc[i], level['rank'], levels['CEN_LAT'].iloc[i], levels['CEN_LON'].iloc[i], levels['RADIUS_M'].iloc[i], GeographicLevel.TRANSLATE_RANK[levels['RANK'].iloc[i].lower()])
 
-	def load_geo_level(self, parent, name, rank, synonyms):
+	def load_geo_level(self, parent, name, rank, lat, lon, uncert, new_rank):
 		name = str(name).strip()
 
 		if not name:
 			return parent
 
-		print(name)
-		gl, _ = GeographicLevel.objects.get_or_create(parent=parent, name=name, defaults={'accepted': True, 'rank': rank})
+		if rank == new_rank:
+			gl, _ = GeographicLevel.objects.get_or_create(
+				parent=parent,
+				name__iexact=name,
+				defaults={
+					'name': name,
+					'latitude': lat,
+					'longitude': lon,
+					'coordinatesUncertainty': uncert,
+					'accepted': True,
+					'rank': rank
+				}
+			)
+		else:
+			gl = GeographicLevel.objects.get(
+				parent=parent,
+				name__iexact=name,
+				rank=rank
+			)
 
-		if synonyms:
-			synonyms = synonyms.split('|')
-			for syn in synonyms:
-				print('\t', syn)
-				syn = syn.strip()
-				if syn and syn != name:
-					gl_syn, _ = GeographicLevel.objects.get_or_create(parent=parent, name=syn, defaults={'accepted': False, 'rank': rank})
-					gl.synonyms.add(gl_syn)
+		# if synonyms:
+		# 	synonyms = synonyms.split('|')
+		# 	for syn in synonyms:
+		# 		print('\t', syn)
+		# 		syn = syn.strip()
+		# 		if syn and syn != name:
+		# 			gl_syn, _ = GeographicLevel.objects.get_or_create(parent=parent, name=syn, defaults={'accepted': False, 'rank': rank})
+		# 			gl.synonyms.add(gl_syn)
 
 		return gl

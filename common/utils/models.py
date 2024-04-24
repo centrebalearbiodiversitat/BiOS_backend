@@ -81,7 +81,7 @@ class SynonymModel(models.Model):
 
 	def clean(self):
 		super().clean()
-		n_accepted_syns = self.synonyms.all().filter(accepted=True).count()
+		n_accepted_syns = self.synonyms.all().filter(accepted=True).count() if self.id else 0
 
 		if self.accepted:
 			if n_accepted_syns != 0:

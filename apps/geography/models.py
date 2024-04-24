@@ -5,44 +5,47 @@ from django.db import models
 from unidecode import unidecode
 
 from common.utils.models import ReferencedModel, SynonymModel, LatLonModel, SynonymManager
+from common.utils.utils import str_clean_up
 
-PUNCTUATION_TRANSLATE = str.maketrans(string.punctuation, ' ' * len(string.punctuation))
+PUNCTUATION_TRANSLATE = str.maketrans(string.punctuation, '\n' * len(string.punctuation))
 
 
 class GeographicLevelManager(SynonymManager):
 	def search(self, location: str):
+		## First try by unique name query
+		potential_nodes = self.filter(name__iexact=location)
+		print(potential_nodes)
+		if potential_nodes.count() > 1:
+			return potential_nodes.first()
+
+		## Second try by higher taxonomy
 		# Clean up location string for optimal search
 		global PUNCTUATION_TRANSLATE
 		location = location.translate(PUNCTUATION_TRANSLATE)
+		loc_nodes = unidecode(location).split('\n')
+		clean_loc_nodes = []
 
-		loc_nodes = unidecode(location).split()
-
-		potential_nodes = {}
+		# Query potential nodes with the exact name
+		best_node = None
 		for node in loc_nodes:
-			if node:
-				for gl in self.filter(name__icontains=node):
-					potential_nodes[gl.id] = gl
+			node = str_clean_up(node)
+			potential_node = self.filter(name__iexact=node)
+			if potential_node.exists():
+				if best_node:
+					for pn in potential_node:
+						if best_node.rank < pn.rank:
+							best_node = pn
+							break
+				else:
+					best_node = potential_node.first()  # most uncertainty
 
-		# Calculate their score by matching and return the best
-		potential_nodes_score = []
-		for potn in potential_nodes.values():
-			score = 0
-			current = potn
-			while current.parent:
-				if current.id in potential_nodes:
-					score += 1
-				current = current.parent
-			potential_nodes_score.append({'score': score, 'obj': potn})
-
-		if potential_nodes_score:
-			return max(potential_nodes_score, key=lambda x: x['score'])
-		else:
-			return None
+		return best_node
 
 
 class GeographicLevel(ReferencedModel, SynonymModel, LatLonModel):
 	objects = GeographicLevelManager()
 
+	# Order matters!
 	AC = 2
 	ISLAND = 3
 	MUNICIPALITY = 4
@@ -75,4 +78,4 @@ class GeographicLevel(ReferencedModel, SynonymModel, LatLonModel):
 
 	class Meta:
 		unique_together = ('parent', 'name')
-		ordering = ['id']
+		ordering = ['rank']

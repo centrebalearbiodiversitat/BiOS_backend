@@ -1,18 +1,17 @@
 from django.db import models
 
-from apps.synonyms.models import ModelWithSynonyms
-from apps.versioning.models import ModelWithReferences
+from common.utils.models import ReferencedModel, SynonymModel
 
 
-class Gene(ModelWithReferences, ModelWithSynonyms):
+class Gene(ReferencedModel, SynonymModel):
     pass
 
 
-class Product(ModelWithReferences, ModelWithSynonyms):
+class Product(ReferencedModel, SynonymModel):
     pass
 
 
-class Produces(ModelWithReferences):
+class Produces(ReferencedModel):
     gene = models.ForeignKey(Gene, on_delete=models.CASCADE, null=True)
     product = models.ForeignKey(Product, on_delete=models.CASCADE, null=True)
 
@@ -23,7 +22,7 @@ class Produces(ModelWithReferences):
         verbose_name_plural = 'Produces'
 
 
-class GeneticFeatures(ModelWithReferences):
+class GeneticFeatures(ReferencedModel):
     sample_id = models.CharField(max_length=255)
     isolate = models.CharField(max_length=255, null=True, blank=True)
     bp = models.PositiveIntegerField()

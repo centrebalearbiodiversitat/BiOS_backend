@@ -4,6 +4,7 @@ from apps.taxonomy.views import SearchTaxonByName, TaxonCRUD, TaxonParent, Taxon
 
 urlpatterns = [
 	path('search', SearchTaxonByName.as_view()),
+	path('list', TaxonCRUD.as_view()),
 	path('taxon/<int:id>', TaxonCRUD.as_view()),
 	path('taxon/<int:id>/parent', TaxonParent.as_view()),
 	path('taxon/<int:id>/children', TaxonChildren.as_view()),

@@ -65,17 +65,18 @@ class TaxonList(ListAPIView):
 			),
 			openapi.Parameter(
 				'rank', openapi.IN_QUERY,
-				description="Rank of the taxon to search for.",
-				type=openapi.TYPE_STRING
+				description="Rank id of the taxon to search for.",
+				type=openapi.TYPE_INTEGER
 			),
 			openapi.Parameter(
 				'authorship', openapi.IN_QUERY,
-				description="Authorship of the taxon to search for.",
-				type=openapi.TYPE_STRING
+				description="Authorship id of the taxon to search for.",
+				type=openapi.TYPE_INTEGER
 			),
 			openapi.Parameter(
 				'parent', openapi.IN_QUERY,
-				description="Parent id of the taxon to search for.", type=openapi.TYPE_STRING
+				description="Parent id of the taxon to search for.", 
+    			type=openapi.TYPE_INTEGER
 			),
 			openapi.Parameter(
 				'exact', openapi.IN_QUERY,
@@ -88,15 +89,12 @@ class TaxonList(ListAPIView):
 			400: 'Bad Request',
 		},
 	)
-	def filter_queryset(self, queryset):
+	def get(self, request):
 		taxon_form = TaxonomicLevelForms(self.request.GET)
 
 		if not taxon_form.is_valid():
 			return Response(taxon_form.errors, status=400)
-		if not taxon_form.is_valid():
-			return Response(taxon_form.errors, status=400)
 
-		exact = taxon_form.cleaned_data.get('exact', False)
 		exact = taxon_form.cleaned_data.get('exact', False)
 
 		str_fields = ['name']
@@ -128,25 +126,13 @@ class TaxonList(ListAPIView):
 
 
 class TaxonCRUD(APIView):
-	def get(self, request, id):
-		taxon = TaxonomicLevelSerializer(
-			TaxonomicLevel.objects.filter(id=id).first()
-		)
-	def get(self, request, id):
-		taxon = TaxonomicLevelSerializer(
-			TaxonomicLevel.objects.filter(id=id).first()
-		)
-
-		return Response(taxon.data)
-		return Response(taxon.data)
-
-
-class TaxonCRUD(APIView):
 	@swagger_auto_schema(
 		operation_description="Retrieve a specific TaxonomicLevel instance by its id",
 		manual_parameters=[
 			openapi.Parameter(
-				'id', openapi.IN_QUERY, description="ID of the taxon to retrieve", type=openapi.TYPE_INTEGER)
+				'id', openapi.IN_QUERY,
+    			description="ID of the taxon to retrieve",
+       			type=openapi.TYPE_INTEGER)
 		],
 		responses={
 			200: TaxonomicLevelSerializer(),
@@ -171,12 +157,7 @@ class TaxonParent(APIView):
 		taxon = TaxonomicLevelSerializer(
 			TaxonomicLevel.objects.filter(id=id).first().parent
 		)
-	def get(self, request, id):
-		taxon = TaxonomicLevelSerializer(
-			TaxonomicLevel.objects.filter(id=id).first().parent
-		)
 
-		return Response(taxon.data)
 		return Response(taxon.data)
 
 
@@ -186,11 +167,5 @@ class TaxonChildren(APIView):
 			TaxonomicLevel.objects.filter(id=id).first().children,
 			many=True
 		)
-	def get(self, request, id):
-		taxon = TaxonomicLevelSerializer(
-			TaxonomicLevel.objects.filter(id=id).first().children,
-			many=True
-		)
 
-		return Response(taxon.data)
 		return Response(taxon.data)

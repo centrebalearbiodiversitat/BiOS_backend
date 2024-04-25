@@ -15,3 +15,4 @@ class TaxonomicLevelForms(ModelForm):
         self.fields['name'].required = False
         self.fields['rank'].required = False
         self.fields['references'].required = False
+        self.fields['authorship'].required = False

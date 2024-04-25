@@ -13,10 +13,16 @@ class TaxonSearch(APIView):
 	@swagger_auto_schema(
 		operation_description="Search for a taxon by name.",
 		manual_parameters=[
-		openapi.Parameter('name', openapi.IN_QUERY, description="Name of the taxon to search for.",
-			type=openapi.TYPE_STRING, required=True),
-		openapi.Parameter('exact', openapi.IN_QUERY,
-			description="Indicates whether to search for an exact match. Defaults to False.", type=openapi.TYPE_BOOLEAN),
+			openapi.Parameter(
+				'name', openapi.IN_QUERY,
+				description="Name of the taxon to search for.",
+				type=openapi.TYPE_STRING, required=True
+			),
+			openapi.Parameter(
+				'exact', openapi.IN_QUERY,
+				description="Indicates whether to search for an exact match. Defaults to False.",
+				type=openapi.TYPE_BOOLEAN
+			),
 		],
 		responses={
 			200: 'Success',
@@ -46,27 +52,51 @@ class TaxonSearch(APIView):
 		)
 
 
-class TaxonList(APIView):
+class TaxonList(ListAPIView):
+	serializer_class = TaxonomicLevelSerializer
+
 	@swagger_auto_schema(
 		operation_description="Get a list of taxa, with optional filtering.",
 		manual_parameters=[
-			openapi.Parameter('name', openapi.IN_QUERY, description="Name of the taxon to search for.", type=openapi.TYPE_STRING),
-			openapi.Parameter('rank', openapi.IN_QUERY, description="Rank id of the taxon to search for.", type=openapi.TYPE_INTEGER),
-			openapi.Parameter('authorship', openapi.IN_QUERY, description="Authorship id of the taxon to search for.", type=openapi.TYPE_INTEGER),
-			openapi.Parameter('parent', openapi.IN_QUERY, description="Parent id of the taxon to search for.", type=openapi.TYPE_INTEGER),
-			openapi.Parameter('exact', openapi.IN_QUERY, description="Indicates whether to search for an exact match. Defaults to False.", type=openapi.TYPE_BOOLEAN),
+			openapi.Parameter(
+				'name', openapi.IN_QUERY,
+				description="Name of the taxon to search for.",
+				type=openapi.TYPE_STRING
+			),
+			openapi.Parameter(
+				'rank', openapi.IN_QUERY,
+				description="Rank of the taxon to search for.",
+				type=openapi.TYPE_STRING
+			),
+			openapi.Parameter(
+				'authorship', openapi.IN_QUERY,
+				description="Authorship of the taxon to search for.",
+				type=openapi.TYPE_STRING
+			),
+			openapi.Parameter(
+				'parent', openapi.IN_QUERY,
+				description="Parent id of the taxon to search for.", type=openapi.TYPE_STRING
+			),
+			openapi.Parameter(
+				'exact', openapi.IN_QUERY,
+				description="Indicates whether to search for an exact match. Defaults to False.",
+				type=openapi.TYPE_BOOLEAN
+			),
 		],
 		responses={
-      		200: 'Success', 
-			400: 'Bad Request'
-		}
+			200: 'Success',
+			400: 'Bad Request',
+		},
 	)
-	def get(self, request):
-		taxon_form = TaxonomicLevelForms(request.GET)
+	def filter_queryset(self, queryset):
+		taxon_form = TaxonomicLevelForms(self.request.GET)
 
 		if not taxon_form.is_valid():
 			return Response(taxon_form.errors, status=400)
+		if not taxon_form.is_valid():
+			return Response(taxon_form.errors, status=400)
 
+		exact = taxon_form.cleaned_data.get('exact', False)
 		exact = taxon_form.cleaned_data.get('exact', False)
 
 		str_fields = ['name']
@@ -102,7 +132,12 @@ class TaxonCRUD(APIView):
 		taxon = TaxonomicLevelSerializer(
 			TaxonomicLevel.objects.filter(id=id).first()
 		)
+	def get(self, request, id):
+		taxon = TaxonomicLevelSerializer(
+			TaxonomicLevel.objects.filter(id=id).first()
+		)
 
+		return Response(taxon.data)
 		return Response(taxon.data)
 
 
@@ -136,7 +171,12 @@ class TaxonParent(APIView):
 		taxon = TaxonomicLevelSerializer(
 			TaxonomicLevel.objects.filter(id=id).first().parent
 		)
+	def get(self, request, id):
+		taxon = TaxonomicLevelSerializer(
+			TaxonomicLevel.objects.filter(id=id).first().parent
+		)
 
+		return Response(taxon.data)
 		return Response(taxon.data)
 
 
@@ -146,5 +186,11 @@ class TaxonChildren(APIView):
 			TaxonomicLevel.objects.filter(id=id).first().children,
 			many=True
 		)
+	def get(self, request, id):
+		taxon = TaxonomicLevelSerializer(
+			TaxonomicLevel.objects.filter(id=id).first().children,
+			many=True
+		)
 
+		return Response(taxon.data)
 		return Response(taxon.data)

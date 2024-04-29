@@ -27,7 +27,6 @@ class Command(BaseCommand):
 		print(file_name)
 		db = gpd.read_file(file_name)
 		levels = db.loc[:]
-		print(levels)
 
 		for i in range(len(levels)):
 			parent = None

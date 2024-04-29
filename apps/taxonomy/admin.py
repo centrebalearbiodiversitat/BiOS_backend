@@ -6,9 +6,9 @@ from apps.taxonomy.models import Authorship, TaxonomicLevel
 class BaseTaxonLevelAdmin(admin.ModelAdmin):
 	list_display = ['scientific_name', 'rank', 'upper_taxon', 'num_references', 'num_children']
 	list_filter = ['rank', 'accepted']
-	fields = ['name', 'rank', 'authorship', 'parent', 'accepted', 'synonyms', 'references', ]
-	search_fields = ['name']
-	autocomplete_fields = ['parent', 'authorship', 'synonyms']
+	fields = ['name', 'verbatim_authorship', 'rank', 'parent', 'accepted', 'synonyms', 'references', 'authorship', 'parsed_year']
+	search_fields = ['unidecode_name', 'verbatim_authorship']
+	autocomplete_fields = ['parent', 'synonyms']
 	# exclude = ['references']
 
 	def name(self, obj):
@@ -43,7 +43,8 @@ admin.site.register(TaxonomicLevel, BaseTaxonLevelAdmin)
 
 
 class AuthorshipAdmin(admin.ModelAdmin):
-	search_fields = ['name']
+	search_fields = ['unidecode_name']
+	list_display = ['name']
 
 
 admin.site.register(Authorship, AuthorshipAdmin)

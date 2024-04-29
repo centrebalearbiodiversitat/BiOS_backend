@@ -1,10 +1,12 @@
 import csv
+import re
 
 from django.core.management.base import BaseCommand
 from django.db import transaction, models
 
 from apps.taxonomy.models import Authorship, TaxonomicLevel
 from apps.versioning.models import Batch, Source
+from common.utils.utils import str_clean_up
 
 KINGDOM, AUTH_KINGDOM, SOURCE_KINGDOM, SOURCE_ORIGIN_KINGDOM = 'Kingdom', 'kingdomAuthor', 'kingdomSource', 'kingdomOrigin'
 PHYLUM, AUTH_PHYLUM, SOURCE_PHYLUM, SOURCE_ORIGIN_PHYLUM = 'Phylum', 'phylumAuthor', 'phylumSource', 'phylumOrigin'
@@ -40,7 +42,7 @@ def create_taxonomic_level(line, parent, batch, idx_name, rank, idx_author, idx_
 	if not line[idx_name]:
 		return parent
 
-	auth = get_or_create_authorship(line, idx_author, batch)
+	verb_auth, auth, parsed_year = get_or_create_authorship(line, idx_author, batch)
 	source = get_or_create_source(line, idx_source, idx_source_origin)
 
 	if TaxonomicLevel.TRANSLATE_RANK[line[TAXON_RANK]] == rank:
@@ -58,6 +60,8 @@ def create_taxonomic_level(line, parent, batch, idx_name, rank, idx_author, idx_
 			defaults={
 				'name': line[idx_name],
 				'accepted': accepted,
+				'verbatim_authorship': verb_auth,
+				'parsed_year': parsed_year,
 				'authorship': auth,
 			}
 		)
@@ -70,11 +74,6 @@ def create_taxonomic_level(line, parent, batch, idx_name, rank, idx_author, idx_
 			if accepted_candidates.count() != 1:
 				raise Exception(f'More than one potential candidates found for synonyms linking')
 			accepted_tl = accepted_candidates.first()
-
-			# for candidate in accepted_candidates:
-			# 	# if candidate.parent == parent and candidate.rank == rank:
-			# 		accepted_tl = candidate
-			# 		break
 
 			if not accepted_tl:
 				raise Exception(f'{parent} {rank} Accepted taxonomic level not found for {line[COL_NAME_ACCEPTED]}. Accepted taxon must be inserted first.')
@@ -96,7 +95,8 @@ def create_taxonomic_level(line, parent, batch, idx_name, rank, idx_author, idx_
 		child = child.first()
 		if not child.accepted:
 			raise Exception(f'Higher taxonomy must be accepted {child.readable_rank()}:{child.name}\n{line}')
-		elif child.authorship != auth:
+		elif child.verbatim_authorship != verb_auth or child.authorship != auth:
+			print(child.verbatim_authorship, verb_auth, child.authorship, auth)
 			raise Exception(f'Trying to update higher taxonomy author for {child.readable_rank()}:{child.name}. Original: {child.authorship or "None"} New: {auth or "None"}\n{line}')
 
 	child.sources.add(source)
@@ -106,21 +106,39 @@ def create_taxonomic_level(line, parent, batch, idx_name, rank, idx_author, idx_
 	return child
 
 
+def parse_verbatim_authorship(input_string):
+	years = re.findall(r'[^0-9]*(\d+)[^0-9]*', input_string)
+
+	if len(years) > 1:
+		raise Exception(f'Authorship must have only one year. Original: {input_string}, year: {years}')
+
+	years = [int(year) for year in years]
+	authors = re.findall(r'\(*(.+)[,|(]' if years else r'\(*(.+)', input_string)
+
+	if len(authors) != 1:
+		raise Exception(f'Authorship must have only one author string. Original: {input_string}, authors: {authors}')
+
+	return input_string, authors and authors[0], years and years[0]
+
+
 def get_or_create_authorship(line, idx_author, batch):
 	if not line[idx_author]:
-		return None
+		return None, None, None
 
-	auth, _ = Authorship.objects.get_or_create(
-		name__iexact=line[idx_author],
-		defaults={
-			'name': line[idx_author],
-			'accepted': True,
-		}
-	)
-	auth.references.add(batch)
-	auth.save()
+	name, parsed_name, parsed_year = parse_verbatim_authorship(line[idx_author])
+	auth = None
+	if parsed_name:
+		auth, _ = Authorship.objects.get_or_create(
+			name__iexact=parsed_name,
+			defaults={
+				'name': parsed_name,
+				'accepted': True,
+			}
+		)
+		auth.references.add(batch)
+		auth.save()
 
-	return auth
+	return name, auth, parsed_year
 
 
 def get_or_create_source(line, idx_source, idx_source_origin):
@@ -141,7 +159,7 @@ def get_or_create_source(line, idx_source, idx_source_origin):
 
 def clean_up_input_line(line):
 	for key in line.keys():
-		line[key] = line[key].strip()
+		line[key] = str_clean_up(line[key])
 
 
 class Command(BaseCommand):
@@ -155,7 +173,7 @@ class Command(BaseCommand):
 	def handle(self, *args, **options):
 		file_name = options['file']
 		delimiter = options['d']
-		with open(file_name, encoding='utf-8-sig') as file:
+		with open(file_name, encoding='windows-1252') as file:
 			csv_file = csv.DictReader(file, delimiter=delimiter)
 			biota, _ = TaxonomicLevel.objects.get_or_create(
 				name__iexact="Biota",
@@ -163,15 +181,14 @@ class Command(BaseCommand):
 				defaults={
 					'name': "Biota",
 					'accepted': True,
-					'authorship': None,
 					'parent': None,
 				}
 			)
 			batch = Batch.objects.create()
 			for line in csv_file:
 				parent = biota
-				print(line[ORIGINAL_NAME])
-				# clean_up_input_line(line)
+				# print(line[ORIGINAL_NAME])
+				clean_up_input_line(line)
 
 				for level in LEVELS:
 					parent = create_taxonomic_level(line, parent, batch, level, *LEVELS_PARAMS[level])

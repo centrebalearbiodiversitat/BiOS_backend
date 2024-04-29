@@ -2,6 +2,7 @@ from django.core.exceptions import ValidationError
 from django.db import models
 
 from common.utils.models import ReferencedModel, SynonymModel, SynonymManager
+from common.utils.utils import str_clean_up
 
 
 class Authorship(ReferencedModel, SynonymModel):
@@ -80,8 +81,14 @@ class TaxonomicLevel(ReferencedModel, SynonymModel):
     }
 
     rank = models.PositiveSmallIntegerField(choices=RANK_CHOICES)
+    verbatim_authorship = models.CharField(max_length=256, null=True, default=None, blank=True)
+    parsed_year = models.PositiveIntegerField(null=True, default=None, blank=True)
     authorship = models.ForeignKey(Authorship, on_delete=models.SET_NULL, null=True, default=None, blank=True)
     parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True, default=None, blank=True, related_name='children')
+
+    def clean(self):
+        self.verbatim_authorship = str_clean_up(self.verbatim_authorship)
+        return super().clean()
 
     def save(self, force_insert=False, force_update=False, using=None, update_fields=None):
         if self.rank == TaxonomicLevel.SPECIES and len(self.name.split()) != 1:

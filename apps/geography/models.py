@@ -1,51 +1,81 @@
+import re
+import string
+
 from django.db import models
+from unidecode import unidecode
 
-from apps.synonyms.models import ModelWithSynonyms
-from apps.versioning.models import ModelWithReferences
+from common.utils.models import ReferencedModel, SynonymModel, LatLonModel, SynonymManager
+from common.utils.utils import str_clean_up
+
+PUNCTUATION_TRANSLATE = str.maketrans(string.punctuation, '\n' * len(string.punctuation))
 
 
-class GeographicLevel(ModelWithReferences, ModelWithSynonyms):
-	CONTINENT = 0
-	COUNTRY = 1
-	STATE_PROVINCE = 2
-	COUNTY = 3
+class GeographicLevelManager(SynonymManager):
+	def search(self, location: str):
+		## First try by unique name query
+		potential_nodes = self.filter(name__iexact=location)
+		print(potential_nodes)
+		if potential_nodes.count() > 1:
+			return potential_nodes.first()
+
+		## Second try by higher taxonomy
+		# Clean up location string for optimal search
+		global PUNCTUATION_TRANSLATE
+		location = location.translate(PUNCTUATION_TRANSLATE)
+		loc_nodes = unidecode(location).split('\n')
+		clean_loc_nodes = []
+
+		# Query potential nodes with the exact name
+		best_node = None
+		for node in loc_nodes:
+			node = str_clean_up(node)
+			potential_node = self.filter(name__iexact=node)
+			if potential_node.exists():
+				if best_node:
+					for pn in potential_node:
+						if best_node.rank < pn.rank:
+							best_node = pn
+							break
+				else:
+					best_node = potential_node.first()  # most uncertainty
+
+		return best_node
+
+
+class GeographicLevel(ReferencedModel, SynonymModel, LatLonModel):
+	objects = GeographicLevelManager()
+
+	# Order matters!
+	AC = 2
+	ISLAND = 3
 	MUNICIPALITY = 4
-	LOCALITY = 5
+	TOWN = 5
 	WATER_BODY = 6
 
 	RANK_CHOICES = (
-		(CONTINENT, 'Continent'),
-		(COUNTRY, 'Country'),
-		(STATE_PROVINCE, 'State province'),
-		(COUNTY, 'County'),
+		(AC, 'Autonomous community'),
+		(ISLAND, 'Island'),
 		(MUNICIPALITY, 'Municipality'),
-		(LOCALITY, 'Locality'),
+		(TOWN, 'Town'),
 		(WATER_BODY, 'Water body'),
 	)
 
 	TRANSLATE_RANK = {
-		CONTINENT: 'continent',
-		'continent': CONTINENT,
-		COUNTRY: 'country',
-		'country': COUNTRY,
-		STATE_PROVINCE: 'stateProvince',
-		'state_province': STATE_PROVINCE,
-		COUNTY: 'county',
-		'county': COUNTY,
+		AC: 'autonomous_community',
+		'autonomous_community': AC,
+		ISLAND: 'island',
+		'island': ISLAND,
+		MUNICIPALITY: 'municipality',
 		'municipality': MUNICIPALITY,
-		LOCALITY: 'locality',
-		'locality': LOCALITY,
+		TOWN: 'town',
+		'town': TOWN,
 		WATER_BODY: 'waterBody',
 		'water_body': WATER_BODY,
 	}
 
 	rank = models.PositiveSmallIntegerField(choices=RANK_CHOICES)
-	gid = models.CharField(max_length=256)
 	parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True, default=None, blank=True, related_name='children')
 
-	def __str__(self):
-		return self.name
-
 	class Meta:
-		unique_together = ('parent', 'gid', 'name')
-		ordering = ['id']
+		unique_together = ('parent', 'name')
+		ordering = ['rank']

@@ -1,7 +1,9 @@
 from django.db import models
 
+from common.utils.models import SynonymModel, ReferencedModel
 
-class Source(models.Model):
+
+class Source(SynonymModel):
     DATABASE = 0
     JOURNAL_ARTICLE = 1
     BOOK = 2
@@ -36,7 +38,6 @@ class Source(models.Model):
         'expert': EXPERT,
     }
 
-    name = models.CharField(max_length=255, unique=True)
     origin = models.PositiveSmallIntegerField(choices=ORIGIN_CHOICES)
 
     def __str__(self):
@@ -61,11 +62,3 @@ class Batch(models.Model):
 
     class Meta:
         verbose_name_plural = "batches"
-
-
-class ModelWithReferences(models.Model):
-    references = models.ManyToManyField(Batch)
-    sources = models.ManyToManyField(Source, blank=True)
-
-    class Meta:
-        abstract = True

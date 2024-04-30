@@ -4,12 +4,12 @@ from apps.genetics.models import Gene, GeneticFeatures, Produces, Product
 
 
 class GeneAdmin(admin.ModelAdmin):
-	search_fields = ['name']
+	search_fields = ['c']
 	autocomplete_fields = ['synonyms']
 
 
 class ProductAdmin(admin.ModelAdmin):
-	search_fields = ['name']
+	search_fields = ['unidecode_name']
 	autocomplete_fields = ['synonyms']
 
 

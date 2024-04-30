@@ -22,7 +22,7 @@ def parse_line(line: dict):
 
 
 class Command(BaseCommand):
-    help = "Loads from taxonomy from csv"
+    help = "Loads occurrences from csv"
 
     def add_arguments(self, parser):
         parser.add_argument("file", type=str)
@@ -40,6 +40,7 @@ class Command(BaseCommand):
                 source, _ = Source.objects.get_or_create(
                     name=line['geneticSource'],
                     defaults={
+                        'accepted': True,
                         'origin': Source.TRANSLATE_CHOICES[line['geneticOrigin']]
                     }
                 )

@@ -4,7 +4,7 @@ from apps.taxonomy.models import Authorship, TaxonomicLevel
 
 
 class BaseTaxonLevelAdmin(admin.ModelAdmin):
-	list_display = ['scientific_name', 'rank', 'upper_taxon', 'num_references', 'num_children']
+	list_display = ['scientific_name', 'rank', 'upper_taxon', 'num_references', 'num_children', 'verbatim_authorship']
 	list_filter = ['rank', 'accepted']
 	fields = ['name', 'verbatim_authorship', 'rank', 'parent', 'accepted', 'synonyms', 'references', 'authorship', 'parsed_year']
 	search_fields = ['unidecode_name', 'verbatim_authorship']

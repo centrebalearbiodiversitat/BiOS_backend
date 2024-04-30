@@ -34,7 +34,7 @@ CORS_ALLOWED_ORIGINS = [
 #     },
 #     'loggers': {
 #         'django.db.backends': {
-#             'handlers': ['console', 'file'],
+#             'handlers': ['console'],
 #             'level': 'DEBUG',
 #             'propagate': False,
 #         },

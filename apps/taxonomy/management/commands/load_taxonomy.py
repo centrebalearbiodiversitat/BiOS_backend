@@ -122,7 +122,7 @@ def parse_verbatim_authorship(input_string):
 		raise Exception(f'Authorship must have only one year. Original: {input_string}, year: {years}')
 
 	years = [int(year) for year in years]
-	authors = re.findall(r'\(*(.+)[,|(]' if years else r'\(*(.+)', input_string)
+	authors = re.findall(r'\(*(.+)[,|(].*\)*' if years else r'\(*(.+).*\)*', input_string)
 
 	if len(authors) != 1:
 		raise Exception(f'Authorship must have only one author string. Original: {input_string}, authors: {authors}')

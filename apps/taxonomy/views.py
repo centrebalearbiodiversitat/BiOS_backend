@@ -1,22 +1,121 @@
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework.generics import ListAPIView
+from .forms import TaxonomicLevelForms
+from drf_yasg import openapi
+from drf_yasg.utils import swagger_auto_schema
 
 from apps.taxonomy.models import TaxonomicLevel
 from apps.taxonomy.serializers import TaxonomicLevelSerializer
 
 
-class SearchTaxonByName(APIView):
+class TaxonSearch(APIView):
+	@swagger_auto_schema(
+		operation_description="Search for a taxon by name.",
+		manual_parameters=[
+			openapi.Parameter(
+				'name', openapi.IN_QUERY,
+				description="Name of the taxon to search for.",
+				type=openapi.TYPE_STRING, required=True
+			),
+			openapi.Parameter(
+				'exact', openapi.IN_QUERY,
+				description="Indicates whether to search for an exact match. Defaults to False.",
+				type=openapi.TYPE_BOOLEAN
+			),
+		],
+		responses={
+			200: 'Success',
+			400: 'Bad Request',
+		},
+	)
 	def get(self, request):
-		query = request.GET.get('taxon')
-		exact = request.GET.get('exact', False)
+		taxon_form = TaxonomicLevelForms(request.GET)
 
-		if not query:
-			return Response(status=400)
+		filters = {}
 
-		if exact:
-			results = TaxonomicLevel.objects.find(query)
-		else:
-			results = TaxonomicLevel.objects.contains(query)
+		if not taxon_form.is_valid():
+			return Response(taxon_form.errors, status=400)
+
+		query = taxon_form.cleaned_data.get('name')
+		exact = taxon_form.cleaned_data.get('exact', False)
+
+		filters['name__iexact' if exact else 'name__icontains'] = query
+
+		results = TaxonomicLevel.objects.filter(**filters)
+
+		return Response(
+			TaxonomicLevelSerializer(
+				results,
+				many=True
+			).data
+		)
+
+
+class TaxonList(ListAPIView):
+	serializer_class = TaxonomicLevelSerializer
+
+	@swagger_auto_schema(
+		operation_description="Get a list of taxa, with optional filtering.",
+		manual_parameters=[
+			openapi.Parameter(
+				'name', openapi.IN_QUERY,
+				description="Name of the taxon to search for.",
+				type=openapi.TYPE_STRING
+			),
+			openapi.Parameter(
+				'rank', openapi.IN_QUERY,
+				description="Rank id of the taxon to search for.",
+				type=openapi.TYPE_INTEGER
+			),
+			openapi.Parameter(
+				'authorship', openapi.IN_QUERY,
+				description="Authorship id of the taxon to search for.",
+				type=openapi.TYPE_INTEGER
+			),
+			openapi.Parameter(
+				'parent', openapi.IN_QUERY,
+				description="Parent id of the taxon to search for.", 
+    			type=openapi.TYPE_INTEGER
+			),
+			openapi.Parameter(
+				'exact', openapi.IN_QUERY,
+				description="Indicates whether to search for an exact match. Defaults to False.",
+				type=openapi.TYPE_BOOLEAN
+			),
+		],
+		responses={
+			200: 'Success',
+			400: 'Bad Request',
+		},
+	)
+	def get(self, request):
+		taxon_form = TaxonomicLevelForms(self.request.GET)
+
+		if not taxon_form.is_valid():
+			return Response(taxon_form.errors, status=400)
+
+		exact = taxon_form.cleaned_data.get('exact', False)
+
+		str_fields = ['name']
+		num_fields = ['authorship', 'parent', 'rank']
+  
+		filters = {}
+
+		for param in str_fields:
+			value = request.query_params.get(param)
+
+			if value:
+				param = f'{param}__iexact' if exact else f'{param}__icontains'
+				filters[param] = value
+
+		for param in num_fields:
+			value = request.query_params.get(param)
+
+			if value:
+				filters[param] = value
+
+		results = TaxonomicLevel.objects.filter(**filters)
 
 		return Response(
 			TaxonomicLevelSerializer(
@@ -27,7 +126,25 @@ class SearchTaxonByName(APIView):
 
 
 class TaxonCRUD(APIView):
+	@swagger_auto_schema(
+		operation_description="Retrieve a specific TaxonomicLevel instance by its id",
+		manual_parameters=[
+			openapi.Parameter(
+				'id', openapi.IN_QUERY,
+    			description="ID of the taxon to retrieve",
+       			type=openapi.TYPE_INTEGER)
+		],
+		responses={
+			200: TaxonomicLevelSerializer(),
+			400: 'Bad Request'
+   		}
+	)
 	def get(self, request, id):
+		taxon_form = TaxonomicLevelForms(request.GET)
+
+		if not taxon_form.is_valid():
+			raise ValidationError(taxon_form.errors)
+
 		taxon = TaxonomicLevelSerializer(
 			TaxonomicLevel.objects.filter(id=id).first()
 		)

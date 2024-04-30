@@ -34,7 +34,7 @@ LEVELS_PARAMS = {
 	GENUS: [TaxonomicLevel.GENUS, AUTH_GENUS, SOURCE_GENUS, SOURCE_ORIGIN_GENUS],
 	SPECIES: [TaxonomicLevel.SPECIES, AUTH_SPECIES, SOURCE_SPECIES, SOURCE_ORIGIN_SPECIES],
 	SUBSPECIES: [TaxonomicLevel.SUBSPECIES, AUTH_SUBSPECIES, SOURCE_SUBSPECIES, SOURCE_ORIGIN_SUBSPECIES],
-	# VARIETY: [TaxonomicLevel.VARIETY, AUTH_VARIETY, SOURCE_VARIETY, SOURCE_ORIGIN_VARIETY]
+	VARIETY: [TaxonomicLevel.VARIETY, AUTH_VARIETY, SOURCE_VARIETY, SOURCE_ORIGIN_VARIETY]
 }
 
 
@@ -46,12 +46,20 @@ def create_taxonomic_level(line, parent, batch, idx_name, rank, idx_author, idx_
 	source = get_or_create_source(line, idx_source, idx_source_origin)
 
 	if TaxonomicLevel.TRANSLATE_RANK[line[TAXON_RANK]] == rank:
-		if line[ORIGINAL_STATUS] == 'accepted':
+		accepted_modifier = None
+		if 'accepted' in line[ORIGINAL_STATUS]:
 			accepted = True
-		elif line[ORIGINAL_STATUS] == 'synonym':
+			if TaxonomicLevel.ACCEPTED_MODIFIERS_TRANSLATE[TaxonomicLevel.PROVISIONAL] in line[ORIGINAL_STATUS]:
+				accepted_modifier = TaxonomicLevel.PROVISIONAL
+		elif 'synonym' in line[ORIGINAL_STATUS]:
 			accepted = False
+			if TaxonomicLevel.ACCEPTED_MODIFIERS_TRANSLATE[TaxonomicLevel.AMBIGUOUS] in line[ORIGINAL_STATUS]:
+				accepted_modifier = TaxonomicLevel.AMBIGUOUS
+		elif TaxonomicLevel.ACCEPTED_MODIFIERS_TRANSLATE[TaxonomicLevel.MISAPPLIED] in line[ORIGINAL_STATUS]:
+			accepted = False
+			accepted_modifier = TaxonomicLevel.MISAPPLIED
 		else:
-			raise Exception(f'{ORIGINAL_STATUS} must be either "accepted" or "synonym" but was "{line[ORIGINAL_STATUS]}"\n{line}')
+			raise Exception(f'{ORIGINAL_STATUS} must be either "accepted", "misapplied" or "synonym" but was "{line[ORIGINAL_STATUS]}"\n{line}')
 
 		child, _ = TaxonomicLevel.objects.get_or_create(
 			parent=parent,
@@ -60,13 +68,14 @@ def create_taxonomic_level(line, parent, batch, idx_name, rank, idx_author, idx_
 			defaults={
 				'name': line[idx_name],
 				'accepted': accepted,
+				'accepted_modifier': accepted_modifier,
 				'verbatim_authorship': verb_auth,
 				'parsed_year': parsed_year,
 				'authorship': auth,
 			}
 		)
 
-		if child.accepted != accepted:
+		if child.accepted != accepted or child.accepted_modifier != accepted_modifier:
 			raise Exception(f'Trying to change taxonomy level status. {child.readable_rank()}:{child.name}')
 
 		if not accepted:
@@ -97,7 +106,7 @@ def create_taxonomic_level(line, parent, batch, idx_name, rank, idx_author, idx_
 			raise Exception(f'Higher taxonomy must be accepted {child.readable_rank()}:{child.name}\n{line}')
 		elif child.verbatim_authorship != verb_auth or child.authorship != auth:
 			print(child.verbatim_authorship, verb_auth, child.authorship, auth)
-			raise Exception(f'Trying to update higher taxonomy author for {child.readable_rank()}:{child.name}. Original: {child.authorship or "None"} New: {auth or "None"}\n{line}')
+			raise Exception(f'Trying to update higher taxonomy author for {child.readable_rank()}:{child.name}. Verbatim: {child.verbatim_authorship} Original: {verb_auth}. Inferred: {child.authorship or "None"} New inferred: {auth or "None"}\n{line}')
 
 	child.sources.add(source)
 	child.references.add(batch)
@@ -118,7 +127,7 @@ def parse_verbatim_authorship(input_string):
 	if len(authors) != 1:
 		raise Exception(f'Authorship must have only one author string. Original: {input_string}, authors: {authors}')
 
-	return input_string, authors and authors[0], years and years[0]
+	return input_string, authors[0] if authors else None, years[0] if years else None
 
 
 def get_or_create_authorship(line, idx_author, batch):

@@ -10,6 +10,9 @@ class Authorship(ReferencedModel, SynonymModel):
 
 
 class TaxonomicLevelManager(SynonymManager):
+    def get_queryset(self):
+        return super().get_queryset().select_related('parent')
+
     def find(self, taxon):
         levels: list = taxon.split()
         assert len(levels) > 0, []

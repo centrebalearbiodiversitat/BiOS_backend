@@ -74,10 +74,29 @@ class SynonymManager(models.Manager):
 class SynonymModel(models.Model):
 	objects = SynonymManager()
 
+	PROVISIONAL = 0
+	AMBIGUOUS = 1
+	MISAPPLIED = 2
+
+	ACCEPTED_MODIFIERS_CHOICES = (
+		(PROVISIONAL, 'provisional'),
+		(AMBIGUOUS, 'provisional'),
+		(MISAPPLIED, 'missaplied'),
+	)
+	ACCEPTED_MODIFIERS_TRANSLATE = {
+		PROVISIONAL: 'provisional',
+		'provisional': PROVISIONAL,
+		AMBIGUOUS: 'ambiguous',
+		'ambiguous': AMBIGUOUS,
+		MISAPPLIED: 'misapplied',
+		'misapplied': MISAPPLIED,
+	}
+
 	name = models.CharField(max_length=256)
 	unidecode_name = models.CharField(max_length=256, help_text="Unidecode name do not touch")
 	synonyms = models.ManyToManyField('self', blank=True, symmetrical=True)
 	accepted = models.BooleanField(null=False, blank=False)
+	accepted_modifier = models.PositiveSmallIntegerField(choices=ACCEPTED_MODIFIERS_CHOICES, null=True, blank=True, default=None)
 
 	def clean(self):
 		super().clean()
@@ -91,6 +110,15 @@ class SynonymModel(models.Model):
 				raise ValidationError('At least one synonym must be accepted')
 			if n_accepted_syns > 1:
 				raise ValidationError('No more than one synonym can be accepted')
+
+		if self.accepted_modifier:
+			if self.accepted:
+				if self.accepted_modifier not in [SynonymModel.PROVISIONAL]:
+					raise ValidationError('Wrong modifier for accepted')
+			else:  # synonym
+				if self.accepted_modifier not in [SynonymModel.AMBIGUOUS, SynonymModel.MISAPPLIED]:
+					raise ValidationError('Invalid modifier for synonym (accepted = False)')
+
 
 	def save(self, force_insert=False, force_update=False, using=None, update_fields=None):
 		self.name = str_clean_up(self.name)

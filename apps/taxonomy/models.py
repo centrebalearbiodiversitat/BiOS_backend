@@ -90,7 +90,8 @@ class TaxonomicLevel(ReferencedModel, SynonymModel):
     parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True, default=None, blank=True, related_name='children')
 
     def clean(self):
-        self.verbatim_authorship = str_clean_up(self.verbatim_authorship)
+        if self.verbatim_authorship:
+            self.verbatim_authorship = str_clean_up(self.verbatim_authorship)
         return super().clean()
 
     def save(self, force_insert=False, force_update=False, using=None, update_fields=None):

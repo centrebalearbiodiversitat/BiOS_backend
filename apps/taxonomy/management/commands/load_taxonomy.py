@@ -1,5 +1,6 @@
 import csv
 import re
+import traceback
 
 from django.core.management.base import BaseCommand
 from django.db import transaction, models
@@ -76,16 +77,17 @@ def create_taxonomic_level(line, parent, batch, idx_name, rank, idx_author, idx_
 		)
 
 		if child.accepted != accepted or child.accepted_modifier != accepted_modifier:
-			raise Exception(f'Trying to change taxonomy level status. {child.readable_rank()}:{child.name}')
+			raise Exception(f'Trying to change taxonomy level status. {child.readable_rank()}:{child.name}\n{line}')
 
 		if not accepted:
 			accepted_candidates = TaxonomicLevel.objects.find(taxon=line[COL_NAME_ACCEPTED])
 			if accepted_candidates.count() != 1:
-				raise Exception(f'More than one potential candidates found for synonyms linking')
+				raise Exception(f'More than one potential candidates found for synonyms linking\n{line}')
 			accepted_tl = accepted_candidates.first()
+			# TODO: Checks that accepted candidate is the good one (Genistogethes bidentatus coleoptera file)
 
 			if not accepted_tl:
-				raise Exception(f'{parent} {rank} Accepted taxonomic level not found for {line[COL_NAME_ACCEPTED]}. Accepted taxon must be inserted first.')
+				raise Exception(f'{parent} {rank} Accepted taxonomic level not found for {line[COL_NAME_ACCEPTED]}. Accepted taxon must be inserted first.\n{line}')
 
 			accepted_tl.synonyms.add(child)
 			accepted_tl.save()
@@ -105,7 +107,6 @@ def create_taxonomic_level(line, parent, batch, idx_name, rank, idx_author, idx_
 		if not child.accepted:
 			raise Exception(f'Higher taxonomy must be accepted {child.readable_rank()}:{child.name}\n{line}')
 		elif child.verbatim_authorship != verb_auth or child.authorship != auth:
-			print(child.verbatim_authorship, verb_auth, child.authorship, auth)
 			raise Exception(f'Trying to update higher taxonomy author for {child.readable_rank()}:{child.name}. Verbatim: {child.verbatim_authorship} Original: {verb_auth}. Inferred: {child.authorship or "None"} New inferred: {auth or "None"}\n{line}')
 
 	child.sources.add(source)
@@ -116,25 +117,33 @@ def create_taxonomic_level(line, parent, batch, idx_name, rank, idx_author, idx_
 
 
 def parse_verbatim_authorship(input_string):
+	input_string = re.sub(r'\(([^0-9|()]+)\),?', r'\1,', input_string)
+	input_string = re.sub(r'\s*\(([0-9]+)\)', r', \1', input_string)
+	input_string = re.sub(r'[()]', r'', input_string)
+
 	years = re.findall(r'[^0-9]*(\d+)[^0-9]*', input_string)
 
 	if len(years) > 1:
 		raise Exception(f'Authorship must have only one year. Original: {input_string}, year: {years}')
 
 	years = [int(year) for year in years]
-	authors = re.findall(r'\(*(.+)[,|(].*\)*' if years else r'\(*(.+).*\)*', input_string)
+
+	if years:
+		authors = re.findall(r'(.+),[^0-9]*\d+[^0-9]*', input_string)
+	else:
+		authors = [input_string]
 
 	if len(authors) != 1:
 		raise Exception(f'Authorship must have only one author string. Original: {input_string}, authors: {authors}')
 
-	return input_string, authors[0] if authors else None, years[0] if years else None
+	return authors[0] if authors else None, years[0] if years else None
 
 
 def get_or_create_authorship(line, idx_author, batch):
 	if not line[idx_author]:
 		return None, None, None
 
-	name, parsed_name, parsed_year = parse_verbatim_authorship(line[idx_author])
+	parsed_name, parsed_year = parse_verbatim_authorship(line[idx_author])
 	auth = None
 	if parsed_name:
 		auth, _ = Authorship.objects.get_or_create(
@@ -147,7 +156,7 @@ def get_or_create_authorship(line, idx_author, batch):
 		auth.references.add(batch)
 		auth.save()
 
-	return name, auth, parsed_year
+	return line[idx_author], auth, parsed_year
 
 
 def get_or_create_source(line, idx_source, idx_source_origin):

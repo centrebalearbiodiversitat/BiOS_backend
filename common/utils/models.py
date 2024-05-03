@@ -1,5 +1,6 @@
 from django.core.exceptions import ValidationError
 from django.db import models
+from django.db.models.signals import m2m_changed
 from unidecode import unidecode
 
 from common.utils.utils import str_clean_up
@@ -98,27 +99,34 @@ class SynonymModel(models.Model):
 	accepted = models.BooleanField(null=False, blank=False)
 	accepted_modifier = models.PositiveSmallIntegerField(choices=ACCEPTED_MODIFIERS_CHOICES, null=True, blank=True, default=None)
 
-	def clean(self):
-		super().clean()
-		n_accepted_syns = self.synonyms.all().filter(accepted=True).count() if self.id else 0
+	@staticmethod
+	def clean(**kwargs):
+		if kwargs and kwargs['action'] == 'post_add':
+			obj = kwargs['instance']
 
-		if self.accepted:
-			if n_accepted_syns != 0:
-				raise ValidationError('No more than one synonym can be accepted')
-		else:
-			if n_accepted_syns == 0:
-				raise ValidationError('At least one synonym must be accepted')
-			if n_accepted_syns > 1:
-				raise ValidationError('No more than one synonym can be accepted')
+			syns = obj.synonyms.all()
 
-		if self.accepted_modifier:
-			if self.accepted:
-				if self.accepted_modifier not in [SynonymModel.PROVISIONAL]:
-					raise ValidationError('Wrong modifier for accepted')
-			else:  # synonym
-				if self.accepted_modifier not in [SynonymModel.AMBIGUOUS, SynonymModel.MISAPPLIED]:
-					raise ValidationError('Invalid modifier for synonym (accepted = False)')
+			if obj.id and syns.filter(id=obj.id).exists():
+				raise ValidationError(f"Self synonym is not allowed.\n{obj}\n{syns}")
 
+			n_accepted_syns = syns.filter(accepted=True).count()
+
+			if obj.accepted:
+				if n_accepted_syns != 0:
+					raise ValidationError(f'No more than one synonym can be accepted.\n{obj}\n{syns}')
+			else:
+				if n_accepted_syns == 0:
+					raise ValidationError(f'At least one synonym must be accepted.\n{obj}\n{syns}')
+				if n_accepted_syns > 1:
+					raise ValidationError(f'No more than one synonym can be accepted.\n{obj}\n{syns}')
+
+			if obj.accepted_modifier:
+				if obj.accepted:
+					if obj.accepted_modifier not in [SynonymModel.PROVISIONAL]:
+						raise ValidationError(f'Wrong modifier for accepted\n{obj}\n{syns}')
+				else:  # synonym
+					if obj.accepted_modifier not in [SynonymModel.AMBIGUOUS, SynonymModel.MISAPPLIED]:
+						raise ValidationError(f'Invalid modifier for synonym (accepted = False)\n{obj}\n{syns}')
 
 	def save(self, force_insert=False, force_update=False, using=None, update_fields=None):
 		self.name = str_clean_up(self.name)
@@ -133,3 +141,7 @@ class SynonymModel(models.Model):
 
 	class Meta:
 		abstract = True
+
+
+m2m_changed.connect(SynonymModel.clean, sender=SynonymModel.synonyms.through)
+

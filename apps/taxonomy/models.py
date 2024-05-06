@@ -86,7 +86,7 @@ class TaxonomicLevel(ReferencedModel, SynonymModel):
     rank = models.PositiveSmallIntegerField(choices=RANK_CHOICES)
     verbatim_authorship = models.CharField(max_length=256, null=True, default=None, blank=True)
     parsed_year = models.PositiveIntegerField(null=True, default=None, blank=True)
-    authorship = models.ForeignKey(Authorship, on_delete=models.SET_NULL, null=True, default=None, blank=True)
+    authorship = models.ManyToManyField(Authorship, blank=True, symmetrical=False)
     parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True, default=None, blank=True, related_name='children')
 
     def clean(self):

@@ -43,7 +43,7 @@ def create_taxonomic_level(line, parent, batch, idx_name, rank, idx_author, idx_
 	if not line[idx_name]:
 		return parent
 
-	verb_auth, auth, parsed_year = get_or_create_authorship(line, idx_author, batch)
+	verb_auth, auths, parsed_year = get_or_create_authorship(line, idx_author, batch)
 	source = get_or_create_source(line, idx_source, idx_source_origin)
 
 	if TaxonomicLevel.TRANSLATE_RANK[line[TAXON_RANK]] == rank:
@@ -72,9 +72,11 @@ def create_taxonomic_level(line, parent, batch, idx_name, rank, idx_author, idx_
 				'accepted_modifier': accepted_modifier,
 				'verbatim_authorship': verb_auth,
 				'parsed_year': parsed_year,
-				'authorship': auth,
 			}
 		)
+
+		if auths:
+			child.authorship.add(*auths)
 
 		if child.accepted != accepted or child.accepted_modifier != accepted_modifier:
 			raise Exception(f'Trying to change taxonomy level status. {child.readable_rank()}:{child.name}\n{line}')
@@ -84,7 +86,6 @@ def create_taxonomic_level(line, parent, batch, idx_name, rank, idx_author, idx_
 			if accepted_candidates.count() != 1:
 				raise Exception(f'More than one potential candidates found for synonyms linking\n{line}')
 			accepted_tl = accepted_candidates.first()
-			# TODO: Checks that accepted candidate is the good one (Genistogethes bidentatus coleoptera file)
 
 			if not accepted_tl:
 				raise Exception(f'{parent} {rank} Accepted taxonomic level not found for {line[COL_NAME_ACCEPTED]}. Accepted taxon must be inserted first.\n{line}')
@@ -104,10 +105,11 @@ def create_taxonomic_level(line, parent, batch, idx_name, rank, idx_author, idx_
 			raise Exception(f'Found {child.count()} possible parent nodes {child} when loading a new taxon\n{line}')
 
 		child = child.first()
+
 		if not child.accepted:
 			raise Exception(f'Higher taxonomy must be accepted {child.readable_rank()}:{child.name}\n{line}')
-		elif child.verbatim_authorship != verb_auth or child.authorship != auth:
-			raise Exception(f'Trying to update higher taxonomy author for {child.readable_rank()}:{child.name}. Verbatim: {child.verbatim_authorship} Original: {verb_auth}. Inferred: {child.authorship or "None"} New inferred: {auth or "None"}\n{line}')
+		elif child.verbatim_authorship != verb_auth or set(auths) != set(child.authorship.all() if child.authorship else []):
+			raise Exception(f'Trying to update higher taxonomy author for {child.readable_rank()}:{child.name}. Verbatim: {child.verbatim_authorship} Original: {verb_auth}. Inferred: {child.authorship or "None"} New inferred: {auths or "None"}\n{line}')
 
 	child.sources.add(source)
 	child.references.add(batch)
@@ -141,22 +143,26 @@ def parse_verbatim_authorship(input_string):
 
 def get_or_create_authorship(line, idx_author, batch):
 	if not line[idx_author]:
-		return None, None, None
+		return None, [], None
 
 	parsed_name, parsed_year = parse_verbatim_authorship(line[idx_author])
-	auth = None
+	auths = []
 	if parsed_name:
-		auth, _ = Authorship.objects.get_or_create(
-			name__iexact=parsed_name,
-			defaults={
-				'name': parsed_name,
-				'accepted': True,
-			}
-		)
-		auth.references.add(batch)
-		auth.save()
+		parsed_authors = re.split(r'\s*[,;&]\s*|\s+[eE][xXtT]\s+', parsed_name)
+		for pauthor in parsed_authors:
+			if pauthor:
+				auth, _ = Authorship.objects.get_or_create(
+					name__iexact=pauthor,
+					defaults={
+						'name': pauthor,
+						'accepted': True,
+					}
+				)
+				auth.references.add(batch)
+				auth.save()
+				auths.append(auth)
 
-	return line[idx_author], auth, parsed_year
+	return line[idx_author], auths, parsed_year
 
 
 def get_or_create_source(line, idx_source, idx_source_origin):

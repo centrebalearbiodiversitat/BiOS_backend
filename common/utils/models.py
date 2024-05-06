@@ -80,9 +80,9 @@ class SynonymModel(models.Model):
 	MISAPPLIED = 2
 
 	ACCEPTED_MODIFIERS_CHOICES = (
-		(PROVISIONAL, 'provisional'),
-		(AMBIGUOUS, 'provisional'),
-		(MISAPPLIED, 'missaplied'),
+		(PROVISIONAL, 'Provisional'),
+		(AMBIGUOUS, 'Ambiguous'),
+		(MISAPPLIED, 'Missaplied'),
 	)
 	ACCEPTED_MODIFIERS_TRANSLATE = {
 		PROVISIONAL: 'provisional',
@@ -115,8 +115,9 @@ class SynonymModel(models.Model):
 				if n_accepted_syns != 0:
 					raise ValidationError(f'No more than one synonym can be accepted.\n{obj}\n{syns}')
 			else:
-				if n_accepted_syns == 0:
-					raise ValidationError(f'At least one synonym must be accepted.\n{obj}\n{syns}')
+				# if n_accepted_syns == 0:
+				# 	print(obj, syns)
+				# 	raise ValidationError(f'At least one synonym must be accepted.\n{obj}\n{syns}')
 				if n_accepted_syns > 1:
 					raise ValidationError(f'No more than one synonym can be accepted.\n{obj}\n{syns}')
 

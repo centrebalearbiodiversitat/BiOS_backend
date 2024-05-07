@@ -1,12 +1,13 @@
 from django.core.exceptions import ValidationError
 from django.db import models
 
+from apps.versioning.models import Batch
 from common.utils.models import ReferencedModel, SynonymModel, SynonymManager
 from common.utils.utils import str_clean_up
 
 
-class Authorship(ReferencedModel, SynonymModel):
-    pass
+class Authorship(SynonymModel):
+    batch = models.ForeignKey(Batch, on_delete=models.CASCADE, null=True, blank=True, default=None)
 
 
 class TaxonomicLevelManager(SynonymManager):

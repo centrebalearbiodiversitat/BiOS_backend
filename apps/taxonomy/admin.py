@@ -4,24 +4,24 @@ from apps.taxonomy.models import Authorship, TaxonomicLevel
 
 
 class BaseTaxonLevelAdmin(admin.ModelAdmin):
-	list_display = ['scientific_name', 'rank', 'upper_taxon', 'num_references', 'num_children', 'verbatim_authorship', 'authorship', 'parsed_year']
+	list_display = ['scientific_name', 'rank', 'upper_taxon', 'num_children', 'verbatim_authorship', 'parsed_year']  # , 'num_references'
 	list_filter = ['rank', 'accepted']
-	fields = ['name', 'verbatim_authorship', 'rank', 'parent', 'accepted', 'synonyms', 'references', 'authorship', 'parsed_year']
+	fields = ['name', 'verbatim_authorship', 'rank', 'parent', 'accepted', 'sources', 'synonyms', 'batch', 'parsed_year', 'authorship']
 	search_fields = ['unidecode_name', 'verbatim_authorship']
-	autocomplete_fields = ['parent', 'synonyms']
+	autocomplete_fields = ['parent', 'synonyms', 'authorship', 'sources']
 	# exclude = ['references']
 
 	def name(self, obj):
 		return obj
 
-	def sources(self, obj):
-		map_sources = {}
-
-		for batch in obj.references.all():
-			for source in batch.sources.all():
-				map_sources[source] = True
-
-		return list(map_sources.keys())
+	# def sources(self, obj):
+	# 	map_sources = {}
+	#
+	# 	for batch in obj.references.all():
+	# 		for source in batch.sources.all():
+	# 			map_sources[source] = True
+	#
+	# 	return list(map_sources.keys())
 
 	def num_references(self, obj):
 		return obj.references.count()

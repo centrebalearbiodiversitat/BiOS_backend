@@ -1,12 +1,13 @@
 from django.core.exceptions import ValidationError
 from django.db import models
 
+from apps.versioning.models import Batch
 from common.utils.models import ReferencedModel, SynonymModel, SynonymManager
 from common.utils.utils import str_clean_up
 
 
-class Authorship(ReferencedModel, SynonymModel):
-    pass
+class Authorship(SynonymModel):
+    batch = models.ForeignKey(Batch, on_delete=models.CASCADE, null=True, blank=True, default=None)
 
 
 class TaxonomicLevelManager(SynonymManager):
@@ -86,7 +87,7 @@ class TaxonomicLevel(ReferencedModel, SynonymModel):
     rank = models.PositiveSmallIntegerField(choices=RANK_CHOICES)
     verbatim_authorship = models.CharField(max_length=256, null=True, default=None, blank=True)
     parsed_year = models.PositiveIntegerField(null=True, default=None, blank=True)
-    authorship = models.ForeignKey(Authorship, on_delete=models.SET_NULL, null=True, default=None, blank=True)
+    authorship = models.ManyToManyField(Authorship, blank=True, symmetrical=False)
     parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True, default=None, blank=True, related_name='children')
 
     def clean(self):

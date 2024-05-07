@@ -134,8 +134,8 @@ PUBLIC_DIR = root('public')
 STATIC_ROOT = join(PUBLIC_DIR, 'static')
 STATIC_URL = '/static/'
 
-STATICFILES_DIRS = (
-    abspath(join(PUBLIC_DIR, 'assets')),
-)
+# STATICFILES_DIRS = (
+#     abspath(join(PUBLIC_DIR, 'assets')),
+# )
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'

@@ -9,18 +9,33 @@ from common.utils.utils import str_clean_up
 class LatLonModel(models.Model):
 	latitude = models.DecimalField(max_digits=8, decimal_places=5, null=True, blank=True)
 	longitude = models.DecimalField(max_digits=8, decimal_places=5, null=True, blank=True)
-	coordinatesUncertainty = models.PositiveIntegerField(null=True, blank=True)
+	coordinatesUncertaintyMeters = models.PositiveIntegerField(null=True, blank=True)
+	elevationMeters = models.IntegerField(null=True, blank=True, default=True)
+	depthMeters = models.IntegerField(null=True, blank=True, default=True)
 
 	class Meta:
 		abstract = True
 
 
 class ReferencedModel(models.Model):
-	references = models.ManyToManyField('versioning.Batch')
-	sources = models.ManyToManyField('versioning.Source', blank=True)
+	batch = models.ForeignKey('versioning.Batch', on_delete=models.CASCADE)
+	sources = models.ManyToManyField('versioning.OriginSource')
+
+	@staticmethod
+	def clean_sources(**kwargs):
+		if kwargs and kwargs['action'] == 'post_add':
+			obj = kwargs['instance']
+
+			sources = [s.source.name for s in obj.sources.all()]
+
+			if len(sources) != len(set(sources)):
+				raise ValidationError(f"Sources must be unique.\n{obj}\n{sources}")
 
 	class Meta:
 		abstract = True
+
+
+m2m_changed.connect(ReferencedModel.clean_sources, sender=ReferencedModel.sources.through)
 
 
 class SynonymManager(models.Manager):
@@ -80,9 +95,9 @@ class SynonymModel(models.Model):
 	MISAPPLIED = 2
 
 	ACCEPTED_MODIFIERS_CHOICES = (
-		(PROVISIONAL, 'provisional'),
-		(AMBIGUOUS, 'provisional'),
-		(MISAPPLIED, 'missaplied'),
+		(PROVISIONAL, 'Provisional'),
+		(AMBIGUOUS, 'Ambiguous'),
+		(MISAPPLIED, 'Misaplied'),
 	)
 	ACCEPTED_MODIFIERS_TRANSLATE = {
 		PROVISIONAL: 'provisional',
@@ -100,7 +115,7 @@ class SynonymModel(models.Model):
 	accepted_modifier = models.PositiveSmallIntegerField(choices=ACCEPTED_MODIFIERS_CHOICES, null=True, blank=True, default=None)
 
 	@staticmethod
-	def clean(**kwargs):
+	def clean_synonyms(**kwargs):
 		if kwargs and kwargs['action'] == 'post_add':
 			obj = kwargs['instance']
 
@@ -115,8 +130,9 @@ class SynonymModel(models.Model):
 				if n_accepted_syns != 0:
 					raise ValidationError(f'No more than one synonym can be accepted.\n{obj}\n{syns}')
 			else:
-				if n_accepted_syns == 0:
-					raise ValidationError(f'At least one synonym must be accepted.\n{obj}\n{syns}')
+				# if n_accepted_syns == 0:
+				# 	print(obj, syns)
+				# 	raise ValidationError(f'At least one synonym must be accepted.\n{obj}\n{syns}')
 				if n_accepted_syns > 1:
 					raise ValidationError(f'No more than one synonym can be accepted.\n{obj}\n{syns}')
 
@@ -143,5 +159,5 @@ class SynonymModel(models.Model):
 		abstract = True
 
 
-m2m_changed.connect(SynonymModel.clean, sender=SynonymModel.synonyms.through)
+m2m_changed.connect(SynonymModel.clean_synonyms, sender=SynonymModel.synonyms.through)
 

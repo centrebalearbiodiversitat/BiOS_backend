@@ -1,6 +1,5 @@
 from django.db import models
 
-from apps.genetics.models import GeneticFeatures
 from apps.geography.models import GeographicLevel
 from apps.taxonomy.models import TaxonomicLevel
 from common.utils.models import LatLonModel, ReferencedModel
@@ -42,11 +41,10 @@ class Occurrence(ReferencedModel, LatLonModel):
         'unknown': UNKNOWN,
     }
 
-    taxonomy = models.ForeignKey(TaxonomicLevel, on_delete=models.PROTECT)
+    taxonomy = models.ForeignKey(TaxonomicLevel, on_delete=models.CASCADE)
     voucher = models.CharField(max_length=255, null=True, blank=True)
     geographical_location = models.ForeignKey(GeographicLevel, on_delete=models.PROTECT, null=True, blank=True)
     collection_date = models.DateField(null=True, blank=True)
-    genetic_features = models.ForeignKey(GeneticFeatures, on_delete=models.SET_NULL, null=True, blank=True)
     basis_of_record = models.PositiveSmallIntegerField(choices=BASIS_OF_RECORD)
 
     def __str__(self):

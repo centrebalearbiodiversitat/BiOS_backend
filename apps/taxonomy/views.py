@@ -1,12 +1,14 @@
+from apps.taxonomy.models import TaxonomicLevel
+from apps.taxonomy.serializers import TaxonomicLevelSerializer, ParentSerializer, ChildrenSerializer
+from django.core.exceptions import ValidationError
+from drf_yasg import openapi
+from drf_yasg.utils import swagger_auto_schema
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.generics import ListAPIView
 from .forms import TaxonomicLevelForms
-from drf_yasg import openapi
-from drf_yasg.utils import swagger_auto_schema
 
-from apps.taxonomy.models import TaxonomicLevel
-from apps.taxonomy.serializers import TaxonomicLevelSerializer, ParentSerializer, ChildrenSerializer
+
 
 
 class TaxonSearch(APIView):
@@ -176,7 +178,7 @@ class TaxonParent(APIView):
 		responses={
 			200: 'Success',
 			204: 'No Content',
-			400: "bad Request"
+			400: "Bad Request"
 		},
 	)
 	

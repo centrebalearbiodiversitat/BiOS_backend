@@ -12,8 +12,9 @@ class TaxonomicLevelForms(ModelForm):
 
 	def __init__(self, *args, **kwargs):
 		super(TaxonomicLevelForms, self).__init__(*args, **kwargs)
+		self.fields['authorship'].required = False
+		self.fields['batch'].required = False
 		self.fields['name'].required = False
 		self.fields['rank'].required = False
-		self.fields['references'].required = False
-		self.fields['authorship'].required = False
+		self.fields['sources'].required = False
 		self.fields['unidecode_name'].required = False

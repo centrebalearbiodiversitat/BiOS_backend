@@ -2,6 +2,8 @@ import re
 import string
 
 from django.db import models
+from mptt.fields import TreeForeignKey
+from mptt.models import MPTTModel
 from unidecode import unidecode
 
 from common.utils.models import ReferencedModel, SynonymModel, LatLonModel, SynonymManager
@@ -14,7 +16,6 @@ class GeographicLevelManager(SynonymManager):
 	def search(self, location: str):
 		## First try by unique name query
 		potential_nodes = self.filter(name__iexact=location)
-		print(potential_nodes)
 		if potential_nodes.count() > 1:
 			return potential_nodes.first()
 
@@ -42,7 +43,7 @@ class GeographicLevelManager(SynonymManager):
 		return best_node
 
 
-class GeographicLevel(ReferencedModel, SynonymModel, LatLonModel):
+class GeographicLevel(SynonymModel, MPTTModel, LatLonModel):
 	objects = GeographicLevelManager()
 
 	# Order matters!
@@ -61,8 +62,8 @@ class GeographicLevel(ReferencedModel, SynonymModel, LatLonModel):
 	)
 
 	TRANSLATE_RANK = {
-		AC: 'autonomous_community',
-		'autonomous_community': AC,
+		AC: 'ac',
+		'ac': AC,
 		ISLAND: 'island',
 		'island': ISLAND,
 		MUNICIPALITY: 'municipality',
@@ -70,11 +71,11 @@ class GeographicLevel(ReferencedModel, SynonymModel, LatLonModel):
 		TOWN: 'town',
 		'town': TOWN,
 		WATER_BODY: 'waterBody',
-		'water_body': WATER_BODY,
+		'wb_0': WATER_BODY,
 	}
 
 	rank = models.PositiveSmallIntegerField(choices=RANK_CHOICES)
-	parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True, default=None, blank=True, related_name='children')
+	parent = TreeForeignKey('self', on_delete=models.CASCADE, null=True, default=None, blank=True)
 
 	class Meta:
 		unique_together = ('parent', 'name')

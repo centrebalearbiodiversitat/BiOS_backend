@@ -6,3 +6,4 @@ geopandas==0.14.3
 pydevd-pycharm
 drf-yasg==1.21.7
 unidecode==1.3.8
+django-mptt==0.16.0

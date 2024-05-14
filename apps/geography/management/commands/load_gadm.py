@@ -24,9 +24,9 @@ class Command(BaseCommand):
 	@transaction.atomic
 	def handle(self, *args, **options):
 		file_name = options['file']
-		print(file_name)
 		db = gpd.read_file(file_name)
 		levels = db.loc[:]
+		print(levels)
 
 		for i in range(len(levels)):
 			parent = None
@@ -41,7 +41,7 @@ class Command(BaseCommand):
 
 		if not name:
 			return parent
-
+		print(parent, name, rank)
 		if rank == new_rank:
 			gl, _ = GeographicLevel.objects.get_or_create(
 				parent=parent,
@@ -50,7 +50,7 @@ class Command(BaseCommand):
 					'name': name,
 					'latitude': lat,
 					'longitude': lon,
-					'coordinatesUncertainty': uncert,
+					'coordinatesUncertaintyMeters': uncert,
 					'accepted': True,
 					'rank': rank
 				}

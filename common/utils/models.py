@@ -13,6 +13,11 @@ class LatLonModel(models.Model):
 	elevationMeters = models.IntegerField(null=True, blank=True, default=True)
 	depthMeters = models.IntegerField(null=True, blank=True, default=True)
 
+	def save(self, force_insert=False, force_update=False, using=None, update_fields=None):
+		if not ((self.latitude is not None and self.longitude is not None) or (self.latitude == self.longitude == None)):
+			raise ValidationError('Latitude and longitude must both exist or None')
+		super().save(force_insert, force_update, using, update_fields)
+
 	class Meta:
 		abstract = True
 
@@ -112,12 +117,16 @@ class SynonymModel(models.Model):
 	unidecode_name = models.CharField(max_length=256, help_text="Unidecode name do not touch")
 	synonyms = models.ManyToManyField('self', blank=True, symmetrical=True)
 	accepted = models.BooleanField(null=False, blank=False)
-	accepted_modifier = models.PositiveSmallIntegerField(choices=ACCEPTED_MODIFIERS_CHOICES, null=True, blank=True, default=None)
+	accepted_modifier = models.PositiveSmallIntegerField(choices=ACCEPTED_MODIFIERS_CHOICES, null=True, blank=True,
+														 default=None)
 
 	@staticmethod
 	def clean_synonyms(**kwargs):
 		if kwargs and kwargs['action'] == 'post_add':
 			obj = kwargs['instance']
+
+			if not hasattr(obj, 'synonyms'):
+				return
 
 			syns = obj.synonyms.all()
 
@@ -160,4 +169,3 @@ class SynonymModel(models.Model):
 
 
 m2m_changed.connect(SynonymModel.clean_synonyms, sender=SynonymModel.synonyms.through)
-

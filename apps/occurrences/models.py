@@ -15,24 +15,24 @@ class Occurrence(ReferencedModel, LatLonModel):
     UNKNOWN = 6
 
     BASIS_OF_RECORD = (
-        (LIVING, 'Living'),
-        (PRESERVED, 'Preserved'),
-        (FOSSIL, 'Fossil'),
-        (CITATION, 'Citation'),
+        (LIVING, 'Living specimen'),
+        (PRESERVED, 'Preserved specimen'),
+        (FOSSIL, 'Fossil specimen'),
+        (CITATION, 'Material citation'),
         (HUMAN_OBSERVATION, 'Human observation'),
         (MACHINE_OBSERVATION, 'Machine observation'),
         (UNKNOWN, 'Unknown'),
     )
 
     TRANSLATE_BASIS_OF_RECORD = {
-        LIVING: 'living',
-        'living': LIVING,
-        PRESERVED: 'preserved',
-        'preserved': PRESERVED,
-        FOSSIL: 'fossil',
-        'fossil': FOSSIL,
-        CITATION: 'citation',
-        'citation': CITATION,
+        LIVING: 'living_specimen',
+        'living_specimen': LIVING,
+        PRESERVED: 'preserved_specimen',
+        'preserved_specimen': PRESERVED,
+        FOSSIL: 'fossil_specimen',
+        'fossil_specimen': FOSSIL,
+        CITATION: 'material_citation',
+        'material_citation': CITATION,
         HUMAN_OBSERVATION: 'human_observation',
         'human_observation': HUMAN_OBSERVATION,
         MACHINE_OBSERVATION: 'machine_observation',
@@ -44,7 +44,9 @@ class Occurrence(ReferencedModel, LatLonModel):
     taxonomy = models.ForeignKey(TaxonomicLevel, on_delete=models.CASCADE)
     voucher = models.CharField(max_length=255, null=True, blank=True)
     geographical_location = models.ForeignKey(GeographicLevel, on_delete=models.PROTECT, null=True, blank=True)
-    collection_date = models.DateField(null=True, blank=True)
+    collection_date_year = models.PositiveSmallIntegerField(null=True, blank=True)
+    collection_date_month = models.PositiveSmallIntegerField(null=True, blank=True)
+    collection_date_day = models.PositiveSmallIntegerField(null=True, blank=True)
     basis_of_record = models.PositiveSmallIntegerField(choices=BASIS_OF_RECORD)
 
     def __str__(self):

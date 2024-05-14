@@ -14,19 +14,22 @@ class TaxonSearch(APIView):
 		operation_description="Search for a taxon by name.",
 		manual_parameters=[
 			openapi.Parameter(
-				'name', openapi.IN_QUERY,
+				"name",
+				openapi.IN_QUERY,
 				description="Name of the taxon to search for.",
-				type=openapi.TYPE_STRING, required=True
+				type=openapi.TYPE_STRING,
+				required=True,
 			),
 			openapi.Parameter(
-				'exact', openapi.IN_QUERY,
+				"exact",
+				openapi.IN_QUERY,
 				description="Indicates whether to search for an exact match. Defaults to False.",
-				type=openapi.TYPE_BOOLEAN
+				type=openapi.TYPE_BOOLEAN,
 			),
 		],
 		responses={
-			200: 'Success',
-			400: 'Bad Request',
+			200: "Success",
+			400: "Bad Request",
 		},
 	)
 	def get(self, request):
@@ -37,19 +40,14 @@ class TaxonSearch(APIView):
 		if not taxon_form.is_valid():
 			return Response(taxon_form.errors, status=400)
 
-		query = taxon_form.cleaned_data.get('name')
-		exact = taxon_form.cleaned_data.get('exact', False)
+		query = taxon_form.cleaned_data.get("name")
+		exact = taxon_form.cleaned_data.get("exact", False)
 
-		filters['name__iexact' if exact else 'name__icontains'] = query
+		filters["name__iexact" if exact else "name__icontains"] = query
 
 		results = TaxonomicLevel.objects.filter(**filters)
 
-		return Response(
-			TaxonomicLevelSerializer(
-				results,
-				many=True
-			).data
-		)
+		return Response(TaxonomicLevelSerializer(results, many=True).data)
 
 
 class TaxonList(ListAPIView):
@@ -59,34 +57,33 @@ class TaxonList(ListAPIView):
 		operation_description="Get a list of taxa, with optional filtering.",
 		manual_parameters=[
 			openapi.Parameter(
-				'name', openapi.IN_QUERY,
-				description="Name of the taxon to search for.",
-				type=openapi.TYPE_STRING
+				"name", openapi.IN_QUERY, description="Name of the taxon to search for.", type=openapi.TYPE_STRING
 			),
 			openapi.Parameter(
-				'rank', openapi.IN_QUERY,
-				description="Rank id of the taxon to search for.",
-				type=openapi.TYPE_INTEGER
+				"rank", openapi.IN_QUERY, description="Rank id of the taxon to search for.", type=openapi.TYPE_INTEGER
 			),
 			openapi.Parameter(
-				'authorship', openapi.IN_QUERY,
+				"authorship",
+				openapi.IN_QUERY,
 				description="Authorship id of the taxon to search for.",
-				type=openapi.TYPE_INTEGER
+				type=openapi.TYPE_INTEGER,
 			),
 			openapi.Parameter(
-				'parent', openapi.IN_QUERY,
-				description="Parent id of the taxon to search for.", 
-    			type=openapi.TYPE_INTEGER
+				"parent",
+				openapi.IN_QUERY,
+				description="Parent id of the taxon to search for.",
+				type=openapi.TYPE_INTEGER,
 			),
 			openapi.Parameter(
-				'exact', openapi.IN_QUERY,
+				"exact",
+				openapi.IN_QUERY,
 				description="Indicates whether to search for an exact match. Defaults to False.",
-				type=openapi.TYPE_BOOLEAN
+				type=openapi.TYPE_BOOLEAN,
 			),
 		],
 		responses={
-			200: 'Success',
-			400: 'Bad Request',
+			200: "Success",
+			400: "Bad Request",
 		},
 	)
 	def get(self, request):
@@ -95,18 +92,18 @@ class TaxonList(ListAPIView):
 		if not taxon_form.is_valid():
 			return Response(taxon_form.errors, status=400)
 
-		exact = taxon_form.cleaned_data.get('exact', False)
+		exact = taxon_form.cleaned_data.get("exact", False)
 
-		str_fields = ['name']
-		num_fields = ['authorship', 'parent', 'rank']
-  
+		str_fields = ["name"]
+		num_fields = ["authorship", "parent", "rank"]
+
 		filters = {}
 
 		for param in str_fields:
 			value = request.query_params.get(param)
 
 			if value:
-				param = f'{param}__iexact' if exact else f'{param}__icontains'
+				param = f"{param}__iexact" if exact else f"{param}__icontains"
 				filters[param] = value
 
 		for param in num_fields:
@@ -117,12 +114,7 @@ class TaxonList(ListAPIView):
 
 		results = TaxonomicLevel.objects.filter(**filters)
 
-		return Response(
-			TaxonomicLevelSerializer(
-				results,
-				many=True
-			).data
-		)
+		return Response(TaxonomicLevelSerializer(results, many=True).data)
 
 
 class TaxonCRUD(APIView):
@@ -130,14 +122,10 @@ class TaxonCRUD(APIView):
 		operation_description="Retrieve a specific TaxonomicLevel instance by its id",
 		manual_parameters=[
 			openapi.Parameter(
-				'id', openapi.IN_QUERY,
-    			description="ID of the taxon to retrieve",
-       			type=openapi.TYPE_INTEGER)
+				"id", openapi.IN_QUERY, description="ID of the taxon to retrieve", type=openapi.TYPE_INTEGER
+			)
 		],
-		responses={
-			200: TaxonomicLevelSerializer(),
-			400: 'Bad Request'
-   		}
+		responses={200: TaxonomicLevelSerializer(), 400: "Bad Request"},
 	)
 	def get(self, request, id):
 		taxon_form = TaxonomicLevelForms(request.GET)
@@ -145,27 +133,20 @@ class TaxonCRUD(APIView):
 		if not taxon_form.is_valid():
 			raise ValidationError(taxon_form.errors)
 
-		taxon = TaxonomicLevelSerializer(
-			TaxonomicLevel.objects.filter(id=id).first()
-		)
+		taxon = TaxonomicLevelSerializer(TaxonomicLevel.objects.filter(id=id).first())
 
 		return Response(taxon.data)
 
 
 class TaxonParent(APIView):
 	def get(self, request, id):
-		taxon = TaxonomicLevelSerializer(
-			TaxonomicLevel.objects.filter(id=id).first().parent
-		)
+		taxon = TaxonomicLevelSerializer(TaxonomicLevel.objects.filter(id=id).first().parent)
 
 		return Response(taxon.data)
 
 
 class TaxonChildren(APIView):
 	def get(self, request, id):
-		taxon = TaxonomicLevelSerializer(
-			TaxonomicLevel.objects.filter(id=id).first().children,
-			many=True
-		)
+		taxon = TaxonomicLevelSerializer(TaxonomicLevel.objects.filter(id=id).first().children, many=True)
 
 		return Response(taxon.data)

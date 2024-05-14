@@ -9,6 +9,7 @@ https://docs.djangoproject.com/en/4.0/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.0/ref/settings/
 """
+
 from os.path import abspath, join
 from pathlib import Path
 import os
@@ -18,113 +19,111 @@ import sys
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
 PROJECT_ROOT = os.path.dirname(__file__)
-sys.path.insert(0, os.path.join(PROJECT_ROOT, 'apps'))
+sys.path.insert(0, os.path.join(PROJECT_ROOT, "apps"))
 
 
 def root(*x):
-    return join(abspath(BASE_DIR), *x)
+	return join(abspath(BASE_DIR), *x)
 
 
-sys.path.insert(0, root('apps'))  # All apps will live inside apps folder
+sys.path.insert(0, root("apps"))  # All apps will live inside apps folder
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-=d^f%8dfm)s@he-zv@dk$z)24q!#6)90c5+!!e5qz-y%qq4txr'
+SECRET_KEY = "django-insecure-=d^f%8dfm)s@he-zv@dk$z)24q!#6)90c5+!!e5qz-y%qq4txr"
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
-SITE_URL = 'localhost'
+SITE_URL = "localhost"
 
 ALLOWED_HOSTS = ["localhost", "127.0.0.1", SITE_URL]
 
 INSTALLED_APPS = [
-    'django.contrib.admin',
-    'django.contrib.auth',
-    'django.contrib.contenttypes',
-    'django.contrib.sessions',
-    'django.contrib.messages',
-    'django.contrib.staticfiles',
-
-    'rest_framework',
-    'drf_yasg',
-    'corsheaders',
-    'mptt',
-    # 'rest_framework_api_key',
-
-    'apps.genetics',
-    'apps.occurrences',
-    'apps.taxonomy',
-    'apps.versioning',
-    'apps.geography',
-    'apps.API',
+	"django.contrib.admin",
+	"django.contrib.auth",
+	"django.contrib.contenttypes",
+	"django.contrib.sessions",
+	"django.contrib.messages",
+	"django.contrib.staticfiles",
+	"rest_framework",
+	"drf_yasg",
+	"corsheaders",
+	"mptt",
+	# 'rest_framework_api_key',
+	"apps.genetics",
+	"apps.occurrences",
+	"apps.taxonomy",
+	"apps.versioning",
+	"apps.geography",
+	"apps.API",
 ]
 
 REST_FRAMEWORK = {
-    # "DEFAULT_PERMISSION_CLASSES": [
-    # 	"rest_framework_api_key.permissions.HasAPIKey",
-    # ]
+	# "DEFAULT_PERMISSION_CLASSES": [
+	# 	"rest_framework_api_key.permissions.HasAPIKey",
+	# ]
 }
 MPTT_ADMIN_LEVEL_INDENT = 0
 
 
 MIDDLEWARE = [
-    'django.middleware.security.SecurityMiddleware',
-    'django.contrib.sessions.middleware.SessionMiddleware',
-    'corsheaders.middleware.CorsMiddleware',
-    'django.middleware.common.CommonMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
-    'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'django.contrib.messages.middleware.MessageMiddleware',
-    'django.middleware.clickjacking.XFrameOptionsMiddleware',
+	"django.middleware.security.SecurityMiddleware",
+	"django.contrib.sessions.middleware.SessionMiddleware",
+	"corsheaders.middleware.CorsMiddleware",
+	"django.middleware.common.CommonMiddleware",
+	"django.middleware.csrf.CsrfViewMiddleware",
+	"django.contrib.auth.middleware.AuthenticationMiddleware",
+	"django.contrib.messages.middleware.MessageMiddleware",
+	"django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
-ROOT_URLCONF = 'cbb.urls'
+ROOT_URLCONF = "cbb.urls"
 
 TEMPLATES = [
-    {
-        'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [os.path.join(BASE_DIR, 'templates')],
-        'APP_DIRS': True,
-        'OPTIONS': {
-            'context_processors': [
-                'django.template.context_processors.debug',
-                'django.template.context_processors.request',
-                'django.contrib.auth.context_processors.auth',
-                'django.contrib.messages.context_processors.messages',
-            ],
-        },
-    },
+	{
+		"BACKEND": "django.template.backends.django.DjangoTemplates",
+		"DIRS": [os.path.join(BASE_DIR, "templates")],
+		"APP_DIRS": True,
+		"OPTIONS": {
+			"context_processors": [
+				"django.template.context_processors.debug",
+				"django.template.context_processors.request",
+				"django.contrib.auth.context_processors.auth",
+				"django.contrib.messages.context_processors.messages",
+			],
+		},
+	},
 ]
 
-WSGI_APPLICATION = 'cbb.wsgi.application'
+WSGI_APPLICATION = "cbb.wsgi.application"
 
 # Password validation
 # https://docs.djangoproject.com/en/4.0/ref/settings/#auth-password-validators
 
 AUTH_PASSWORD_VALIDATORS = [
-    {
-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
-    },
+	{
+		"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
+	},
+	{
+		"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
+	},
+	{
+		"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator",
+	},
+	{
+		"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
+	},
 ]
 
 # Internationalization
 # https://docs.djangoproject.com/en/4.0/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = "en-us"
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = "UTC"
 
 USE_I18N = True
 
@@ -134,12 +133,12 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/4.0/howto/static-files/
 
 
-PUBLIC_DIR = root('public')
-STATIC_ROOT = join(PUBLIC_DIR, 'static')
-STATIC_URL = '/static/'
+PUBLIC_DIR = root("public")
+STATIC_ROOT = join(PUBLIC_DIR, "static")
+STATIC_URL = "/static/"
 
 # STATICFILES_DIRS = (
 #     abspath(join(PUBLIC_DIR, 'assets')),
 # )
 
-DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"

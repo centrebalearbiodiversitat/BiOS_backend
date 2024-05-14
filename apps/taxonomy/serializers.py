@@ -6,7 +6,7 @@ from apps.taxonomy.models import TaxonomicLevel, Authorship
 class AuthorshipSerializer(serializers.ModelSerializer):
 	class Meta:
 		model = Authorship
-		fields = ['id', 'name']
+		fields = ["id", "name"]
 
 
 class TaxonomicLevelSerializer(serializers.ModelSerializer):
@@ -25,4 +25,4 @@ class TaxonomicLevelSerializer(serializers.ModelSerializer):
 
 	class Meta:
 		model = TaxonomicLevel
-		fields = ['id', 'name', 'rank', 'authorship', 'parent_level']
+		fields = ["id", "name", "rank", "authorship", "parent_level"]

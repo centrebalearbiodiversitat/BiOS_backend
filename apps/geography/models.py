@@ -9,7 +9,7 @@ from unidecode import unidecode
 from common.utils.models import ReferencedModel, SynonymModel, LatLonModel, SynonymManager
 from common.utils.utils import str_clean_up
 
-PUNCTUATION_TRANSLATE = str.maketrans(string.punctuation, '\n' * len(string.punctuation))
+PUNCTUATION_TRANSLATE = str.maketrans(string.punctuation, "\n" * len(string.punctuation))
 
 
 class GeographicLevelManager(SynonymManager):
@@ -23,7 +23,7 @@ class GeographicLevelManager(SynonymManager):
 		# Clean up location string for optimal search
 		global PUNCTUATION_TRANSLATE
 		location = location.translate(PUNCTUATION_TRANSLATE)
-		loc_nodes = unidecode(location).split('\n')
+		loc_nodes = unidecode(location).split("\n")
 		clean_loc_nodes = []
 
 		# Query potential nodes with the exact name
@@ -54,29 +54,29 @@ class GeographicLevel(SynonymModel, MPTTModel, LatLonModel):
 	WATER_BODY = 6
 
 	RANK_CHOICES = (
-		(AC, 'Autonomous community'),
-		(ISLAND, 'Island'),
-		(MUNICIPALITY, 'Municipality'),
-		(TOWN, 'Town'),
-		(WATER_BODY, 'Water body'),
+		(AC, "Autonomous community"),
+		(ISLAND, "Island"),
+		(MUNICIPALITY, "Municipality"),
+		(TOWN, "Town"),
+		(WATER_BODY, "Water body"),
 	)
 
 	TRANSLATE_RANK = {
-		AC: 'ac',
-		'ac': AC,
-		ISLAND: 'island',
-		'island': ISLAND,
-		MUNICIPALITY: 'municipality',
-		'municipality': MUNICIPALITY,
-		TOWN: 'town',
-		'town': TOWN,
-		WATER_BODY: 'waterBody',
-		'wb_0': WATER_BODY,
+		AC: "ac",
+		"ac": AC,
+		ISLAND: "island",
+		"island": ISLAND,
+		MUNICIPALITY: "municipality",
+		"municipality": MUNICIPALITY,
+		TOWN: "town",
+		"town": TOWN,
+		WATER_BODY: "waterBody",
+		"wb_0": WATER_BODY,
 	}
 
 	rank = models.PositiveSmallIntegerField(choices=RANK_CHOICES)
-	parent = TreeForeignKey('self', on_delete=models.CASCADE, null=True, default=None, blank=True)
+	parent = TreeForeignKey("self", on_delete=models.CASCADE, null=True, default=None, blank=True)
 
 	class Meta:
-		unique_together = ('parent', 'name')
-		ordering = ['rank']
+		unique_together = ("parent", "name")
+		ordering = ["rank"]

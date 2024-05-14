@@ -8,11 +8,11 @@ class TaxonomicLevelForms(ModelForm):
 
 	class Meta:
 		model = TaxonomicLevel
-		fields = '__all__'
+		fields = "__all__"
 
 	def __init__(self, *args, **kwargs):
 		super(TaxonomicLevelForms, self).__init__(*args, **kwargs)
-		self.fields['name'].required = False
-		self.fields['rank'].required = False
-		self.fields['references'].required = False
-		self.fields['authorship'].required = False
+		self.fields["name"].required = False
+		self.fields["rank"].required = False
+		self.fields["references"].required = False
+		self.fields["authorship"].required = False

@@ -53,45 +53,45 @@ class TaxonomicLevel(SynonymModel, MPTTModel, ReferencedModel):
 	LIFE = 9
 
 	RANK_CHOICES = (
-		(KINGDOM, 'Kingdom'),
-		(PHYLUM, 'Phylum'),
-		(CLASS, 'Class'),
-		(ORDER, 'Order'),
-		(FAMILY, 'Family'),
-		(GENUS, 'Genus'),
-		(SPECIES, 'Species'),
-		(SUBSPECIES, 'Subspecies'),
-		(VARIETY, 'Variety'),
-		(LIFE, 'Life'),
+		(KINGDOM, "Kingdom"),
+		(PHYLUM, "Phylum"),
+		(CLASS, "Class"),
+		(ORDER, "Order"),
+		(FAMILY, "Family"),
+		(GENUS, "Genus"),
+		(SPECIES, "Species"),
+		(SUBSPECIES, "Subspecies"),
+		(VARIETY, "Variety"),
+		(LIFE, "Life"),
 	)
 	TRANSLATE_RANK = {
-		KINGDOM: 'kingdom',
-		'kingdom': KINGDOM,
-		PHYLUM: 'phylum',
-		'phylum': PHYLUM,
-		CLASS: 'class',
-		'class': CLASS,
-		ORDER: 'order',
-		'order': ORDER,
-		FAMILY: 'family',
-		'family': FAMILY,
-		GENUS: 'genus',
-		'genus': GENUS,
-		SPECIES: 'species',
-		'species': SPECIES,
-		SUBSPECIES: 'subspecies',
-		'subspecies': SUBSPECIES,
-		VARIETY: 'variety',
-		'variety': VARIETY,
-		LIFE: 'life',
-		'life': LIFE,
+		KINGDOM: "kingdom",
+		"kingdom": KINGDOM,
+		PHYLUM: "phylum",
+		"phylum": PHYLUM,
+		CLASS: "class",
+		"class": CLASS,
+		ORDER: "order",
+		"order": ORDER,
+		FAMILY: "family",
+		"family": FAMILY,
+		GENUS: "genus",
+		"genus": GENUS,
+		SPECIES: "species",
+		"species": SPECIES,
+		SUBSPECIES: "subspecies",
+		"subspecies": SUBSPECIES,
+		VARIETY: "variety",
+		"variety": VARIETY,
+		LIFE: "life",
+		"life": LIFE,
 	}
 
 	rank = models.PositiveSmallIntegerField(choices=RANK_CHOICES)
 	verbatim_authorship = models.CharField(max_length=256, null=True, default=None, blank=True)
 	parsed_year = models.PositiveIntegerField(null=True, default=None, blank=True)
 	authorship = models.ManyToManyField(Authorship, blank=True, symmetrical=False)
-	parent = TreeForeignKey('self', on_delete=models.CASCADE, null=True, default=None, blank=True)
+	parent = TreeForeignKey("self", on_delete=models.CASCADE, null=True, default=None, blank=True)
 
 	def clean(self):
 		if self.verbatim_authorship:
@@ -100,7 +100,7 @@ class TaxonomicLevel(SynonymModel, MPTTModel, ReferencedModel):
 
 	def save(self, force_insert=False, force_update=False, using=None, update_fields=None):
 		if self.rank == TaxonomicLevel.SPECIES and len(self.name.split()) != 1:
-			raise ValidationError('Species level must be epithet separated of genus.')
+			raise ValidationError("Species level must be epithet separated of genus.")
 
 		super().save(force_insert, force_update, using, update_fields)
 
@@ -111,11 +111,13 @@ class TaxonomicLevel(SynonymModel, MPTTModel, ReferencedModel):
 		return TaxonomicLevel.TRANSLATE_RANK[self.rank]
 
 	def scientific_name(self):
-		ancestors = self.get_ancestors(include_self=False, ascending=True).filter(rank__in=[TaxonomicLevel.GENUS, TaxonomicLevel.SPECIES, TaxonomicLevel.SUBSPECIES, TaxonomicLevel.VARIETY])
+		ancestors = self.get_ancestors(include_self=False, ascending=True).filter(
+			rank__in=[TaxonomicLevel.GENUS, TaxonomicLevel.SPECIES, TaxonomicLevel.SUBSPECIES, TaxonomicLevel.VARIETY]
+		)
 		full_name = self.name
 
 		for an in ancestors:
-			full_name = f'{an.name} {full_name}'
+			full_name = f"{an.name} {full_name}"
 
 		return full_name
 
@@ -132,7 +134,7 @@ class TaxonomicLevel(SynonymModel, MPTTModel, ReferencedModel):
 	# self.accepted.save()
 
 	class Meta:
-		unique_together = ('parent', 'name', 'rank')
+		unique_together = ("parent", "name", "rank")
 		# indexes = [
 		#     models.Index(fields=['rank'], name='rank_idx'),
 		# ]

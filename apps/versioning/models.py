@@ -14,29 +14,29 @@ class Source(SynonymModel):
 	EXPERT = 6
 
 	ORIGIN_CHOICES = (
-		(DATABASE, 'database'),
-		(JOURNAL_ARTICLE, 'journal_article'),
-		(BOOK, 'book'),
-		(AI, 'ai'),
-		(WEB_PAGE, 'web_page'),
-		(DOCUMENT, 'document'),
-		(EXPERT, 'expert'),
+		(DATABASE, "database"),
+		(JOURNAL_ARTICLE, "journal_article"),
+		(BOOK, "book"),
+		(AI, "ai"),
+		(WEB_PAGE, "web_page"),
+		(DOCUMENT, "document"),
+		(EXPERT, "expert"),
 	)
 	TRANSLATE_CHOICES = {
-		DATABASE: 'database',
-		'database': DATABASE,
-		JOURNAL_ARTICLE: 'journal_article',
-		'journal_article': JOURNAL_ARTICLE,
-		BOOK: 'book',
-		'book': BOOK,
-		AI: 'ai',
-		'ai': AI,
-		WEB_PAGE: 'web_page',
-		'web_page': WEB_PAGE,
-		DOCUMENT: 'document',
-		'document': DOCUMENT,
-		EXPERT: 'expert',
-		'expert': EXPERT,
+		DATABASE: "database",
+		"database": DATABASE,
+		JOURNAL_ARTICLE: "journal_article",
+		"journal_article": JOURNAL_ARTICLE,
+		BOOK: "book",
+		"book": BOOK,
+		AI: "ai",
+		"ai": AI,
+		WEB_PAGE: "web_page",
+		"web_page": WEB_PAGE,
+		DOCUMENT: "document",
+		"document": DOCUMENT,
+		EXPERT: "expert",
+		"expert": EXPERT,
 	}
 
 	origin = models.PositiveSmallIntegerField(choices=ORIGIN_CHOICES)
@@ -50,16 +50,16 @@ class Batch(models.Model):
 	ACCEPTED = 1
 	REJECTED = 2
 	STATUS_CHOICES = (
-		(PENDING, 'Pending'),
-		(ACCEPTED, 'Accepted'),
-		(REJECTED, 'Rejected'),
+		(PENDING, "Pending"),
+		(ACCEPTED, "Accepted"),
+		(REJECTED, "Rejected"),
 	)
 
 	created_at = models.DateTimeField(auto_now_add=True, editable=False)
 	status = models.PositiveSmallIntegerField(choices=STATUS_CHOICES, default=PENDING)
 
 	def __str__(self):
-		return f'{self.created_at.year}-{self.created_at.month}-{self.created_at.day}__{self.id}'
+		return f"{self.created_at.year}-{self.created_at.month}-{self.created_at.day}__{self.id}"
 
 	class Meta:
 		verbose_name_plural = "batches"
@@ -75,7 +75,7 @@ class OriginSource(models.Model):
 			raise ValidationError('Blank "origin_id" field is not allowed.')
 
 	def __str__(self):
-		return f'{self.source.name}:{self.origin_id}'
+		return f"{self.source.name}:{self.origin_id}"
 
 	class Meta:
-		unique_together = ('origin_id', 'source')
+		unique_together = ("origin_id", "source")

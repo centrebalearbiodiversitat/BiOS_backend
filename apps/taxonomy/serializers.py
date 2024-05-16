@@ -3,44 +3,13 @@ from apps.taxonomy.models import TaxonomicLevel, Authorship
 
 
 class BaseTaxonomicLevelSerializer(serializers.ModelSerializer):
-	scientificNameAuthorship = serializers.CharField(source='verbatim_authorship')
-	taxonRank = serializers.SerializerMethodField()
 
-	def get_taxonRank(self, obj):
+	scientific_name_authorship = serializers.CharField(source='verbatim_authorship')
+	taxon_rank = serializers.SerializerMethodField()
+
+	def get_taxon_rank(self, obj):
 		return obj.readable_rank()
 
 	class Meta:
 		model = TaxonomicLevel
-		fields = ['id', 'name', 'taxonRank', 'scientificNameAuthorship']
-
-class ParentSerializer(BaseTaxonomicLevelSerializer):
-	parent = serializers.SerializerMethodField()
-
-	def get_parent(self, obj):
-		if obj.parent:
-			parent = TaxonomicLevelSerializer(obj.parent).data
-			del parent['children']
-			return parent
-		else: 
-			return None
-
-	class Meta(BaseTaxonomicLevelSerializer.Meta):
-		fields = BaseTaxonomicLevelSerializer.Meta.fields + ['parent']
-
-class ChildrenSerializer(BaseTaxonomicLevelSerializer):
-
-	def get_children(self, obj):
-		if obj.children:
-			return TaxonomicLevelSerializer(obj.children).data
-		else: 
-			return None
-
-	class Meta(BaseTaxonomicLevelSerializer.Meta):
-		fields = BaseTaxonomicLevelSerializer.Meta.fields
-
-class TaxonomicLevelSerializer(BaseTaxonomicLevelSerializer):
-	children = ChildrenSerializer(many=True)
-	parent = ParentSerializer(many=False)
-
-	class Meta(BaseTaxonomicLevelSerializer.Meta):
-		fields = BaseTaxonomicLevelSerializer.Meta.fields + ['parent', 'children']
+		fields = ['id', 'name', 'taxon_rank', 'scientific_name_authorship']

@@ -1,15 +1,19 @@
 from apps.taxonomy.models import TaxonomicLevel
-from apps.taxonomy.serializers import TaxonomicLevelSerializer, ParentSerializer, ChildrenSerializer
+from apps.taxonomy.serializers import BaseTaxonomicLevelSerializer
 from django.core.exceptions import ValidationError
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.generics import ListAPIView
-from .forms import TaxonomicLevelForms
+from .forms import TaxonomicLevelForm
 
-
-
+TRANSLATE_PARAM = {
+	'name': 'name',
+	'parent': 'parent',
+	'scientific_name_authorship': 'authorship',
+	'taxon_rank': 'rank'
+}
 
 class TaxonSearch(APIView):
 
@@ -38,7 +42,7 @@ class TaxonSearch(APIView):
 	)
 
 	def get(self, request):
-		taxon_form = TaxonomicLevelForms(request.GET)
+		taxon_form = TaxonomicLevelForm(request.GET)
 
 		filters = {}
 
@@ -52,11 +56,10 @@ class TaxonSearch(APIView):
 
 		queryset = TaxonomicLevel.objects.filter(**filters)
 
-		return Response(TaxonomicLevelSerializer(queryset, many=True).data)
+		return Response(BaseTaxonomicLevelSerializer(queryset, many=True).data)
 
 
 class TaxonList(ListAPIView):
-	serializer_class = TaxonomicLevelSerializer
 
 	@swagger_auto_schema(
 		operation_description="Get a list of taxa, with optional filtering.",
@@ -68,16 +71,16 @@ class TaxonList(ListAPIView):
 				type=openapi.TYPE_STRING
 			),
 			openapi.Parameter(
-				'rank',
+				'taxon_rank',
 				openapi.IN_QUERY,
 				description="Rank id of the taxon to search for.",
-				type=openapi.TYPE_INTEGER
+				type=openapi.TYPE_STRING
 			),
 			openapi.Parameter(
-				'scientificNameAuthorship',
+				'scientific_name_authorship',
 				openapi.IN_QUERY,
 				description="Authorship id of the taxon to search for.",
-				type=openapi.TYPE_INTEGER
+				type=openapi.TYPE_STRING
 			),
 			openapi.Parameter(
 				'parent',
@@ -100,34 +103,34 @@ class TaxonList(ListAPIView):
 	)
 
 	def get(self, request):
-		taxon_form = TaxonomicLevelForms(self.request.GET)
+		taxon_form = TaxonomicLevelForm(self.request.GET)
 
-		if not taxon_form.is_valid():
+		if not taxon_form.is_valid():		
 			return Response(taxon_form.errors, status=400)
 
 		exact = taxon_form.cleaned_data.get('exact', False)
 
 		str_fields = ['name']
-		num_fields = ['authorship', 'parent', 'rank']
+		num_fields = ['parent', 'scientific_name_authorship', 'taxon_rank']
 
 		filters = {}
 
 		for param in str_fields:
-			value = request.query_params.get(param)
+			value = taxon_form.cleaned_data.get(param)
 
 			if value:
 				param = f'{param}__iexact' if exact else f'{param}__icontains'
 				filters[param] = value
 
 		for param in num_fields:
-			value = request.query_params.get(param)
+			value = taxon_form.cleaned_data.get(TRANSLATE_PARAM[param])
 
 			if value:
-				filters[param] = value
+				filters[TRANSLATE_PARAM[param]] = value
 
 		queryset = TaxonomicLevel.objects.filter(**filters)
 
-		return Response(TaxonomicLevelSerializer(queryset, many=True).data)
+		return Response(BaseTaxonomicLevelSerializer(queryset, many=True).data)
 
 
 class TaxonCRUD(APIView):
@@ -151,21 +154,21 @@ class TaxonCRUD(APIView):
 	)
 
 	def get(self, request):
-		taxon_form = TaxonomicLevelForms(self.request.GET)
+		taxon_form = TaxonomicLevelForm(self.request.GET)
 
 		if not taxon_form.is_valid():
 			raise ValidationError(taxon_form.errors)
 
 		id = request.query_params.get('id')
-		queryset = TaxonomicLevel.objects.filter(id=id).first()
+		taxon = TaxonomicLevel.objects.filter(id=id).first()
 
-		return Response(TaxonomicLevelSerializer(queryset).data)
+		return Response(BaseTaxonomicLevelSerializer(taxon).data)
 
 
 class TaxonParent(APIView):
 
 	@swagger_auto_schema(
-		operation_description="Get the parent of the taxon given its ID",
+		operation_description="Get the parents of the taxon given its ID",
 		manual_parameters=[
 			openapi.Parameter(
 				name='id',
@@ -183,21 +186,22 @@ class TaxonParent(APIView):
 	)
 	
 	def get(self, request):
-		taxon_form = TaxonomicLevelForms(self.request.GET)
+		taxon_form = TaxonomicLevelForm(self.request.GET)
 
 		if not taxon_form.is_valid():
 			raise ValidationError(taxon_form.errors)
 
 		id = request.query_params.get('id')
-		queryset = TaxonomicLevel.objects.filter(id=id).first().parent
+		taxon = TaxonomicLevel.objects.get(pk=id)
+		ancestors = taxon.get_ancestors()
 
-		return Response(ParentSerializer(queryset).data)
+		return Response(BaseTaxonomicLevelSerializer(ancestors, many=True).data)
 
 
 class TaxonChildren(APIView):
 
 	@swagger_auto_schema(
-		operation_description="Get taxonomic level children",
+		operation_description="Get the direct childrens of the taxon given its ID",
 		manual_parameters=[
 			openapi.Parameter(
 				name="id",
@@ -215,12 +219,13 @@ class TaxonChildren(APIView):
 	)
 	
 	def get(self, request):
-		taxon_form = TaxonomicLevelForms(self.request.GET)
+		taxon_form = TaxonomicLevelForm(self.request.GET)
 
 		if not taxon_form.is_valid():
 			raise ValidationError(taxon_form.errors)
 
 		id = request.query_params.get('id')
-		queryset = TaxonomicLevel.objects.filter(id=id).first()
-		queryset = queryset.children.all()
-		return Response(ChildrenSerializer(queryset, many = True).data)
+		taxon = TaxonomicLevel.objects.get(pk=id)
+		children = taxon.get_children()
+
+		return Response(BaseTaxonomicLevelSerializer(children, many=True).data)

@@ -48,15 +48,16 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
+    'drf_yasg',
+    'corsheaders',
+    'mptt',
     # 'rest_framework_api_key',
     'apps.genetics',
     'apps.occurrences',
     'apps.taxonomy',
     'apps.versioning',
     'apps.geography',
-    'apps.API',
-    'drf_yasg',
-    'corsheaders',
+    'apps.API'
 ]
 
 REST_FRAMEWORK = {
@@ -65,6 +66,7 @@ REST_FRAMEWORK = {
     # ]
 }
 
+MPTT_ADMIN_LEVEL_INDENT = 0
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',

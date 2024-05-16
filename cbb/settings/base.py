@@ -68,6 +68,7 @@ REST_FRAMEWORK = {
 }
 MPTT_ADMIN_LEVEL_INDENT = 0
 
+MPTT_ADMIN_LEVEL_INDENT = 0
 
 MIDDLEWARE = [
 	"django.middleware.security.SecurityMiddleware",

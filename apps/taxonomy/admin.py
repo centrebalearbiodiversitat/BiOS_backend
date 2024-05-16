@@ -1,6 +1,5 @@
 from django.contrib import admin
 from mptt.admin import MPTTModelAdmin
-
 from apps.taxonomy.models import Authorship, TaxonomicLevel
 
 

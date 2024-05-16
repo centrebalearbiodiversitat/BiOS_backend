@@ -125,7 +125,11 @@ class Command(BaseCommand):
 							taxon.sources.add(OriginSource.objects.create(origin_id=line[taxon_id_key], source=source))
 
 				taxonomy = TaxonomicLevel.objects.find(taxon=line["originalName"])
-				assert taxonomy.count() == 1, f"Multiple taxonomy trees found.\n{line}"
+
+				if taxonomy.count() == 0:
+					raise Exception(f"Taxonomy not found.\n{line}")
+				elif taxonomy.count() > 1:
+					raise Exception(f"Multiple taxonomy found.\n{line}")
 
 				if line["lat_lon"] and len(line["lat_lon"]) != 2:
 					raise Exception(f"Bad formatting for lat_lon field\n{line}")

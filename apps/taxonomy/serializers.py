@@ -1,9 +1,9 @@
 from rest_framework import serializers
 from apps.taxonomy.models import TaxonomicLevel, Authorship
 
-class BaseTaxonomicLevelSerializer(serializers.ModelSerializer):
 
-	scientific_name_authorship = serializers.CharField(source='verbatim_authorship')
+class BaseTaxonomicLevelSerializer(serializers.ModelSerializer):
+	scientific_name_authorship = serializers.CharField(source="verbatim_authorship")
 	taxon_rank = serializers.SerializerMethodField()
 
 	def get_taxon_rank(self, obj):
@@ -11,4 +11,4 @@ class BaseTaxonomicLevelSerializer(serializers.ModelSerializer):
 
 	class Meta:
 		model = TaxonomicLevel
-		fields = ['id', 'name', 'taxon_rank', 'scientific_name_authorship']
+		fields = ["id", "name", "taxon_rank", "scientific_name_authorship"]

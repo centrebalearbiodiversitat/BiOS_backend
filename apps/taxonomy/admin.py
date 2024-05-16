@@ -4,7 +4,6 @@ from apps.taxonomy.models import Authorship, TaxonomicLevel
 
 
 class BaseTaxonLevelAdmin(MPTTModelAdmin):
-
 	list_display = [
 		"scientific_name",
 		"rank",
@@ -50,7 +49,6 @@ class BaseTaxonLevelAdmin(MPTTModelAdmin):
 		return obj.get_children().count()
 
 	def upper_taxon(self, obj):
-
 		full_taxon_str = ""
 		upper_taxa = obj.get_ancestors(ascending=True)
 		for taxon in upper_taxa:

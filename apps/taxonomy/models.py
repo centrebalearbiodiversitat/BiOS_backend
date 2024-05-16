@@ -111,7 +111,6 @@ class TaxonomicLevel(SynonymModel, MPTTModel, ReferencedModel):
 		return TaxonomicLevel.TRANSLATE_RANK[self.rank]
 
 	def scientific_name(self):
-
 		ancestors = self.get_ancestors(include_self=False, ascending=True).filter(
 			rank__in=[TaxonomicLevel.GENUS, TaxonomicLevel.SPECIES, TaxonomicLevel.SUBSPECIES, TaxonomicLevel.VARIETY]
 		)

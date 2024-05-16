@@ -31,7 +31,7 @@ class TaxonSearch(APIView):
 				'exact',
 				openapi.IN_QUERY,
 				description="Indicates whether to search for an exact match. Defaults to False.",
-				type=openapi.TYPE_BOOLEAN
+				type=openapi.TYPE_BOOLEAN,
 			),
 		],
 		responses={
@@ -49,10 +49,10 @@ class TaxonSearch(APIView):
 		if not taxon_form.is_valid():
 			return Response(taxon_form.errors, status=400)
 
-		query = taxon_form.cleaned_data.get('name')
-		exact = taxon_form.cleaned_data.get('exact', False)
+		query = taxon_form.cleaned_data.get("name")
+		exact = taxon_form.cleaned_data.get("exact", False)
 
-		filters['name__iexact' if exact else 'name__icontains'] = query
+		filters["name__iexact" if exact else "name__icontains"] = query
 
 		queryset = TaxonomicLevel.objects.filter(**filters)
 
@@ -92,7 +92,7 @@ class TaxonList(ListAPIView):
 				'exact',
 				openapi.IN_QUERY,
 				description="Indicates whether to search for an exact match. Defaults to False.",
-				type=openapi.TYPE_BOOLEAN
+				type=openapi.TYPE_BOOLEAN,
 			),
 		],
 		responses={
@@ -108,18 +108,18 @@ class TaxonList(ListAPIView):
 		if not taxon_form.is_valid():		
 			return Response(taxon_form.errors, status=400)
 
-		exact = taxon_form.cleaned_data.get('exact', False)
+		exact = taxon_form.cleaned_data.get("exact", False)
 
 		str_fields = ['name']
 		num_fields = ['parent', 'scientific_name_authorship', 'taxon_rank']
-
+    
 		filters = {}
 
 		for param in str_fields:
 			value = taxon_form.cleaned_data.get(param)
 
 			if value:
-				param = f'{param}__iexact' if exact else f'{param}__icontains'
+				param = f"{param}__iexact" if exact else f"{param}__icontains"
 				filters[param] = value
 
 		for param in num_fields:

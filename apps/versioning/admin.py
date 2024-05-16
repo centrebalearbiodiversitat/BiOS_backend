@@ -7,7 +7,7 @@ admin.site.register(Batch)
 
 class SourceAdmin(admin.ModelAdmin):
 	search_fields = ["name"]
-	list_display = ['name']
+	list_display = ["name"]
 
 
 admin.site.register(Source, SourceAdmin)
@@ -15,7 +15,7 @@ admin.site.register(Source, SourceAdmin)
 
 class OriginSourceAdmin(admin.ModelAdmin):
 	search_fields = ["origin_id", "source"]
-	list_filter = ['source']
+	list_filter = ["source"]
 
 
 admin.site.register(OriginSource, OriginSourceAdmin)

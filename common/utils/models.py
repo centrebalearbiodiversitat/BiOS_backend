@@ -13,18 +13,25 @@ class LatLonModel(models.Model):
 	elevationMeters = models.IntegerField(null=True, blank=True, default=True)
 	depthMeters = models.IntegerField(null=True, blank=True, default=True)
 
+	def save(self, force_insert=False, force_update=False, using=None, update_fields=None):
+		if not (
+			(self.latitude is not None and self.longitude is not None) or (self.latitude == self.longitude == None)
+		):
+			raise ValidationError("Latitude and longitude must both exist or None")
+		super().save(force_insert, force_update, using, update_fields)
+
 	class Meta:
 		abstract = True
 
 
 class ReferencedModel(models.Model):
-	batch = models.ForeignKey('versioning.Batch', on_delete=models.CASCADE)
-	sources = models.ManyToManyField('versioning.OriginSource')
+	batch = models.ForeignKey("versioning.Batch", on_delete=models.CASCADE)
+	sources = models.ManyToManyField("versioning.OriginSource")
 
 	@staticmethod
 	def clean_sources(**kwargs):
-		if kwargs and kwargs['action'] == 'post_add':
-			obj = kwargs['instance']
+		if kwargs and kwargs["action"] == "post_add":
+			obj = kwargs["instance"]
 
 			sources = [s.source.name for s in obj.sources.all()]
 
@@ -41,9 +48,9 @@ m2m_changed.connect(ReferencedModel.clean_sources, sender=ReferencedModel.source
 class SynonymManager(models.Manager):
 	def _override_args(self, kwargs):
 		for arg in list(kwargs.keys()):
-			if arg.startswith('name'):
+			if arg.startswith("name"):
 				kwargs[arg] = str_clean_up(kwargs[arg])
-				kwargs[f'unidecode_{arg}'] = unidecode(kwargs[arg])
+				kwargs[f"unidecode_{arg}"] = unidecode(kwargs[arg])
 				del kwargs[arg]
 
 	def filter(self, *args, **kwargs):
@@ -95,29 +102,34 @@ class SynonymModel(models.Model):
 	MISAPPLIED = 2
 
 	ACCEPTED_MODIFIERS_CHOICES = (
-		(PROVISIONAL, 'Provisional'),
-		(AMBIGUOUS, 'Ambiguous'),
-		(MISAPPLIED, 'Misaplied'),
+		(PROVISIONAL, "Provisional"),
+		(AMBIGUOUS, "Ambiguous"),
+		(MISAPPLIED, "Misaplied"),
 	)
 	ACCEPTED_MODIFIERS_TRANSLATE = {
-		PROVISIONAL: 'provisional',
-		'provisional': PROVISIONAL,
-		AMBIGUOUS: 'ambiguous',
-		'ambiguous': AMBIGUOUS,
-		MISAPPLIED: 'misapplied',
-		'misapplied': MISAPPLIED,
+		PROVISIONAL: "provisional",
+		"provisional": PROVISIONAL,
+		AMBIGUOUS: "ambiguous",
+		"ambiguous": AMBIGUOUS,
+		MISAPPLIED: "misapplied",
+		"misapplied": MISAPPLIED,
 	}
 
 	name = models.CharField(max_length=256)
 	unidecode_name = models.CharField(max_length=256, help_text="Unidecode name do not touch")
-	synonyms = models.ManyToManyField('self', blank=True, symmetrical=True)
+	synonyms = models.ManyToManyField("self", blank=True, symmetrical=True)
 	accepted = models.BooleanField(null=False, blank=False)
-	accepted_modifier = models.PositiveSmallIntegerField(choices=ACCEPTED_MODIFIERS_CHOICES, null=True, blank=True, default=None)
+	accepted_modifier = models.PositiveSmallIntegerField(
+		choices=ACCEPTED_MODIFIERS_CHOICES, null=True, blank=True, default=None
+	)
 
 	@staticmethod
 	def clean_synonyms(**kwargs):
-		if kwargs and kwargs['action'] == 'post_add':
-			obj = kwargs['instance']
+		if kwargs and kwargs["action"] == "post_add":
+			obj = kwargs["instance"]
+
+			if not hasattr(obj, "synonyms"):
+				return
 
 			syns = obj.synonyms.all()
 
@@ -128,21 +140,21 @@ class SynonymModel(models.Model):
 
 			if obj.accepted:
 				if n_accepted_syns != 0:
-					raise ValidationError(f'No more than one synonym can be accepted.\n{obj}\n{syns}')
+					raise ValidationError(f"No more than one synonym can be accepted.\n{obj}\n{syns}")
 			else:
 				# if n_accepted_syns == 0:
 				# 	print(obj, syns)
 				# 	raise ValidationError(f'At least one synonym must be accepted.\n{obj}\n{syns}')
 				if n_accepted_syns > 1:
-					raise ValidationError(f'No more than one synonym can be accepted.\n{obj}\n{syns}')
+					raise ValidationError(f"No more than one synonym can be accepted.\n{obj}\n{syns}")
 
 			if obj.accepted_modifier:
 				if obj.accepted:
 					if obj.accepted_modifier not in [SynonymModel.PROVISIONAL]:
-						raise ValidationError(f'Wrong modifier for accepted\n{obj}\n{syns}')
+						raise ValidationError(f"Wrong modifier for accepted\n{obj}\n{syns}")
 				else:  # synonym
 					if obj.accepted_modifier not in [SynonymModel.AMBIGUOUS, SynonymModel.MISAPPLIED]:
-						raise ValidationError(f'Invalid modifier for synonym (accepted = False)\n{obj}\n{syns}')
+						raise ValidationError(f"Invalid modifier for synonym (accepted = False)\n{obj}\n{syns}")
 
 	def save(self, force_insert=False, force_update=False, using=None, update_fields=None):
 		self.name = str_clean_up(self.name)
@@ -160,4 +172,3 @@ class SynonymModel(models.Model):
 
 
 m2m_changed.connect(SynonymModel.clean_synonyms, sender=SynonymModel.synonyms.through)
-

@@ -2,19 +2,20 @@ import re
 import string
 
 from django.db import models
+from mptt.fields import TreeForeignKey
+from mptt.models import MPTTModel
 from unidecode import unidecode
 
 from common.utils.models import ReferencedModel, SynonymModel, LatLonModel, SynonymManager
 from common.utils.utils import str_clean_up
 
-PUNCTUATION_TRANSLATE = str.maketrans(string.punctuation, '\n' * len(string.punctuation))
+PUNCTUATION_TRANSLATE = str.maketrans(string.punctuation, "\n" * len(string.punctuation))
 
 
 class GeographicLevelManager(SynonymManager):
 	def search(self, location: str):
 		## First try by unique name query
 		potential_nodes = self.filter(name__iexact=location)
-		print(potential_nodes)
 		if potential_nodes.count() > 1:
 			return potential_nodes.first()
 
@@ -22,7 +23,7 @@ class GeographicLevelManager(SynonymManager):
 		# Clean up location string for optimal search
 		global PUNCTUATION_TRANSLATE
 		location = location.translate(PUNCTUATION_TRANSLATE)
-		loc_nodes = unidecode(location).split('\n')
+		loc_nodes = unidecode(location).split("\n")
 		clean_loc_nodes = []
 
 		# Query potential nodes with the exact name
@@ -42,7 +43,7 @@ class GeographicLevelManager(SynonymManager):
 		return best_node
 
 
-class GeographicLevel(ReferencedModel, SynonymModel, LatLonModel):
+class GeographicLevel(SynonymModel, MPTTModel, LatLonModel):
 	objects = GeographicLevelManager()
 
 	# Order matters!
@@ -53,29 +54,29 @@ class GeographicLevel(ReferencedModel, SynonymModel, LatLonModel):
 	WATER_BODY = 6
 
 	RANK_CHOICES = (
-		(AC, 'Autonomous community'),
-		(ISLAND, 'Island'),
-		(MUNICIPALITY, 'Municipality'),
-		(TOWN, 'Town'),
-		(WATER_BODY, 'Water body'),
+		(AC, "Autonomous community"),
+		(ISLAND, "Island"),
+		(MUNICIPALITY, "Municipality"),
+		(TOWN, "Town"),
+		(WATER_BODY, "Water body"),
 	)
 
 	TRANSLATE_RANK = {
-		AC: 'autonomous_community',
-		'autonomous_community': AC,
-		ISLAND: 'island',
-		'island': ISLAND,
-		MUNICIPALITY: 'municipality',
-		'municipality': MUNICIPALITY,
-		TOWN: 'town',
-		'town': TOWN,
-		WATER_BODY: 'waterBody',
-		'water_body': WATER_BODY,
+		AC: "ac",
+		"ac": AC,
+		ISLAND: "island",
+		"island": ISLAND,
+		MUNICIPALITY: "municipality",
+		"municipality": MUNICIPALITY,
+		TOWN: "town",
+		"town": TOWN,
+		WATER_BODY: "waterBody",
+		"wb_0": WATER_BODY,
 	}
 
 	rank = models.PositiveSmallIntegerField(choices=RANK_CHOICES)
-	parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True, default=None, blank=True, related_name='children')
+	parent = TreeForeignKey("self", on_delete=models.CASCADE, null=True, default=None, blank=True)
 
 	class Meta:
-		unique_together = ('parent', 'name')
-		ordering = ['rank']
+		unique_together = ("parent", "name")
+		ordering = ["rank"]

@@ -1,7 +1,6 @@
 from rest_framework import serializers
 from apps.taxonomy.models import TaxonomicLevel, Authorship
 
-
 class BaseTaxonomicLevelSerializer(serializers.ModelSerializer):
 
 	scientific_name_authorship = serializers.CharField(source='verbatim_authorship')

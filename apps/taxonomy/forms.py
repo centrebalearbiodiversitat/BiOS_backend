@@ -10,9 +10,10 @@ class TaxonomicLevelForm(ModelForm):
 	
 	class Meta:
 		model = TaxonomicLevel
-		fields = '__all__'
+		fields = "__all__"
 
 	def __init__(self, *args, **kwargs):
+
 		super().__init__(*args, **kwargs)
 		self.fields['authorship'].required = False
 		self.fields['batch'].required = False

@@ -1,11 +1,11 @@
 from django.forms import ModelForm
 from .models import Occurrence, TaxonomicLevel, GeographicLevel
 
-class OccurrenceForm(ModelForm):
 
+class OccurrenceForm(ModelForm):
 	class Meta:
 		model = Occurrence
-		fields = '__all__'
+		fields = "__all__"
 
 	def __init__(self, *args, **kwargs):
 		super().__init__(*args, **kwargs)

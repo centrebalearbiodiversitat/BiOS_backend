@@ -2,6 +2,7 @@ from rest_framework import serializers
 from .models import Occurrence
 from common.utils.serializers import CaseModelSerializer
 
+
 class OccurrenceSerializer(CaseModelSerializer):
 	basis_of_record = serializers.SerializerMethodField()
 	coordinatesUncertaintyInMeters = serializers.IntegerField(source="coordinatesUncertaintyMeters")

@@ -17,28 +17,29 @@ TRANSFORM_PARAM = {
 	"decimalLatitude": "latitude",
 	"decimalLongitude": "longitude",
 	"elevation": "elevationMeters",
-	"depth": "depthMeters"
+	"depth": "depthMeters",
 }
+
 
 class OccurrenceDetail(APIView):
 	@swagger_auto_schema(
-        operation_description="Get details of a specific occurrence.",
-        manual_parameters=[
-            openapi.Parameter(
-                name="id",
-                in_=openapi.IN_QUERY,
-                description="Unique identifier of the occurrence to retrieve.",
-                type=openapi.TYPE_STRING,
-                required=True,
-            ),
-        ],
-        responses={
-            200: "Success",
+		operation_description="Get details of a specific occurrence.",
+		manual_parameters=[
+			openapi.Parameter(
+				name="id",
+				in_=openapi.IN_QUERY,
+				description="Unique identifier of the occurrence to retrieve.",
+				type=openapi.TYPE_STRING,
+				required=True,
+			),
+		],
+		responses={
+			200: "Success",
 			204: "No Content",
-            400: "Bad Request - Invalid query parameters",
+			400: "Bad Request - Invalid query parameters",
 			404: "Not Found",
-        }
-    )
+		},
+	)
 	def get(self, request):
 		occurr_form = OccurrenceForm(self.request.GET)
 
@@ -50,7 +51,6 @@ class OccurrenceDetail(APIView):
 
 		serializer = OccurrenceSerializer(occurrence)
 		return Response(serializer.data)
-
 
 
 class OccurrenceFilter(APIView):
@@ -84,24 +84,18 @@ class OccurrenceFilter(APIView):
 
 class OccurrenceList(OccurrenceFilter):
 	@swagger_auto_schema(
-        operation_description="Filter occurrences based on query parameters.",
-        manual_parameters=[
-            openapi.Parameter(
-                name=field,
-                in_=openapi.IN_QUERY,
-                description=f"Filter occurrences by {field} field.",
-                type=openapi.TYPE_STRING,  # Adjust data type based on model field
-            )
-            for field in ["taxonomy", "voucher", "geographicalLocation", "year",
-                         "month", "day", "basisOfRecord"]
-        ],
-        responses={
-            200: "Success",
-			204: "No Content",
-            400: "Bad Request - Invalid query parameters",
-			404: "Not Found"
-        }
-    )
+		operation_description="Filter occurrences based on query parameters.",
+		manual_parameters=[
+			openapi.Parameter(
+				name=field,
+				in_=openapi.IN_QUERY,
+				description=f"Filter occurrences by {field} field.",
+				type=openapi.TYPE_STRING,  # Adjust data type based on model field
+			)
+			for field in ["taxonomy", "voucher", "geographicalLocation", "year", "month", "day", "basisOfRecord"]
+		],
+		responses={200: "Success", 204: "No Content", 400: "Bad Request - Invalid query parameters", 404: "Not Found"},
+	)
 	def filter_queryset(self, filters):
 		queryset = super().filter_queryset(filters)
 		return queryset
@@ -114,19 +108,14 @@ class OccurrenceList(OccurrenceFilter):
 
 class OccurrenceCount(OccurrenceFilter):
 	@swagger_auto_schema(
-        operation_description="Filter occurrences based on query parameters.",
+		operation_description="Filter occurrences based on query parameters.",
 		request_body=OccurrenceSerializer,
-        responses={
-            200: "Success",
-			204: "No Content",
-            400: "Bad Request - Invalid query parameters",
-			404: "Not Found"
-        }
-    )
+		responses={200: "Success", 204: "No Content", 400: "Bad Request - Invalid query parameters", 404: "Not Found"},
+	)
 	def filter_queryset(self, filters):
 		queryset = super().filter_queryset(filters)
 		return queryset.count()
 
 	def get(self, request):
 		queryset = super().get(request)
-		return Response({'count': queryset})
+		return Response({"count": queryset})

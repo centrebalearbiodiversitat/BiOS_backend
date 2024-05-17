@@ -2,6 +2,7 @@ Django==4.2.5
 django-cors-headers
 django-mptt==0.16.0
 djangorestframework==3.15.1
+pyhumps
 psycopg2-binary==2.9.5
 debugpy
 geopandas==0.14.3

@@ -33,6 +33,7 @@ class TaxonSearch(APIView):
 			200: "Success",
 			204: "No Content",
 			400: "Bad Request",
+			404: "Not Found"
 		},
 	)
 	def get(self, request):
@@ -58,16 +59,19 @@ class TaxonList(ListAPIView):
 		operation_description="Get a list of taxa, with optional filtering.",
 		manual_parameters=[
 			openapi.Parameter(
-				"name", openapi.IN_QUERY, description="Name of the taxon to search for.", type=openapi.TYPE_STRING
+				"name",
+				openapi.IN_QUERY,
+				description="Name of the taxon to search for.",
+				type=openapi.TYPE_STRING
 			),
 			openapi.Parameter(
-				"taxon_rank",
+				"taxonRank",
 				openapi.IN_QUERY,
 				description="Rank id of the taxon to search for.",
 				type=openapi.TYPE_STRING,
 			),
 			openapi.Parameter(
-				"scientific_name_authorship",
+				"scientificNameAuthorship",
 				openapi.IN_QUERY,
 				description="Authorship id of the taxon to search for.",
 				type=openapi.TYPE_STRING,
@@ -89,6 +93,7 @@ class TaxonList(ListAPIView):
 			200: "Success",
 			204: "No Content",
 			400: "Bad Request",
+			404: "Not Found"
 		},
 	)
 	def get(self, request):
@@ -134,7 +139,12 @@ class TaxonCRUD(APIView):
 				required=True,
 			)
 		],
-		responses={200: "Success", 204: "No Content", 400: "Bad Request"},
+		responses={
+			200: "Success",
+			204: "No Content",
+			400: "Bad Request",
+			404: "Not Found"
+			},
 	)
 	def get(self, request):
 		taxon_form = TaxonomicLevelForm(self.request.GET)
@@ -153,10 +163,19 @@ class TaxonParent(APIView):
 		operation_description="Get the parents of the taxon given its ID",
 		manual_parameters=[
 			openapi.Parameter(
-				name="id", in_=openapi.IN_QUERY, description="ID of the taxon", type=openapi.TYPE_INTEGER, required=True
+				"id",
+				openapi.IN_QUERY,
+				description="ID of the taxon",
+				type=openapi.TYPE_INTEGER,
+				required=True
 			),
 		],
-		responses={200: "Success", 204: "No Content", 400: "Bad Request"},
+		responses={
+			200: "Success",
+			204: "No Content",
+			400: "Bad Request",
+			404: "Not Found"
+			},
 	)
 	def get(self, request):
 		taxon_form = TaxonomicLevelForm(self.request.GET)
@@ -176,14 +195,19 @@ class TaxonChildren(APIView):
 		operation_description="Get the direct childrens of the taxon given its ID",
 		manual_parameters=[
 			openapi.Parameter(
-				name="id",
-				in_=openapi.IN_QUERY,
+				"id",
+				openapi.IN_QUERY,
 				type=openapi.TYPE_INTEGER,
 				description="ID of the taxonomic level",
 				required=True,
 			)
 		],
-		responses={200: "Success", 204: "No Content", 400: "Bad Request"},
+		responses={
+			200: "Success",
+			204: "No Content",
+			400: "Bad Request",
+			404: "Not Found"
+			},
 	)
 	def get(self, request):
 		taxon_form = TaxonomicLevelForm(self.request.GET)

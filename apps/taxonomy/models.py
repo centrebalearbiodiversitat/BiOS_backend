@@ -19,7 +19,8 @@ class TaxonomicLevelManager(SynonymManager):
 
 	def find(self, taxon):
 		levels: list = taxon.split()
-		assert len(levels) > 0, []
+		if len(levels) < 1:
+			return self.none()
 
 		query = self.filter(name__iexact=levels[0])
 		for level in levels[1:]:

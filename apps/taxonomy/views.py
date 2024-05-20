@@ -46,9 +46,12 @@ class TaxonSearch(APIView):
 		query = taxon_form.cleaned_data.get("name")
 		exact = taxon_form.cleaned_data.get("exact", False)
 
+		if not query:
+			return Response(BaseTaxonomicLevelSerializer(TaxonomicLevel.objects.none(), many=True).data)
+
 		filters["name__iexact" if exact else "name__icontains"] = query
 
-		queryset = TaxonomicLevel.objects.filter(**filters)
+		queryset = TaxonomicLevel.objects.filter(**filters)[:25]
 
 		return Response(BaseTaxonomicLevelSerializer(queryset, many=True).data)
 

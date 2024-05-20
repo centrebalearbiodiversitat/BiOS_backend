@@ -123,6 +123,9 @@ class SynonymModel(models.Model):
 		choices=ACCEPTED_MODIFIERS_CHOICES, null=True, blank=True, default=None
 	)
 
+	def readable_accepted_modifier(self):
+		return SynonymModel.ACCEPTED_MODIFIERS_TRANSLATE.get(self.accepted_modifier)
+
 	@staticmethod
 	def clean_synonyms(**kwargs):
 		if kwargs and kwargs["action"] == "post_add":

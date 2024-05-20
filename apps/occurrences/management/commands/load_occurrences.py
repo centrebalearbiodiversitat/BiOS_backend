@@ -89,7 +89,9 @@ def create_origin_source(ref_model_elem, origin_id, source):
 		ref_model_elem.sources.add(os)
 	else:
 		if not ref_model_elem.sources.filter(id=os.id).exists():
-			raise Exception(f'Origin id already assigned to another model. {ref_model_elem}, {ref_model_elem.sources}, {os}')
+			raise Exception(
+				f"Origin id already assigned to another model. {ref_model_elem}, {ref_model_elem.sources}, {os}"
+			)
 
 
 class Command(BaseCommand):
@@ -151,7 +153,9 @@ class Command(BaseCommand):
 						taxonomy=taxonomy.first(),
 						batch=batch,
 						voucher=line["voucher"],
-						basis_of_record=Occurrence.TRANSLATE_BASIS_OF_RECORD.get(line["basisOfRecord"], Occurrence.UNKNOWN),
+						basis_of_record=Occurrence.TRANSLATE_BASIS_OF_RECORD.get(
+							line["basisOfRecord"], Occurrence.UNKNOWN
+						),
 						collection_date_year=int(line["year"]) if line["year"] else None,
 						collection_date_month=int(line["month"]) if line["month"] else None,
 						collection_date_day=int(line["day"]) if line["day"] else None,
@@ -165,4 +169,3 @@ class Command(BaseCommand):
 						depthMeters=int(line["depth"]) if line["depth"] else None,
 					)
 					occ.sources.add(os)
-

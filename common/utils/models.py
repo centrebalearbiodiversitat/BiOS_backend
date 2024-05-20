@@ -38,6 +38,10 @@ class ReferencedModel(models.Model):
 			if len(sources) != len(set(sources)):
 				raise ValidationError(f"Sources must be unique.\n{obj}\n{sources}")
 
+	def delete(self, using=None, keep_parents=False):
+		self.sources.all().delete()
+		return super().delete(using, keep_parents)
+
 	class Meta:
 		abstract = True
 

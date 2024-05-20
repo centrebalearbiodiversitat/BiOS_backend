@@ -29,12 +29,7 @@ class TaxonSearch(APIView):
 				type=openapi.TYPE_BOOLEAN,
 			),
 		],
-		responses={
-			200: "Success",
-			204: "No Content",
-			400: "Bad Request",
-			404: "Not Found"
-		},
+		responses={200: "Success", 204: "No Content", 400: "Bad Request", 404: "Not Found"},
 	)
 	def get(self, request):
 		taxon_form = TaxonomicLevelForm(request.GET)
@@ -59,10 +54,7 @@ class TaxonList(ListAPIView):
 		operation_description="Get a list of taxa, with optional filtering.",
 		manual_parameters=[
 			openapi.Parameter(
-				"name",
-				openapi.IN_QUERY,
-				description="Name of the taxon to search for.",
-				type=openapi.TYPE_STRING
+				"name", openapi.IN_QUERY, description="Name of the taxon to search for.", type=openapi.TYPE_STRING
 			),
 			openapi.Parameter(
 				"taxonRank",
@@ -89,12 +81,7 @@ class TaxonList(ListAPIView):
 				type=openapi.TYPE_BOOLEAN,
 			),
 		],
-		responses={
-			200: "Success",
-			204: "No Content",
-			400: "Bad Request",
-			404: "Not Found"
-		},
+		responses={200: "Success", 204: "No Content", 400: "Bad Request", 404: "Not Found"},
 	)
 	def get(self, request):
 		taxon_form = TaxonomicLevelForm(self.request.GET)
@@ -139,12 +126,7 @@ class TaxonCRUD(APIView):
 				required=True,
 			)
 		],
-		responses={
-			200: "Success",
-			204: "No Content",
-			400: "Bad Request",
-			404: "Not Found"
-			},
+		responses={200: "Success", 204: "No Content", 400: "Bad Request", 404: "Not Found"},
 	)
 	def get(self, request):
 		taxon_form = TaxonomicLevelForm(self.request.GET)
@@ -163,19 +145,10 @@ class TaxonParent(APIView):
 		operation_description="Get the parents of the taxon given its ID",
 		manual_parameters=[
 			openapi.Parameter(
-				"id",
-				openapi.IN_QUERY,
-				description="ID of the taxon",
-				type=openapi.TYPE_INTEGER,
-				required=True
+				"id", openapi.IN_QUERY, description="ID of the taxon", type=openapi.TYPE_INTEGER, required=True
 			),
 		],
-		responses={
-			200: "Success",
-			204: "No Content",
-			400: "Bad Request",
-			404: "Not Found"
-			},
+		responses={200: "Success", 204: "No Content", 400: "Bad Request", 404: "Not Found"},
 	)
 	def get(self, request):
 		taxon_form = TaxonomicLevelForm(self.request.GET)
@@ -202,12 +175,7 @@ class TaxonChildren(APIView):
 				required=True,
 			)
 		],
-		responses={
-			200: "Success",
-			204: "No Content",
-			400: "Bad Request",
-			404: "Not Found"
-			},
+		responses={200: "Success", 204: "No Content", 400: "Bad Request", 404: "Not Found"},
 	)
 	def get(self, request):
 		taxon_form = TaxonomicLevelForm(self.request.GET)

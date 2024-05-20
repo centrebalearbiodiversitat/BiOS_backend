@@ -23,20 +23,20 @@ TRANSFORM_PARAM = {
 
 class OccurrenceDetail(APIView):
 	@swagger_auto_schema(
-        operation_description="Get details of a specific occurrence.",
-        manual_parameters=[
-            openapi.Parameter(
-                "id",
-                openapi.IN_QUERY,
-                description="Unique identifier of the occurrence to retrieve.",
-                type=openapi.TYPE_INTEGER,
-                required=True,
-            ),
-        ],
-        responses={
-            200: "Success",
+		operation_description="Get details of a specific occurrence.",
+		manual_parameters=[
+			openapi.Parameter(
+				"id",
+				openapi.IN_QUERY,
+				description="Unique identifier of the occurrence to retrieve.",
+				type=openapi.TYPE_INTEGER,
+				required=True,
+			),
+		],
+		responses={
+			200: "Success",
 			204: "No Content",
-            400: "Bad Request",
+			400: "Bad Request",
 			404: "Not Found",
 		},
 	)
@@ -84,7 +84,7 @@ class OccurrenceFilter(APIView):
 
 class OccurrenceList(OccurrenceFilter, APIView):
 	@swagger_auto_schema(
-        operation_description="Filter occurrences based on query parameters.",
+		operation_description="Filter occurrences based on query parameters.",
 		manual_parameters=[
 			openapi.Parameter(
 				"taxonomy",
@@ -128,15 +128,9 @@ class OccurrenceList(OccurrenceFilter, APIView):
 				description="Filter occurrences by basis of record field.",
 				type=openapi.TYPE_STRING,  # Ajusta el tipo de dato según el campo del modelo
 			),
-    ],
-        responses={
-            200: "Success",
-			204: "No Content",
-            400: "Bad Request",
-			404: "Not Found"
-        }
-    )
-	
+		],
+		responses={200: "Success", 204: "No Content", 400: "Bad Request", 404: "Not Found"},
+	)
 	def get(self, request):
 		queryset = super().get(request)
 		serializer = OccurrenceSerializer(queryset, many=True)
@@ -149,7 +143,7 @@ class OccurrenceList(OccurrenceFilter, APIView):
 
 class OccurrenceCount(OccurrenceFilter, APIView):
 	@swagger_auto_schema(
-        operation_description="Counts the filtered occurrences based on the query parameters.",
+		operation_description="Counts the filtered occurrences based on the query parameters.",
 		manual_parameters=[
 			openapi.Parameter(
 				"taxonomy",
@@ -193,18 +187,12 @@ class OccurrenceCount(OccurrenceFilter, APIView):
 				description="Filter occurrences by basis of record field.",
 				type=openapi.TYPE_STRING,  # Ajusta el tipo de dato según el campo del modelo
 			),
-    ],
-        responses={
-            200: "Success",
-			204: "No Content",
-            400: "Bad Request",
-			404: "Not Found"
-        }
-    )
-
+		],
+		responses={200: "Success", 204: "No Content", 400: "Bad Request", 404: "Not Found"},
+	)
 	def get(self, request):
 		queryset = super().get(request)
-		return Response({'Occurrences found': queryset})
+		return Response({"Occurrences found": queryset})
 
 	def filter_queryset(self, filters):
 		queryset = super().filter_queryset(filters)

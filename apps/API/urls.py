@@ -1,4 +1,4 @@
-from django.urls import path, include
+from django.urls import path, include, re_path
 
 from rest_framework import permissions
 
@@ -21,6 +21,6 @@ schema_view = get_schema_view(
 )
 
 urlpatterns = [
-	path("docs/", schema_view.with_ui("swagger", cache_timeout=0), name="schema-swagger-ui"),
+	re_path("docs/?$", schema_view.with_ui("swagger", cache_timeout=0), name="schema-swagger-ui"),
 	path("v1/", include("apps.API.v1.urls")),
 ]

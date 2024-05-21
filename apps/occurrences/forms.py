@@ -1,11 +1,13 @@
-from django.forms import ModelForm
-from .models import Occurrence, TaxonomicLevel, GeographicLevel
+from common.utils.forms import CamelCaseForm
+from .models import Occurrence
 
 
-class OccurrenceForm(ModelForm):
-	class Meta:
-		model = Occurrence
-		fields = "__all__"
+class OccurrenceForm(CamelCaseForm):
+	TRANSLATE_FIELDS = {
+		"year": "collection_date_year",
+		"month": "collection_date_month",
+		"day": "collection_date_day",
+	}
 
 	def __init__(self, *args, **kwargs):
 		super().__init__(*args, **kwargs)
@@ -18,3 +20,8 @@ class OccurrenceForm(ModelForm):
 		self.fields["basis_of_record"].required = False
 		self.fields["batch"].required = False
 		self.fields["sources"].required = False
+
+	class Meta:
+		model = Occurrence
+		fields = "__all__"
+

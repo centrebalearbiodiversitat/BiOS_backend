@@ -1,4 +1,6 @@
 from django.core.exceptions import ValidationError
+from django.http import Http404
+from django.shortcuts import get_object_or_404
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.views import APIView
@@ -6,19 +8,7 @@ from rest_framework.response import Response
 from .models import Occurrence
 from .serializers import OccurrenceSerializer
 from .forms import OccurrenceForm
-
-TRANSFORM_PARAM = {
-	"basisOfRecord": "basis_of_record",
-	"basisOfRecordDisplay": "basis_of_record_display",
-	"year": "collection_date_year",
-	"month": "collection_date_month",
-	"day": "collection_date_day",
-	"coordinateUncertaintyInMeters": "coordinatesUncertaintyMeters",
-	"decimalLatitude": "latitude",
-	"decimalLongitude": "longitude",
-	"elevation": "elevationMeters",
-	"depth": "depthMeters",
-}
+from ..geography.models import GeographicLevel
 
 
 class OccurrenceDetail(APIView):
@@ -41,48 +31,48 @@ class OccurrenceDetail(APIView):
 		},
 	)
 	def get(self, request):
-		occurr_form = OccurrenceForm(self.request.GET)
+		occurr_form = OccurrenceForm(data=self.request.GET)
 
 		if not occurr_form.is_valid():
 			raise ValidationError(occurr_form.errors)
 
 		occur_id = request.query_params.get("id")
-		occurrence = Occurrence.objects.get(id=occur_id)
+		try:
+			occurrence = Occurrence.objects.get(id=occur_id)
+		except Occurrence.DoesNotExist:
+			raise Http404
 
-		serializer = OccurrenceSerializer(occurrence)
-		return Response(serializer.data)
+		return Response(OccurrenceSerializer(occurrence).data)
 
 
 class OccurrenceFilter(APIView):
 	def get(self, request):
-		form = request.GET
-		occu_form = {}
-
-		for param in form:
-			if param in TRANSFORM_PARAM:
-				occu_form[TRANSFORM_PARAM[param]] = form.get(param)
-			else:
-				occu_form[param] = form.get(param)
-
-		occurr_form = OccurrenceForm(occu_form)
-
-		if not occurr_form.is_valid():
-			return Response(occurr_form.errors, status=400)
+		occu_form = OccurrenceForm(data=request.GET)
+		if not occu_form.is_valid():
+			return Response(occu_form.errors, status=400)
 
 		filters = {}
-		for param in occurr_form.cleaned_data:
-			value = occurr_form.cleaned_data.get(param)
+		for param in occu_form.cleaned_data:
+			value = occu_form.cleaned_data.get(param)
 			if value:
-				filters[param] = value
+				if param == 'geographical_location':
+					try:
+						loc = GeographicLevel.objects.get(id=value.id)
+					except GeographicLevel.DoesNotExist:
+						raise Http404('Location does not exist')
 
-		return self.filter_queryset(filters)
+					filters['geographical_location__lft__gte'] = loc.lft
+					filters['geographical_location__rght__lte'] = loc.rght
+				else:
+					filters[param] = value
 
-	def filter_queryset(self, filters):
-		queryset = Occurrence.objects.filter(**filters)
-		return queryset
+		if not filters:
+			return Occurrence.objects.none()
+
+		return Occurrence.objects.filter(**filters)
 
 
-class OccurrenceList(OccurrenceFilter, APIView):
+class OccurrenceList(OccurrenceFilter):
 	@swagger_auto_schema(
 		operation_description="Filter occurrences based on query parameters.",
 		manual_parameters=[
@@ -129,19 +119,13 @@ class OccurrenceList(OccurrenceFilter, APIView):
 				type=openapi.TYPE_STRING,  # Ajusta el tipo de dato según el campo del modelo
 			),
 		],
-		responses={200: "Success", 204: "No Content", 400: "Bad Request", 404: "Not Found"},
+		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
 	)
 	def get(self, request):
-		queryset = super().get(request)
-		serializer = OccurrenceSerializer(queryset, many=True)
-		return Response(serializer.data)
-
-	def filter_queryset(self, filters):
-		queryset = super().filter_queryset(filters)
-		return queryset
+		return Response(OccurrenceSerializer(super().get(request), many=True).data)
 
 
-class OccurrenceCount(OccurrenceFilter, APIView):
+class OccurrenceCount(OccurrenceFilter):
 	@swagger_auto_schema(
 		operation_description="Counts the filtered occurrences based on the query parameters.",
 		manual_parameters=[
@@ -188,12 +172,7 @@ class OccurrenceCount(OccurrenceFilter, APIView):
 				type=openapi.TYPE_STRING,  # Ajusta el tipo de dato según el campo del modelo
 			),
 		],
-		responses={200: "Success", 204: "No Content", 400: "Bad Request", 404: "Not Found"},
+		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
 	)
 	def get(self, request):
-		queryset = super().get(request)
-		return Response({"Occurrences found": queryset})
-
-	def filter_queryset(self, filters):
-		queryset = super().filter_queryset(filters)
-		return queryset.count()
+		return Response(super().get(request).count())

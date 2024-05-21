@@ -2,7 +2,7 @@ from django.urls import path
 from apps.occurrences.views import OccurrenceList, OccurrenceDetail, OccurrenceCount
 
 urlpatterns = [
-	path("occurrence/", OccurrenceDetail.as_view()),
-	path("count/", OccurrenceCount.as_view()),
-	path("list/", OccurrenceList.as_view()),
+	path("", OccurrenceDetail.as_view()),
+	path("/count", OccurrenceCount.as_view()),
+	path("/list", OccurrenceList.as_view()),
 ]

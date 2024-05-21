@@ -56,9 +56,9 @@ class Command(BaseCommand):
 				name__iexact=name,
 				defaults={
 					"name": name,
-					"latitude": lat,
-					"longitude": lon,
-					"coordinatesUncertaintyMeters": uncert,
+					"decimal_latitude": lat,
+					"decimal_longitude": lon,
+					"coordinate_uncertainty_in_meters": uncert,
 					"accepted": True,
 					"rank": rank,
 				},

@@ -6,14 +6,12 @@ from django.db import transaction
 from apps.geography.models import GeographicLevel
 
 LEVELS = [
-	{'key': 'CONTINENT', 'gid': 'CONTINENT', 'rank': GeographicLevel.CONTINENT},
-	{'key': 'NAME_0', 'gid': 'GID_0', 'rank': GeographicLevel.COUNTRY},
-	{'key': 'NAME_1', 'gid': 'GID_1', 'rank': GeographicLevel.STATE_PROVINCE},
-	{'key': 'NAME_2', 'gid': 'GID_2', 'rank': GeographicLevel.COUNTY},
-	{'key': 'NAME_3', 'gid': 'GID_3', 'rank': GeographicLevel.MUNICIPALITY},
-	{'key': 'NAME_4', 'gid': 'GID_4', 'rank': GeographicLevel.LOCALITY},
-	{'key': 'WATER_BODY_0', 'gid': 'WBID_0', 'rank': GeographicLevel.WATER_BODY},
-	{'key': 'WATER_BODY_1', 'gid': 'WBID_1', 'rank': GeographicLevel.WATER_BODY},
+	{"key": "AC", "synonyms": "VARNAME_1", "rank": GeographicLevel.AC},
+	{"key": "ISLAND", "synonyms": "VARNAME_2", "rank": GeographicLevel.ISLAND},
+	{"key": "MUNICIPALI", "synonyms": "VARNAME_3", "rank": GeographicLevel.MUNICIPALITY},
+	{"key": "TOWN", "synonyms": "VARNAME_4", "rank": GeographicLevel.TOWN},
+	{"key": "WATER_BODY_0", "rank": GeographicLevel.WATER_BODY},
+	{"key": "WATER_BODY_1", "rank": GeographicLevel.WATER_BODY},
 ]
 
 
@@ -25,27 +23,56 @@ class Command(BaseCommand):
 
 	@transaction.atomic
 	def handle(self, *args, **options):
-		file_name = options['file']
-		print(file_name)
+		file_name = options["file"]
 		db = gpd.read_file(file_name)
-		levels = db.loc[:, db.columns.isin([
-			'CONTINENT',
-			'NAME_0', 'GID_0',
-			'NAME_1', 'GID_1',
-			'NAME_2', 'GID_2',
-			'NAME_3', 'GID_3',
-			'NAME_4', 'GID_4']
-		)]
+		levels = db.loc[:]
+		print(levels)
 
-		# parent = GeographicLevel.objects.get_or_create(name='Earth', gid="EARTH", accepted=True, rank=)
 		for i in range(len(levels)):
 			parent = None
 			for level in LEVELS:
-				if level['key'] in levels:
-					parent = self.load_geo_level(parent, levels[level['key']].iloc[i], levels[level['gid']].iloc[i], level['rank'])
+				if level["key"] in levels:
+					# if 'synonyms' in level:
+					# 	synonyms = levels[level['synonyms']].iloc[i]
+					parent = self.load_geo_level(
+						parent,
+						levels[level["key"]].iloc[i],
+						level["rank"],
+						levels["CEN_LAT"].iloc[i],
+						levels["CEN_LON"].iloc[i],
+						levels["RADIUS_M"].iloc[i],
+						GeographicLevel.TRANSLATE_RANK[levels["RANK"].iloc[i].lower()],
+					)
 
-	def load_geo_level(self, parent, name, gid, rank):
-		gl, _ = GeographicLevel.objects.get_or_create(gid=gid, parent=parent, defaults={'name': name, 'accepted': True, 'rank': rank})
-		print(gl.name)
+	def load_geo_level(self, parent, name, rank, lat, lon, uncert, new_rank):
+		name = str(name).strip()
+
+		if not name:
+			return parent
+		print(parent, name, rank)
+		if rank == new_rank:
+			gl, _ = GeographicLevel.objects.get_or_create(
+				parent=parent,
+				name__iexact=name,
+				defaults={
+					"name": name,
+					"decimal_latitude": lat,
+					"decimal_longitude": lon,
+					"coordinate_uncertainty_in_meters": uncert,
+					"accepted": True,
+					"rank": rank,
+				},
+			)
+		else:
+			gl = GeographicLevel.objects.get(parent=parent, name__iexact=name, rank=rank)
+
+		# if synonyms:
+		# 	synonyms = synonyms.split('|')
+		# 	for syn in synonyms:
+		# 		print('\t', syn)
+		# 		syn = syn.strip()
+		# 		if syn and syn != name:
+		# 			gl_syn, _ = GeographicLevel.objects.get_or_create(parent=parent, name=syn, defaults={'accepted': False, 'rank': rank})
+		# 			gl.synonyms.add(gl_syn)
 
 		return gl

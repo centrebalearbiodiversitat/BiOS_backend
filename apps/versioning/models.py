@@ -1,71 +1,81 @@
+from django.core.exceptions import ValidationError
 from django.db import models
 
+from common.utils.models import SynonymModel, ReferencedModel
 
-class Source(models.Model):
-    DATABASE = 0
-    JOURNAL_ARTICLE = 1
-    BOOK = 2
-    AI = 3
-    WEB_PAGE = 4
-    DOCUMENT = 5
-    EXPERT = 6
 
-    ORIGIN_CHOICES = (
-        (DATABASE, 'database'),
-        (JOURNAL_ARTICLE, 'journal_article'),
-        (BOOK, 'book'),
-        (AI, 'ai'),
-        (WEB_PAGE, 'web_page'),
-        (DOCUMENT, 'document'),
-        (EXPERT, 'expert'),
-    )
-    TRANSLATE_CHOICES = {
-        DATABASE: 'database',
-        'database': DATABASE,
-        JOURNAL_ARTICLE: 'journal_article',
-        'journal_article': JOURNAL_ARTICLE,
-        BOOK: 'book',
-        'book': BOOK,
-        AI: 'ai',
-        'ai': AI,
-        WEB_PAGE: 'web_page',
-        'web_page': WEB_PAGE,
-        DOCUMENT: 'document',
-        'document': DOCUMENT,
-        EXPERT: 'expert',
-        'expert': EXPERT,
-    }
+class Source(SynonymModel):
+	DATABASE = 0
+	JOURNAL_ARTICLE = 1
+	BOOK = 2
+	AI = 3
+	WEB_PAGE = 4
+	DOCUMENT = 5
+	EXPERT = 6
 
-    name = models.CharField(max_length=255, unique=True)
-    origin = models.PositiveSmallIntegerField(choices=ORIGIN_CHOICES)
+	ORIGIN_CHOICES = (
+		(DATABASE, "database"),
+		(JOURNAL_ARTICLE, "journal_article"),
+		(BOOK, "book"),
+		(AI, "ai"),
+		(WEB_PAGE, "web_page"),
+		(DOCUMENT, "document"),
+		(EXPERT, "expert"),
+	)
+	TRANSLATE_CHOICES = {
+		DATABASE: "database",
+		"database": DATABASE,
+		JOURNAL_ARTICLE: "journal_article",
+		"journal_article": JOURNAL_ARTICLE,
+		BOOK: "book",
+		"book": BOOK,
+		AI: "ai",
+		"ai": AI,
+		WEB_PAGE: "web_page",
+		"web_page": WEB_PAGE,
+		DOCUMENT: "document",
+		"document": DOCUMENT,
+		EXPERT: "expert",
+		"expert": EXPERT,
+	}
 
-    def __str__(self):
-        return self.name
+	origin = models.PositiveSmallIntegerField(choices=ORIGIN_CHOICES)
+
+	def __str__(self):
+		return self.name
 
 
 class Batch(models.Model):
-    PENDING = 0
-    ACCEPTED = 1
-    REJECTED = 2
-    STATUS_CHOICES = (
-        (PENDING, 'Pending'),
-        (ACCEPTED, 'Accepted'),
-        (REJECTED, 'Rejected'),
-    )
+	PENDING = 0
+	ACCEPTED = 1
+	REJECTED = 2
+	STATUS_CHOICES = (
+		(PENDING, "Pending"),
+		(ACCEPTED, "Accepted"),
+		(REJECTED, "Rejected"),
+	)
 
-    sources = models.ManyToManyField(Source, blank=True)
-    created_at = models.DateTimeField(auto_now_add=True, editable=False)
-    status = models.PositiveSmallIntegerField(choices=STATUS_CHOICES, default=PENDING)
+	created_at = models.DateTimeField(auto_now_add=True, editable=False)
+	status = models.PositiveSmallIntegerField(choices=STATUS_CHOICES, default=PENDING)
 
-    def __str__(self):
-        return f'{self.created_at.year}-{self.created_at.month}-{self.created_at.day}__{self.id}'
+	def __str__(self):
+		return f"{self.created_at.year}-{self.created_at.month}-{self.created_at.day}__{self.id}"
 
-    class Meta:
-        verbose_name_plural = "batches"
+	class Meta:
+		verbose_name_plural = "batches"
 
 
-class ModelWithReferences(models.Model):
-    references = models.ManyToManyField(Batch)
+class OriginSource(models.Model):
+	origin_id = models.CharField(max_length=255, blank=False, null=False)
+	source = models.ForeignKey(Source, on_delete=models.CASCADE)
 
-    class Meta:
-        abstract = True
+	def save(self, force_insert=False, force_update=False, using=None, update_fields=None):
+		super().save(force_insert, force_update, using, update_fields)
+		if not self.origin_id:
+			raise ValidationError('Blank "origin_id" field is not allowed.')
+
+	def __str__(self):
+		return f"{self.source.name}:{self.origin_id}"
+
+	class Meta:
+		unique_together = ("origin_id", "source")

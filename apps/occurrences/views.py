@@ -9,6 +9,7 @@ from .models import Occurrence
 from .serializers import OccurrenceSerializer
 from .forms import OccurrenceForm
 from ..geography.models import GeographicLevel
+from ..taxonomy.models import TaxonomicLevel
 
 
 class OccurrenceDetail(APIView):
@@ -46,6 +47,11 @@ class OccurrenceDetail(APIView):
 
 
 class OccurrenceFilter(APIView):
+	SPECIAL_FILTERS = {
+		'geographical_location': GeographicLevel,
+		'taxonomy': TaxonomicLevel
+	}
+
 	def get(self, request):
 		occu_form = OccurrenceForm(data=request.GET)
 		if not occu_form.is_valid():
@@ -55,14 +61,15 @@ class OccurrenceFilter(APIView):
 		for param in occu_form.cleaned_data:
 			value = occu_form.cleaned_data.get(param)
 			if value:
-				if param == "geographical_location":
+				klass = OccurrenceFilter.SPECIAL_FILTERS.get(param, None)
+				if klass:
 					try:
-						loc = GeographicLevel.objects.get(id=value.id)
-					except GeographicLevel.DoesNotExist:
-						raise Http404("Location does not exist")
+						obj = klass.objects.get(id=value.id)
+					except klass.DoesNotExist:
+						raise Http404(f"{param} does not exist")
 
-					filters["geographical_location__lft__gte"] = loc.lft
-					filters["geographical_location__rght__lte"] = loc.rght
+					filters[f"{param}__lft__gte"] = obj.lft
+					filters[f"{param}__rght__lte"] = obj.rght
 				else:
 					filters[param] = value
 

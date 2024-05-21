@@ -1,12 +1,12 @@
 from rest_framework import serializers
 from .models import Occurrence
 from common.utils.serializers import CaseModelSerializer
-from ..geography.serializers import GeographicLevelSerializer
+from ..geography.models import GeographicLevel
 
 
 class OccurrenceSerializer(CaseModelSerializer):
 	basis_of_record = serializers.SerializerMethodField()
-	location = serializers.SerializerMethodField(source="geographical_location")
+	location = serializers.PrimaryKeyRelatedField(queryset=GeographicLevel.objects.all(), source="geographical_location")
 
 	event_date = serializers.SerializerMethodField()
 	day = serializers.IntegerField(source="collection_date_day")
@@ -34,9 +34,6 @@ class OccurrenceSerializer(CaseModelSerializer):
 
 	def get_basis_of_record(self, obj):
 		return Occurrence.TRANSLATE_BASIS_OF_RECORD[obj.basis_of_record]
-
-	def get_location(self, obj):
-		return GeographicLevelSerializer(obj.geographical_location.get_ancestors(include_self=True), many=True).data
 
 	def get_event_date(self, obj):
 		year = obj.collection_date_year

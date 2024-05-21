@@ -13,6 +13,7 @@ class GeographicLevelSerializer(serializers.ModelSerializer):
 		model = GeographicLevel
 		fields = [
 			"id",
+			"parent",
 			"name",
 			"rank",
 			"decimal_latitude",

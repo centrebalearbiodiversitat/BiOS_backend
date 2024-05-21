@@ -47,10 +47,7 @@ class OccurrenceDetail(APIView):
 
 
 class OccurrenceFilter(APIView):
-	SPECIAL_FILTERS = {
-		'geographical_location': GeographicLevel,
-		'taxonomy': TaxonomicLevel
-	}
+	SPECIAL_FILTERS = {"geographical_location": GeographicLevel, "taxonomy": TaxonomicLevel}
 
 	def get(self, request):
 		occu_form = OccurrenceForm(data=request.GET)

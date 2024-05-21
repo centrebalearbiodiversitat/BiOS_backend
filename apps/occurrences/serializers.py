@@ -6,7 +6,9 @@ from ..geography.models import GeographicLevel
 
 class OccurrenceSerializer(CaseModelSerializer):
 	basis_of_record = serializers.SerializerMethodField()
-	location = serializers.PrimaryKeyRelatedField(queryset=GeographicLevel.objects.all(), source="geographical_location")
+	location = serializers.PrimaryKeyRelatedField(
+		queryset=GeographicLevel.objects.all(), source="geographical_location"
+	)
 
 	event_date = serializers.SerializerMethodField()
 	day = serializers.IntegerField(source="collection_date_day")

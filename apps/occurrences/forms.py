@@ -24,4 +24,3 @@ class OccurrenceForm(CamelCaseForm):
 	class Meta:
 		model = Occurrence
 		fields = "__all__"
-

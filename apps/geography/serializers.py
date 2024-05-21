@@ -11,5 +11,13 @@ class GeographicLevelSerializer(serializers.ModelSerializer):
 
 	class Meta:
 		model = GeographicLevel
-		fields = ['id', 'name', 'rank', 'decimal_latitude', 'decimal_longitude', 'coordinate_uncertainty_in_meters',
-				  'elevation', 'depth']
+		fields = [
+			"id",
+			"name",
+			"rank",
+			"decimal_latitude",
+			"decimal_longitude",
+			"coordinate_uncertainty_in_meters",
+			"elevation",
+			"depth",
+		]

@@ -1,28 +1,23 @@
 from rest_framework import serializers
 
-# from apps.taxonomy.models import TaxonomicLevel, Authorship
-#
-#
-# class AuthorshipSerializer(serializers.ModelSerializer):
-#     class Meta:
-#         model = Authorship
-#         fields = ['id', 'name']
-#
-#
-# class TaxonomicLevelSerializer(serializers.ModelSerializer):
-#     authorship = AuthorshipSerializer()
-#     rank = serializers.SerializerMethodField()
-#     parent_level = serializers.SerializerMethodField()
-#
-#     def get_rank(self, obj):
-#         return obj.readable_rank()
-#
-#     def get_parent_level(self, obj):
-#         if obj.parent:
-#             return TaxonomicLevelSerializer(obj.parent).data
-#         else:
-#             return None
-#
-#     class Meta:
-#         model = TaxonomicLevel
-#         fields = ['id', 'name', 'rank', 'authorship', 'parent_level']
+from apps.geography.models import GeographicLevel
+
+
+class GeographicLevelSerializer(serializers.ModelSerializer):
+	rank = serializers.SerializerMethodField()
+
+	def get_rank(self, obj):
+		return obj.get_readable_rank()
+
+	class Meta:
+		model = GeographicLevel
+		fields = [
+			"id",
+			"name",
+			"rank",
+			"decimal_latitude",
+			"decimal_longitude",
+			"coordinate_uncertainty_in_meters",
+			"elevation",
+			"depth",
+		]

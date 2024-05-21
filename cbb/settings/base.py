@@ -65,6 +65,7 @@ REST_FRAMEWORK = {
 	# "DEFAULT_PERMISSION_CLASSES": [
 	# 	"rest_framework_api_key.permissions.HasAPIKey",
 	# ]
+	"COERCE_DECIMAL_TO_STRING": False,
 }
 MPTT_ADMIN_LEVEL_INDENT = 0
 

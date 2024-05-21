@@ -77,6 +77,9 @@ class GeographicLevel(SynonymModel, MPTTModel, LatLonModel):
 	rank = models.PositiveSmallIntegerField(choices=RANK_CHOICES)
 	parent = TreeForeignKey("self", on_delete=models.CASCADE, null=True, default=None, blank=True)
 
+	def get_readable_rank(self):
+		return GeographicLevel.TRANSLATE_RANK[self.rank]
+
 	class Meta:
 		unique_together = ("parent", "name")
 		ordering = ["rank"]

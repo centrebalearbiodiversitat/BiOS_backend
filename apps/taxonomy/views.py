@@ -29,11 +29,7 @@ class TaxonSearch(APIView):
 				type=openapi.TYPE_BOOLEAN,
 			),
 		],
-		responses={
-			200: "Success",
-			204: "No Content",
-			400: "Bad Request",
-		},
+		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
 	)
 	def get(self, request):
 		taxon_form = TaxonomicLevelForm(request.GET)
@@ -43,7 +39,7 @@ class TaxonSearch(APIView):
 		if not taxon_form.is_valid():
 			return Response(taxon_form.errors, status=400)
 
-		query = taxon_form.cleaned_data.get("name")
+		query = taxon_form.cleaned_data.get("name", None)
 		exact = taxon_form.cleaned_data.get("exact", False)
 
 		if not query:
@@ -64,13 +60,13 @@ class TaxonList(ListAPIView):
 				"name", openapi.IN_QUERY, description="Name of the taxon to search for.", type=openapi.TYPE_STRING
 			),
 			openapi.Parameter(
-				"taxon_rank",
+				"taxonRank",
 				openapi.IN_QUERY,
 				description="Rank id of the taxon to search for.",
 				type=openapi.TYPE_STRING,
 			),
 			openapi.Parameter(
-				"scientific_name_authorship",
+				"scientificNameAuthorship",
 				openapi.IN_QUERY,
 				description="Authorship id of the taxon to search for.",
 				type=openapi.TYPE_STRING,
@@ -88,11 +84,7 @@ class TaxonList(ListAPIView):
 				type=openapi.TYPE_BOOLEAN,
 			),
 		],
-		responses={
-			200: "Success",
-			204: "No Content",
-			400: "Bad Request",
-		},
+		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
 	)
 	def get(self, request):
 		taxon_form = TaxonomicLevelForm(self.request.GET)
@@ -137,7 +129,7 @@ class TaxonCRUD(APIView):
 				required=True,
 			)
 		],
-		responses={200: "Success", 204: "No Content", 400: "Bad Request"},
+		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
 	)
 	def get(self, request):
 		taxon_form = TaxonomicLevelForm(self.request.GET)

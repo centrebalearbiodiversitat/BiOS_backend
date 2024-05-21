@@ -55,14 +55,14 @@ class OccurrenceFilter(APIView):
 		for param in occu_form.cleaned_data:
 			value = occu_form.cleaned_data.get(param)
 			if value:
-				if param == 'geographical_location':
+				if param == "geographical_location":
 					try:
 						loc = GeographicLevel.objects.get(id=value.id)
 					except GeographicLevel.DoesNotExist:
-						raise Http404('Location does not exist')
+						raise Http404("Location does not exist")
 
-					filters['geographical_location__lft__gte'] = loc.lft
-					filters['geographical_location__rght__lte'] = loc.rght
+					filters["geographical_location__lft__gte"] = loc.lft
+					filters["geographical_location__rght__lte"] = loc.rght
 				else:
 					filters[param] = value
 

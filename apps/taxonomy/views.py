@@ -42,12 +42,12 @@ class TaxonSearch(APIView):
 		query = taxon_form.cleaned_data.get("name", None)
 		exact = taxon_form.cleaned_data.get("exact", False)
 
+		if not query:
+			return Response(BaseTaxonomicLevelSerializer(TaxonomicLevel.objects.none(), many=True).data)
+
 		filters["name__iexact" if exact else "name__icontains"] = query
 
-		if filters:
-			queryset = TaxonomicLevel.objects.filter(**filters)
-		else:
-			queryset = TaxonomicLevel.objects.none()
+		queryset = TaxonomicLevel.objects.filter(**filters)[:25]
 
 		return Response(BaseTaxonomicLevelSerializer(queryset, many=True).data)
 
@@ -148,10 +148,10 @@ class TaxonParent(APIView):
 		operation_description="Get the parents of the taxon given its ID",
 		manual_parameters=[
 			openapi.Parameter(
-				"id", openapi.IN_QUERY, description="ID of the taxon", type=openapi.TYPE_INTEGER, required=True
+				name="id", in_=openapi.IN_QUERY, description="ID of the taxon", type=openapi.TYPE_INTEGER, required=True
 			),
 		],
-		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
+		responses={200: "Success", 204: "No Content", 400: "Bad Request"},
 	)
 	def get(self, request):
 		taxon_form = TaxonomicLevelForm(self.request.GET)
@@ -171,14 +171,14 @@ class TaxonChildren(APIView):
 		operation_description="Get the direct childrens of the taxon given its ID",
 		manual_parameters=[
 			openapi.Parameter(
-				"id",
-				openapi.IN_QUERY,
+				name="id",
+				in_=openapi.IN_QUERY,
 				type=openapi.TYPE_INTEGER,
 				description="ID of the taxonomic level",
 				required=True,
 			)
 		],
-		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
+		responses={200: "Success", 204: "No Content", 400: "Bad Request"},
 	)
 	def get(self, request):
 		taxon_form = TaxonomicLevelForm(self.request.GET)

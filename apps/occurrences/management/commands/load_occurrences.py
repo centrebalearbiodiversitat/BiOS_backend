@@ -19,7 +19,7 @@ TAXON_KEYS = [
 	("family", "familyKey", TaxonomicLevel.FAMILY),
 	("genus", "genusKey", TaxonomicLevel.GENUS),
 	("specificEpithet", "speciesKey", TaxonomicLevel.SPECIES),
-	("infraspecificEpithet", "subspeciesKey", TaxonomicLevel.SUBSPECIES),
+	# ("infraspecificEpithet", "subspeciesKey", TaxonomicLevel.SUBSPECIES),
 	# ('varietyEpithet', 'varietyKey', TaxonomicLevel.VARIETY),
 ]
 
@@ -82,6 +82,18 @@ def find_gadm(line):
 	return GeographicLevel.objects.search(location=gadm_query)
 
 
+def create_origin_source(ref_model_elem, origin_id, source):
+	os, new = OriginSource.objects.get_or_create(origin_id=origin_id, source=source)
+
+	if new:
+		ref_model_elem.sources.add(os)
+	else:
+		if not ref_model_elem.sources.filter(id=os.id).exists():
+			raise Exception(
+				f"Origin id already assigned to another model. {ref_model_elem}, {ref_model_elem.sources}, {os}"
+			)
+
+
 class Command(BaseCommand):
 	help = "Loads occurrences from csv"
 
@@ -99,7 +111,7 @@ class Command(BaseCommand):
 			biota = TaxonomicLevel.objects.get(rank=TaxonomicLevel.LIFE)
 			line: dict
 			for line in csv_file:
-				print(line)
+				# print(line)
 				line = parse_line(line)
 				source, _ = Source.objects.get_or_create(
 					name__icontains=line["occurrenceSource"],
@@ -121,8 +133,9 @@ class Command(BaseCommand):
 
 						taxon = taxon.first()
 
-						if not taxon.sources.all().filter(origin_id=line[taxon_id_key], source=source).exists():
-							taxon.sources.add(OriginSource.objects.create(origin_id=line[taxon_id_key], source=source))
+						# if not taxon.sources.all().filter(origin_id=line[taxon_id_key], source=source).exists():
+						# 	taxon.sources.add(OriginSource.objects.get_or_create(origin_id=line[taxon_id_key], source=source))
+						create_origin_source(taxon, line[taxon_id_key], source)
 
 				taxonomy = TaxonomicLevel.objects.find(taxon=line["originalName"])
 
@@ -134,21 +147,25 @@ class Command(BaseCommand):
 				if line["lat_lon"] and len(line["lat_lon"]) != 2:
 					raise Exception(f"Bad formatting for lat_lon field\n{line}")
 
-				occ = Occurrence.objects.create(
-					taxonomy=taxonomy.first(),
-					batch=batch,
-					voucher=line["voucher"],
-					basis_of_record=Occurrence.TRANSLATE_BASIS_OF_RECORD.get(line["basisOfRecord"], Occurrence.UNKNOWN),
-					collection_date_year=int(line["year"]) if line["year"] else None,
-					collection_date_month=int(line["month"]) if line["month"] else None,
-					collection_date_day=int(line["day"]) if line["day"] else None,
-					geographical_location=find_gadm(line),
-					latitude=float(line["lat_lon"][0]) if line["lat_lon"] else None,
-					longitude=float(line["lat_lon"][1]) if line["lat_lon"] else None,
-					coordinatesUncertaintyMeters=int(line["coordinateUncertaintyInMeters"])
-					if line["coordinateUncertaintyInMeters"]
-					else None,
-					elevationMeters=int(line["elevation"]) if line["elevation"] else None,
-					depthMeters=int(line["depth"]) if line["depth"] else None,
-				)
-				occ.sources.add(OriginSource.objects.create(origin_id=line["sample_id"], source=source))
+				os, new = OriginSource.objects.get_or_create(origin_id=line["sample_id"], source=source)
+				if new:
+					occ = Occurrence.objects.create(
+						taxonomy=taxonomy.first(),
+						batch=batch,
+						voucher=line["voucher"],
+						basis_of_record=Occurrence.TRANSLATE_BASIS_OF_RECORD.get(
+							line["basisOfRecord"], Occurrence.UNKNOWN
+						),
+						collection_date_year=int(line["year"]) if line["year"] else None,
+						collection_date_month=int(line["month"]) if line["month"] else None,
+						collection_date_day=int(line["day"]) if line["day"] else None,
+						geographical_location=find_gadm(line),
+						latitude=float(line["lat_lon"][0]) if line["lat_lon"] else None,
+						longitude=float(line["lat_lon"][1]) if line["lat_lon"] else None,
+						coordinatesUncertaintyMeters=int(line["coordinateUncertaintyInMeters"])
+						if line["coordinateUncertaintyInMeters"]
+						else None,
+						elevationMeters=int(line["elevation"]) if line["elevation"] else None,
+						depthMeters=int(line["depth"]) if line["depth"] else None,
+					)
+					occ.sources.add(os)

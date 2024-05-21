@@ -19,6 +19,7 @@ class BaseTaxonLevelAdmin(MPTTModelAdmin):
 		"rank",
 		"parent",
 		"accepted",
+		"accepted_modifier",
 		"sources",
 		"synonyms",
 		"batch",

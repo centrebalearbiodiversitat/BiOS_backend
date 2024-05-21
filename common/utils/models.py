@@ -38,6 +38,10 @@ class ReferencedModel(models.Model):
 			if len(sources) != len(set(sources)):
 				raise ValidationError(f"Sources must be unique.\n{obj}\n{sources}")
 
+	def delete(self, using=None, keep_parents=False):
+		self.sources.all().delete()
+		return super().delete(using, keep_parents)
+
 	class Meta:
 		abstract = True
 
@@ -122,6 +126,9 @@ class SynonymModel(models.Model):
 	accepted_modifier = models.PositiveSmallIntegerField(
 		choices=ACCEPTED_MODIFIERS_CHOICES, null=True, blank=True, default=None
 	)
+
+	def readable_accepted_modifier(self):
+		return SynonymModel.ACCEPTED_MODIFIERS_TRANSLATE.get(self.accepted_modifier)
 
 	@staticmethod
 	def clean_synonyms(**kwargs):

@@ -3,7 +3,7 @@ import re
 import traceback
 
 from django.core.management.base import BaseCommand
-from django.db import transaction, models
+from django.db import transaction
 
 from apps.taxonomy.models import Authorship, TaxonomicLevel
 from apps.versioning.models import Batch, Source, OriginSource
@@ -44,8 +44,7 @@ ORIGINAL_STATUS = "originalStatus"
 COL_NAME_ACCEPTED = "colNamesAccepted"
 COL_ID = "colID"
 
-LEVELS = [KINGDOM, PHYLUM, CLASS, ORDER, FAM, GENUS, SPECIES, SUBSPECIES]
-# LEVELS = [KINGDOM, PHYLUM, CLASS, ORDER, FAM, GENUS, SPECIES, SUBSPECIES, VARIETY]
+LEVELS = [KINGDOM, PHYLUM, CLASS, ORDER, FAM, GENUS, SPECIES, SUBSPECIES, VARIETY]
 
 LEVELS_PARAMS = {
 	KINGDOM: [TaxonomicLevel.KINGDOM, AUTH_KINGDOM, SOURCE_KINGDOM, SOURCE_ORIGIN_KINGDOM],
@@ -60,7 +59,10 @@ LEVELS_PARAMS = {
 }
 
 
+@transaction.atomic
 def create_taxonomic_level(line, parent, batch, idx_name, rank, idx_author, idx_source, idx_source_origin):
+	if idx_name == VARIETY and idx_name not in line:
+		return parent
 	if not line[idx_name]:
 		return parent
 
@@ -248,5 +250,8 @@ class Command(BaseCommand):
 				# print(line[ORIGINAL_NAME])
 				clean_up_input_line(line)
 
-				for level in LEVELS:
-					parent = create_taxonomic_level(line, parent, batch, level, *LEVELS_PARAMS[level])
+				try:
+					for level in LEVELS:
+						parent = create_taxonomic_level(line, parent, batch, level, *LEVELS_PARAMS[level])
+				except:
+					print(traceback.format_exc())

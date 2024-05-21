@@ -1,6 +1,7 @@
+import re
+
 from django.core.exceptions import ValidationError
 from django.db import models
-from django.db.models import Q
 from mptt.fields import TreeForeignKey
 from mptt.models import MPTTModel
 
@@ -19,7 +20,8 @@ class TaxonomicLevelManager(SynonymManager):
 
 	def find(self, taxon):
 		levels: list = taxon.split()
-		assert len(levels) > 0, []
+		if len(levels) < 1:
+			return self.none()
 
 		query = self.filter(name__iexact=levels[0])
 		for level in levels[1:]:
@@ -99,7 +101,7 @@ class TaxonomicLevel(SynonymModel, MPTTModel, ReferencedModel):
 		return super().clean()
 
 	def save(self, force_insert=False, force_update=False, using=None, update_fields=None):
-		if self.rank == TaxonomicLevel.SPECIES and len(self.name.split()) != 1:
+		if self.rank == TaxonomicLevel.SPECIES and len(re.sub("^x ", "", self.name).split()) != 1:
 			raise ValidationError("Species level must be epithet separated of genus.")
 
 		super().save(force_insert, force_update, using, update_fields)

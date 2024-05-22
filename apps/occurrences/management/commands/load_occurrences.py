@@ -168,4 +168,7 @@ class Command(BaseCommand):
 						elevationMeters=int(line["elevation"]) if line["elevation"] else None,
 						depthMeters=int(line["depth"]) if line["depth"] else None,
 					)
-					occ.sources.add(os)
+				else:
+					occ = Occurrence.objects.get(sources=occ)
+
+				occ.sources.add(os)

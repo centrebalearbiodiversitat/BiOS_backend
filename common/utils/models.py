@@ -109,7 +109,7 @@ class SynonymModel(models.Model):
 	ACCEPTED_MODIFIERS_CHOICES = (
 		(PROVISIONAL, "Provisional"),
 		(AMBIGUOUS, "Ambiguous"),
-		(MISAPPLIED, "Misaplied"),
+		(MISAPPLIED, "Misapplied"),
 	)
 	ACCEPTED_MODIFIERS_TRANSLATE = {
 		PROVISIONAL: "provisional",

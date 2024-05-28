@@ -101,14 +101,12 @@ def create_taxonomic_level(line, parent, batch, idx_name, rank, idx_author, idx_
 			},
 		)
 
-		if new_taxon:
-			os, new_source = OriginSource.objects.get_or_create(origin_id=line[COL_ID], source=source)
-
-			if not new_source:
-				raise Exception(f"Origin source id already existing. {os}\n{line}")
-
+		os, new_source = OriginSource.objects.get_or_create(origin_id=line[COL_ID], source=source)
+		if new_source:
 			child.sources.add(os)
 			child.save()
+		elif not child.sources.filter(id=os.id).exists():
+			raise Exception(f"Origin source id already existing. {os}\n{line}")
 
 		if auths:
 			child.authorship.add(*auths)
@@ -231,6 +229,7 @@ class Command(BaseCommand):
 	def handle(self, *args, **options):
 		file_name = options["file"]
 		delimiter = options["d"]
+		exception = False
 		with open(file_name, encoding="windows-1252") as file:
 			csv_file = csv.DictReader(file, delimiter=delimiter)
 			batch = Batch.objects.create()
@@ -254,4 +253,8 @@ class Command(BaseCommand):
 					for level in LEVELS:
 						parent = create_taxonomic_level(line, parent, batch, level, *LEVELS_PARAMS[level])
 				except:
+					exception = True
 					print(traceback.format_exc())
+
+			if exception:
+				raise Exception('Errors found: Rollback control')

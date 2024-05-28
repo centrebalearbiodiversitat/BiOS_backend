@@ -141,9 +141,7 @@ def create_taxonomic_level(line, parent, batch, idx_name, rank, idx_author, idx_
 
 		if not child.accepted:
 			raise Exception(f"Higher taxonomy must be accepted {child.readable_rank()}:{child.name}\n{line}")
-		elif child.verbatim_authorship != verb_auth or set(auths) != set(
-			child.authorship.all() if child.authorship else []
-		):
+		elif child.verbatim_authorship != verb_auth or set(auths) != set(child.authorship.all() if child.authorship else []):
 			raise Exception(
 				f'Trying to update higher taxonomy author for {child.readable_rank()}:{child.name}. Verbatim: {child.verbatim_authorship} Original: {verb_auth}. Inferred: {child.authorship or "None"} New inferred: {auths or "None"}\n{line}'
 			)
@@ -257,4 +255,4 @@ class Command(BaseCommand):
 					print(traceback.format_exc())
 
 			if exception:
-				raise Exception('Errors found: Rollback control')
+				raise Exception("Errors found: Rollback control")

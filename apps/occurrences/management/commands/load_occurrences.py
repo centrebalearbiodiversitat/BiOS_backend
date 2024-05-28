@@ -89,9 +89,7 @@ def create_origin_source(ref_model_elem, origin_id, source):
 		ref_model_elem.sources.add(os)
 	else:
 		if not ref_model_elem.sources.filter(id=os.id).exists():
-			raise Exception(
-				f"Origin id already assigned to another model. {ref_model_elem}, {ref_model_elem.sources}, {os}"
-			)
+			raise Exception(f"Origin id already assigned to another model. {ref_model_elem}, {ref_model_elem.sources}, {os}")
 
 
 class Command(BaseCommand):

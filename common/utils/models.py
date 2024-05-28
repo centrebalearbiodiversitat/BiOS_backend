@@ -14,10 +14,7 @@ class LatLonModel(models.Model):
 	depth = models.IntegerField(null=True, blank=True, default=None)
 
 	def save(self, force_insert=False, force_update=False, using=None, update_fields=None):
-		if not (
-			(self.decimal_latitude is not None and self.decimal_longitude is not None)
-			or (self.latitude == self.longitude == None)
-		):
+		if not ((self.decimal_latitude is not None and self.decimal_longitude is not None) or (self.latitude == self.longitude == None)):
 			raise ValidationError("Latitude and longitude must both exist or None")
 		super().save(force_insert, force_update, using, update_fields)
 
@@ -124,9 +121,7 @@ class SynonymModel(models.Model):
 	unidecode_name = models.CharField(max_length=256, help_text="Unidecode name do not touch")
 	synonyms = models.ManyToManyField("self", blank=True, symmetrical=True)
 	accepted = models.BooleanField(null=False, blank=False)
-	accepted_modifier = models.PositiveSmallIntegerField(
-		choices=ACCEPTED_MODIFIERS_CHOICES, null=True, blank=True, default=None
-	)
+	accepted_modifier = models.PositiveSmallIntegerField(choices=ACCEPTED_MODIFIERS_CHOICES, null=True, blank=True, default=None)
 
 	def readable_accepted_modifier(self):
 		return SynonymModel.ACCEPTED_MODIFIERS_TRANSLATE.get(self.accepted_modifier)

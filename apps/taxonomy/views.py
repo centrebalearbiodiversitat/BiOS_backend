@@ -56,9 +56,7 @@ class TaxonList(ListAPIView):
 	@swagger_auto_schema(
 		operation_description="Get a list of taxa, with optional filtering.",
 		manual_parameters=[
-			openapi.Parameter(
-				"name", openapi.IN_QUERY, description="Name of the taxon to search for.", type=openapi.TYPE_STRING
-			),
+			openapi.Parameter("name", openapi.IN_QUERY, description="Name of the taxon to search for.", type=openapi.TYPE_STRING),
 			openapi.Parameter(
 				"taxonRank",
 				openapi.IN_QUERY,
@@ -147,9 +145,7 @@ class TaxonParent(APIView):
 	@swagger_auto_schema(
 		operation_description="Get the parents of the taxon given its ID",
 		manual_parameters=[
-			openapi.Parameter(
-				name="id", in_=openapi.IN_QUERY, description="ID of the taxon", type=openapi.TYPE_INTEGER, required=True
-			),
+			openapi.Parameter(name="id", in_=openapi.IN_QUERY, description="ID of the taxon", type=openapi.TYPE_INTEGER, required=True),
 		],
 		responses={200: "Success", 204: "No Content", 400: "Bad Request"},
 	)

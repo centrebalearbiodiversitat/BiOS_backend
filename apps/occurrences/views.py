@@ -39,12 +39,12 @@ class OccurrenceDetail(APIView):
 
 		occur_id = occur_form.cleaned_data.get("id")
 		if not occur_id:
-			raise CBBAPIException('Missing id parameter', 400)
+			raise CBBAPIException("Missing id parameter", 400)
 
 		try:
 			occurrence = Occurrence.objects.get(id=occur_id)
 		except Occurrence.DoesNotExist:
-			raise CBBAPIException('Occurrence does not exist', 404)
+			raise CBBAPIException("Occurrence does not exist", 404)
 
 		return Response(OccurrenceSerializer(occurrence).data)
 

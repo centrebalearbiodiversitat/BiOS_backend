@@ -38,7 +38,6 @@ class TaxonomicLevelForm(IdFieldForm):
 
 
 class AuthorshipForm(IdFieldForm):
-
 	class Meta:
 		model = Authorship
 		fields = ["id"]

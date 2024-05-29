@@ -1,10 +1,11 @@
 from django import forms
 from django.forms import ModelForm
+
+from common.utils.forms import IdFieldForm
 from .models import TaxonomicLevel, Authorship
 
 
-class TaxonomicLevelForm(ModelForm):
-	id = forms.IntegerField(required=False)
+class TaxonomicLevelForm(IdFieldForm):
 	exact = forms.BooleanField(required=False)
 	taxon_rank = forms.CharField(max_length=100, required=False)
 	scientific_name_authorship = forms.CharField(max_length=256, required=False)
@@ -36,8 +37,7 @@ class TaxonomicLevelForm(ModelForm):
 		return cleaned_data
 
 
-class AuthorshipForm(ModelForm):
-	id = forms.IntegerField(required=False)
+class AuthorshipForm(IdFieldForm):
 
 	class Meta:
 		model = Authorship

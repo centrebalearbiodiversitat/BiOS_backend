@@ -126,6 +126,12 @@ class OccurrenceList(OccurrenceFilter):
 				description="Filter occurrences by basis of record field.",
 				type=openapi.TYPE_STRING,  # Ajusta el tipo de dato según el campo del modelo
 			),
+			openapi.Parameter(
+				"coordinateUncertaintyInMeters",
+				openapi.IN_QUERY,
+				description="Filter occurrences by the coordinate uncertainty in meters.",
+				type=openapi.TYPE_STRING,  # Ajusta el tipo de dato según el campo del modelo
+			),
 		],
 		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
 	)

@@ -2,6 +2,7 @@ from apps.taxonomy.models import TaxonomicLevel, Authorship
 from apps.taxonomy.serializers import BaseTaxonomicLevelSerializer, AuthorshipSerializer
 from apps.API.exceptions import CBBAPIException
 from django.core.exceptions import ValidationError
+from django.http import Http404
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.response import Response
@@ -50,6 +51,9 @@ class TaxonSearch(APIView):
 
 		queryset = TaxonomicLevel.objects.filter(**filters)[:25]
 
+		if not queryset.exists():
+			raise Http404("No taxa found with the specified name.")
+
 		return Response(BaseTaxonomicLevelSerializer(queryset, many=True).data)
 
 
@@ -86,7 +90,7 @@ class TaxonList(ListAPIView):
 		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
 	)
 	def get(self, request):
-		taxon_form = TaxonomicLevelForm(self.request.GET)
+		taxon_form = TaxonomicLevelForm(data = request.GET)
 
 		if not taxon_form.is_valid():
 			raise CBBAPIException(taxon_form.errors, code=400)
@@ -94,7 +98,7 @@ class TaxonList(ListAPIView):
 		exact = taxon_form.cleaned_data.get("exact", False)
 
 		str_fields = ["name"]
-		num_fields = ["parent", "scientific_name_authorship", "taxon_rank"]
+		num_fields = ["parent", "authorship", "rank"]
 
 		filters = {}
 
@@ -106,14 +110,20 @@ class TaxonList(ListAPIView):
 				filters[param] = value
 
 		for param in num_fields:
-			value = taxon_form.cleaned_data.get(TRANSLATE_PARAM[param])
+			value = taxon_form.cleaned_data.get(param)
 
 			if value:
-				filters[TRANSLATE_PARAM[param]] = value
+				filters[param] = value
 
 		queryset = TaxonomicLevel.objects.filter(**filters)
 
+		if not queryset.exists():
+			raise Http404("No taxa have been found that meet the specified filters.")
+
 		return Response(BaseTaxonomicLevelSerializer(queryset, many=True).data)
+
+
+
 
 
 class TaxonCRUD(APIView):
@@ -145,6 +155,9 @@ class TaxonCRUD(APIView):
 			taxon = TaxonomicLevel.objects.get(id=taxon_id)
 		except TaxonomicLevel.DoesNotExist:
 			raise CBBAPIException("Taxonomic level does not exist")
+
+		if not taxon:
+			raise Http404("No taxa have been found that meet the specified ID.")
 
 		return Response(BaseTaxonomicLevelSerializer(taxon).data)
 

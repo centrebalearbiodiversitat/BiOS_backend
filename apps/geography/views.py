@@ -1,3 +1,244 @@
-from django.shortcuts import render
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework.exceptions import ValidationError, NotFound
+from django.http import Http404
+from drf_yasg.utils import swagger_auto_schema
+from drf_yasg import openapi
+from .models import GeographicLevel
+from .serializers import GeographicLevelSerializer
+from .forms import GeographicLevelForm
 
-# Create your views here.
+class GeographicLevelDetailView(APIView):
+	@swagger_auto_schema(
+		operation_description="Retrieve a geographic level by rank and name",
+		manual_parameters=[
+			openapi.Parameter(
+				name="name",
+				in_=openapi.IN_QUERY,
+				type=openapi.TYPE_STRING,
+				description="Name of the geographic level",
+				required=False,
+			)
+		],
+		responses={
+			200: "Success",
+			400: "Bad Request",
+			404: "Not Found"
+		}
+	)
+	def get(self, request):
+		geographic_form = GeographicLevelForm(data=self.request.GET)
+		
+		filters = {}
+
+		if not geographic_form.is_valid():
+			raise ValidationError(geographic_form.errors)
+
+		query = geographic_form.cleaned_data.get("name", None)
+		exact = geographic_form.cleaned_data.get("exact", False)
+
+		if not query:
+			return Response(GeographicLevelSerializer(GeographicLevel.objects.none(), many=True).data)
+
+		filters["name__iexact" if exact else "name__icontains"] = query
+
+		try:
+			geographic_level = GeographicLevel.objects.filter(**filters)[:25]
+		except GeographicLevel.DoesNotExist:
+			raise NotFound("Geographic level not found.")
+
+		return Response(GeographicLevelSerializer(geographic_level, many=True).data)
+
+class GeographicLevelIdView(APIView):
+	@swagger_auto_schema(
+		operation_description="Retrieve a specific geographic level instance by its id",
+		manual_parameters=[
+			openapi.Parameter(
+				"id",
+				openapi.IN_QUERY,
+				description="ID of the geographic level to retrieve",
+				type=openapi.TYPE_INTEGER,
+				required=True,
+			)
+		],
+		responses={
+			200: "Success",
+			400: "Bad Request",
+			404: "Not Found"
+		},
+	)
+	def get(self, request):
+		geographic_form = GeographicLevelForm(self.request.GET)
+
+		if not geographic_form.is_valid():
+			raise ValidationError(geographic_form.errors)
+
+		id = request.query_params.get("id")
+		level = GeographicLevel.objects.filter(id=id).first()
+
+		if not level:
+			raise Http404("No geographic levels have been found that meet the specified ID.")
+
+		return Response(GeographicLevelSerializer(level).data)
+
+
+class GeographicLevelListView(APIView):
+	@swagger_auto_schema(
+		operation_description="List geographic levels with optional filters",
+		manual_parameters=[
+			openapi.Parameter(
+				name="rank",
+				in_=openapi.IN_QUERY,
+				description="Rank of the geographic level",
+				type=openapi.TYPE_STRING,
+				required=False
+			),
+			openapi.Parameter(
+				name="parent",
+				in_=openapi.IN_QUERY,
+				description="Parent ID of the geographic level",
+				type=openapi.TYPE_INTEGER,
+				required=False
+			),
+			openapi.Parameter(
+				name="decimalLatitude",
+				in_=openapi.IN_QUERY,
+				description="Decimal latitude of the geographic level",
+				type=openapi.TYPE_NUMBER,
+				required=False
+			),
+			openapi.Parameter(
+				name="decimalLongitude",
+				in_=openapi.IN_QUERY,
+				description="Decimal longitude of the geographic level",
+				type=openapi.TYPE_NUMBER,
+				required=False
+			),
+			openapi.Parameter(
+				name="coordinateUncertaintyInMeters",
+				in_=openapi.IN_QUERY,
+				description="Coordinate uncertainty in meters of the geographic level",
+				type=openapi.TYPE_INTEGER,
+				required=False
+			)
+			# openapi.Parameter(
+			# 	name="elevation",
+			# 	in_=openapi.IN_QUERY,
+			# 	description="Elevation of the geographic level",
+			# 	type=openapi.TYPE_INTEGER,
+			# 	required=False
+			# ),
+			# openapi.Parameter(
+			# 	name="depth",
+			# 	in_=openapi.IN_QUERY,
+			# 	description="Depth of the geographic level",
+			# 	type=openapi.TYPE_INTEGER,
+			# 	required=False
+			# )
+		],
+		responses={
+			200: "Success",
+			400: "Bad Request",
+			404: "Not Found"
+		}
+	)
+	def get(self, request):
+		geographic_form = GeographicLevelForm(data = request.GET)
+
+		if not geographic_form.is_valid():
+			return Response(geographic_form.errors, status=400)
+
+		exact = geographic_form.cleaned_data.get("exact", False)
+
+		str_fields = ["name"]
+		num_fields = [
+			"parent",
+			"rank",
+			"decimal_latitude",
+			"decimal_longitude",
+			"coordinate_uncertainty_in_meters"
+		]
+
+		filters = {}
+
+		for param in str_fields:
+			value = geographic_form.cleaned_data.get(param)
+
+			if value:
+				param = f"{param}__iexact" if exact else f"{param}__icontains"
+				filters[param] = value
+
+		for param in num_fields:
+			value = geographic_form.cleaned_data.get(param)
+
+			if value:
+				filters[param] = value
+
+		queryset = GeographicLevel.objects.filter(**filters)
+
+		if not queryset.exists():
+			raise Http404("No geographic levels have been found that meet the specified filters.")
+
+		return Response(GeographicLevelSerializer(queryset, many=True).data)
+
+
+class GeographicLevelParent(APIView):
+	@swagger_auto_schema(
+		operation_description="Get the parents of the geographic level given its ID",
+		manual_parameters=[
+			openapi.Parameter(
+				name="id",
+				in_=openapi.IN_QUERY,
+				description="ID of the geographic level",
+				type=openapi.TYPE_INTEGER,
+				required=True
+			),
+		],
+		responses={
+			200: "Success",
+			400: "Bad Request",
+			404: "Not Found"
+		}
+	)
+	def get(self, request):
+		geographic_form = GeographicLevelForm(self.request.GET)
+
+		if not geographic_form.is_valid():
+			raise ValidationError(geographic_form.errors)
+
+		level_id = request.query_params.get("id")
+		level = GeographicLevel.objects.get(pk=level_id)
+		ancestors = level.get_ancestors()
+
+		return Response(GeographicLevelSerializer(ancestors, many=True).data)
+
+
+class GeographicLevelChildren(APIView):
+	@swagger_auto_schema(
+		operation_description="Get the direct childrens of the geographic level given its ID",
+		manual_parameters=[
+			openapi.Parameter(
+				name="id",
+				in_=openapi.IN_QUERY,
+				type=openapi.TYPE_INTEGER,
+				description="ID of the geographic level",
+				required=True,
+			)
+		],
+		responses={
+			200: "Success",
+			400: "Bad Request",
+			404: "Not Found"
+		},
+	)
+	def get(self, request):
+		geographic_form = GeographicLevelForm(self.request.GET)
+
+		if not geographic_form.is_valid():
+			raise ValidationError(geographic_form.errors)
+
+		level_id = request.query_params.get("id")
+		level = GeographicLevel.objects.get(pk=level_id)
+		children = level.get_children()
+
+		return Response(GeographicLevelSerializer(children, many=True).data)

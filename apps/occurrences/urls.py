@@ -3,6 +3,6 @@ from apps.occurrences.views import OccurrenceList, OccurrenceDetail, OccurrenceC
 
 urlpatterns = [
 	path("", OccurrenceDetail.as_view()),
-	path("/count", OccurrenceCount.as_view()),
-	path("/list", OccurrenceList.as_view()),
+	path("count", OccurrenceCount.as_view()),
+	path("list", OccurrenceList.as_view()),
 ]

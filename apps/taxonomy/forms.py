@@ -41,5 +41,4 @@ class AuthorshipForm(ModelForm):
 
 	class Meta:
 		model = Authorship
-		fields = ['id']
-
+		fields = ["id"]

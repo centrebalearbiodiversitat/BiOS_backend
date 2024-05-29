@@ -139,12 +139,12 @@ class TaxonCRUD(APIView):
 		taxon_id = taxon_form.cleaned_data.get("id")
 
 		if not taxon_id:
-			raise CBBAPIException('Missing id parameter', code=400)
+			raise CBBAPIException("Missing id parameter", code=400)
 
 		try:
 			taxon = TaxonomicLevel.objects.get(id=taxon_id)
 		except TaxonomicLevel.DoesNotExist:
-			raise CBBAPIException('Taxonomic level does not exist')
+			raise CBBAPIException("Taxonomic level does not exist")
 
 		return Response(BaseTaxonomicLevelSerializer(taxon).data)
 
@@ -163,15 +163,15 @@ class TaxonParent(APIView):
 		if not taxon_form.is_valid():
 			raise CBBAPIException(taxon_form.errors, 400)
 
-		taxon_id = taxon_form.cleaned_data.get('id')
+		taxon_id = taxon_form.cleaned_data.get("id")
 
 		if not taxon_id:
-			raise CBBAPIException('Missing id parameter', 400)
+			raise CBBAPIException("Missing id parameter", 400)
 
 		try:
 			taxon = TaxonomicLevel.objects.get(id=taxon_id)
 		except TaxonomicLevel.DoesNotExist:
-			raise CBBAPIException('Taxonomic level does not exist', 404)
+			raise CBBAPIException("Taxonomic level does not exist", 404)
 
 		ancestors = taxon.get_ancestors()
 
@@ -198,15 +198,15 @@ class TaxonChildren(APIView):
 		if not taxon_form.is_valid():
 			raise CBBAPIException(taxon_form.errors, code=400)
 
-		taxon_id = taxon_form.cleaned_data.get('id')
+		taxon_id = taxon_form.cleaned_data.get("id")
 
 		if not taxon_id:
-			raise CBBAPIException('Missing id parameter', code=400)
+			raise CBBAPIException("Missing id parameter", code=400)
 
 		try:
 			taxon = TaxonomicLevel.objects.get(id=taxon_id)
 		except TaxonomicLevel.DoesNotExist:
-			raise CBBAPIException('Taxonomic level does not exist', code=404)
+			raise CBBAPIException("Taxonomic level does not exist", code=404)
 
 		return Response(BaseTaxonomicLevelSerializer(taxon.get_children(), many=True).data)
 
@@ -231,14 +231,14 @@ class AuthorshipCRUD(APIView):
 		if not authorship_form.is_valid():
 			raise CBBAPIException(authorship_form.errors, code=400)
 
-		authorship_id = authorship_form.cleaned_data.get('id')
+		authorship_id = authorship_form.cleaned_data.get("id")
 
 		if not authorship_id:
-			raise CBBAPIException('Missing id parameter', code=400)
+			raise CBBAPIException("Missing id parameter", code=400)
 
 		try:
 			authorship = Authorship.objects.get(id=authorship_id)
 		except Authorship.DoesNotExist:
-			raise CBBAPIException('Authorship does not exist', code=404)
+			raise CBBAPIException("Authorship does not exist", code=404)
 
 		return Response(AuthorshipSerializer(authorship).data)

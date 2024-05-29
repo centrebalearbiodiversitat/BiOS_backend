@@ -25,4 +25,4 @@ class BaseTaxonomicLevelSerializer(serializers.ModelSerializer):
 class AuthorshipSerializer(serializers.ModelSerializer):
 	class Meta:
 		model = Authorship
-		fields = ['id', 'name', 'accepted']
+		fields = ["id", "name", "accepted"]

@@ -38,7 +38,7 @@ class ReferencedModel(models.Model):
 					raise ValidationError(f"Sources must be unique.\n{obj}\n{sources}")
 
 	@staticmethod
-	def pre_delete(sender, instance,  *args, **kwargs):
+	def pre_delete(sender, instance, *args, **kwargs):
 		if issubclass(sender, ReferencedModel):
 			instance.sources.all().delete()
 

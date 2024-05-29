@@ -1,6 +1,6 @@
 from django.core.exceptions import ValidationError
 from django.db import models
-from django.db.models.signals import m2m_changed
+from django.db.models.signals import m2m_changed, pre_delete
 from unidecode import unidecode
 
 from common.utils.utils import str_clean_up
@@ -28,23 +28,26 @@ class ReferencedModel(models.Model):
 
 	@staticmethod
 	def clean_sources(**kwargs):
-		if kwargs and kwargs["action"] == "post_add":
-			obj = kwargs["instance"]
+		if kwargs:
+			if kwargs["action"] == "post_add":
+				obj = kwargs["instance"]
 
-			sources = [s.source.name for s in obj.sources.all()]
+				sources = [s.source.name for s in obj.sources.all()]
 
-			if len(sources) != len(set(sources)):
-				raise ValidationError(f"Sources must be unique.\n{obj}\n{sources}")
+				if len(sources) != len(set(sources)):
+					raise ValidationError(f"Sources must be unique.\n{obj}\n{sources}")
 
-	def delete(self, using=None, keep_parents=False):
-		self.sources.all().delete()
-		return super().delete(using, keep_parents)
+	@staticmethod
+	def pre_delete(sender, instance,  *args, **kwargs):
+		if issubclass(sender, ReferencedModel):
+			instance.sources.all().delete()
 
 	class Meta:
 		abstract = True
 
 
 m2m_changed.connect(ReferencedModel.clean_sources, sender=ReferencedModel.sources.through)
+pre_delete.connect(ReferencedModel.pre_delete)
 
 
 class SynonymManager(models.Manager):

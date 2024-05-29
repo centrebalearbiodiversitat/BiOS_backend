@@ -1,9 +1,10 @@
 from django import forms
 from django.forms import ModelForm
-from .models import TaxonomicLevel
+from .models import TaxonomicLevel, Authorship
 
 
 class TaxonomicLevelForm(ModelForm):
+	id = forms.IntegerField(required=False)
 	exact = forms.BooleanField(required=False)
 	taxon_rank = forms.CharField(max_length=100, required=False)
 	scientific_name_authorship = forms.CharField(max_length=256, required=False)
@@ -33,3 +34,12 @@ class TaxonomicLevelForm(ModelForm):
 			cleaned_data["rank"] = TaxonomicLevel.TRANSLATE_RANK[cleaned_data["taxon_rank"]]
 
 		return cleaned_data
+
+
+class AuthorshipForm(ModelForm):
+	id = forms.IntegerField(required=False)
+
+	class Meta:
+		model = Authorship
+		fields = ['id']
+

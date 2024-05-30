@@ -127,7 +127,6 @@ USE_TZ = True
 PUBLIC_DIR = root("public")
 STATIC_ROOT = join(PUBLIC_DIR, "static")
 STATIC_URL = "/static/"
-
-STATICFILES_DIRS = ("static",)
+SILENCED_SYSTEM_CHECKS = ['urls.W002']
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"

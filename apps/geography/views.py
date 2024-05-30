@@ -7,6 +7,8 @@ from drf_yasg import openapi
 from .models import GeographicLevel
 from .serializers import GeographicLevelSerializer
 from .forms import GeographicLevelForm
+from apps.API.exceptions import CBBAPIException
+
 
 class GeographicLevelDetailView(APIView):
 	@swagger_auto_schema(
@@ -32,22 +34,22 @@ class GeographicLevelDetailView(APIView):
 		filters = {}
 
 		if not geographic_form.is_valid():
-			raise ValidationError(geographic_form.errors)
+			raise CBBAPIException(geographic_form.errors, code=400)
 
 		query = geographic_form.cleaned_data.get("name", None)
 		exact = geographic_form.cleaned_data.get("exact", False)
 
 		if not query:
-			return Response(GeographicLevelSerializer(GeographicLevel.objects.none(), many=True).data)
+			raise CBBAPIException("No geographic level name has been provided.", code=400)
 
 		filters["name__iexact" if exact else "name__icontains"] = query
 
-		try:
-			geographic_level = GeographicLevel.objects.filter(**filters)[:25]
-		except GeographicLevel.DoesNotExist:
-			raise NotFound("Geographic level not found.")
+		level = GeographicLevel.objects.filter(**filters)[:25]
 
-		return Response(GeographicLevelSerializer(geographic_level, many=True).data)
+		if not level:
+			raise CBBAPIException("Geographic level not found.", code=404)
+
+		return Response(GeographicLevelSerializer(level, many=True).data)
 
 class GeographicLevelIdView(APIView):
 	@swagger_auto_schema(
@@ -71,13 +73,17 @@ class GeographicLevelIdView(APIView):
 		geographic_form = GeographicLevelForm(self.request.GET)
 
 		if not geographic_form.is_valid():
-			raise ValidationError(geographic_form.errors)
+			raise CBBAPIException(geographic_form.errors, code=400)
+		
+		try:
+			level_id = geographic_form.cleaned_data.get("id")
+		except ValueError:
+			raise CBBAPIException("No geographic level ID has been provided", code=400)
 
-		id = request.query_params.get("id")
-		level = GeographicLevel.objects.filter(id=id).first()
-
-		if not level:
-			raise Http404("No geographic levels have been found that meet the specified ID.")
+		try:
+			level = GeographicLevel.objects.get(id=level_id)
+		except GeographicLevel.DoesNotExist:
+			raise CBBAPIException("No geographic levels have been found that meet the specified ID.", code=404)
 
 		return Response(GeographicLevelSerializer(level).data)
 
@@ -121,20 +127,6 @@ class GeographicLevelListView(APIView):
 				type=openapi.TYPE_INTEGER,
 				required=False
 			)
-			# openapi.Parameter(
-			# 	name="elevation",
-			# 	in_=openapi.IN_QUERY,
-			# 	description="Elevation of the geographic level",
-			# 	type=openapi.TYPE_INTEGER,
-			# 	required=False
-			# ),
-			# openapi.Parameter(
-			# 	name="depth",
-			# 	in_=openapi.IN_QUERY,
-			# 	description="Depth of the geographic level",
-			# 	type=openapi.TYPE_INTEGER,
-			# 	required=False
-			# )
 		],
 		responses={
 			200: "Success",
@@ -147,8 +139,6 @@ class GeographicLevelListView(APIView):
 
 		if not geographic_form.is_valid():
 			return Response(geographic_form.errors, status=400)
-
-		exact = geographic_form.cleaned_data.get("exact", False)
 
 		str_fields = ["name"]
 		num_fields = [
@@ -165,6 +155,7 @@ class GeographicLevelListView(APIView):
 			value = geographic_form.cleaned_data.get(param)
 
 			if value:
+				exact = geographic_form.cleaned_data.get("exact", False)
 				param = f"{param}__iexact" if exact else f"{param}__icontains"
 				filters[param] = value
 
@@ -176,8 +167,8 @@ class GeographicLevelListView(APIView):
 
 		queryset = GeographicLevel.objects.filter(**filters)
 
-		if not queryset.exists():
-			raise Http404("No geographic levels have been found that meet the specified filters.")
+		if not queryset:
+			raise CBBAPIException("No geographic levels have been found that meet the specified filters.", code=404)
 
 		return Response(GeographicLevelSerializer(queryset, many=True).data)
 
@@ -206,9 +197,21 @@ class GeographicLevelParent(APIView):
 		if not geographic_form.is_valid():
 			raise ValidationError(geographic_form.errors)
 
-		level_id = request.query_params.get("id")
-		level = GeographicLevel.objects.get(pk=level_id)
+		try:
+			level_id = geographic_form.cleaned_data.get("id")
+		except ValueError:
+			raise CBBAPIException("No geographic level ID has been provided", code=400)
+
+		try:
+			level = GeographicLevel.objects.get(pk=level_id)
+		except GeographicLevel.DoesNotExist:
+			raise CBBAPIException("No geographic levels have been found that meet the specified ID.", code=404)
+
 		ancestors = level.get_ancestors()
+
+		if not ancestors:
+			raise CBBAPIException("No parent geographic levels have been found that meet the specified ID.", code=404)
+
 
 		return Response(GeographicLevelSerializer(ancestors, many=True).data)
 
@@ -235,10 +238,21 @@ class GeographicLevelChildren(APIView):
 		geographic_form = GeographicLevelForm(self.request.GET)
 
 		if not geographic_form.is_valid():
-			raise ValidationError(geographic_form.errors)
+			raise CBBAPIException(geographic_form.errors, code=400)
+		
+		try:
+			level_id = geographic_form.cleaned_data.get("id")
+		except ValueError:
+			raise CBBAPIException("No geographic level ID has been provided", code=400)
 
-		level_id = request.query_params.get("id")
-		level = GeographicLevel.objects.get(pk=level_id)
+		try:
+			level = GeographicLevel.objects.get(pk=level_id)
+		except GeographicLevel.DoesNotExist:
+			raise CBBAPIException("No geographic levels have been found that meet the specified ID.", code=404)
+
 		children = level.get_children()
+		
+		if not children:
+			raise CBBAPIException("No children geographic levels have been found that meet the specified ID.", code=404)
 
 		return Response(GeographicLevelSerializer(children, many=True).data)

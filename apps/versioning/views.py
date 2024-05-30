@@ -116,32 +116,6 @@ class SourceList(APIView):
 				many=True)
 		).data)
 
-# # TERMINAR DE REVISAR EL FILTRADO POR DATETIME
-# class BatchView(APIView):
-# 	def get(self, request):
-# 		batch_form = BatchForm(data = self.request.GET)
-
-# 		if not batch_form.is_valid():
-# 			raise ValidationError(batch_form.errors)
-
-# 		filters = {}
-# 		for param in batch_form.cleaned_data:
-# 			value = batch_form.cleaned_data.get(param)
-# 			if value or isinstance(value, int):
-# 				filters[param] = value
-# 		if filters:
-# 			try:
-# 				print("ENTRA")
-# 				print(filters)
-# 				queryset = Batch.objects.filter(**filters)
-# 			except Batch.DoesNotExist:
-# 				raise Http404
-
-# 			return Response((
-# 				BatchSerializer(
-# 					queryset,
-# 					many=False)
-# 			).data)
 
 class OriginSourceView(APIView):
 	@swagger_auto_schema(
@@ -192,21 +166,3 @@ class OriginSourceView(APIView):
 				queryset,
 				many=True)
 		).data)
-
-# class SynonymModelView(APIView):
-# 	def get(self, request):
-# 		synonym_form = SynonymModelForm(self.request.GET)
-
-# 		if not synonym_form.is_valid():
-# 			raise ValidationError(synonym_form.errors)
-		
-# 		name = synonym_form.cleaned_data.get('name')
-# 		try:
-# 			synonym_models = SynonymModel.objects.get(name=name)
-# 			print("200")
-# 		except SynonymModel.DoesNotExist:
-# 			print("404")
-# 			raise Http404
-
-# 		serializer = SynonymModelSerializer(synonym_models, many=False)
-# 		return Response(serializer.data)

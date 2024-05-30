@@ -8,7 +8,6 @@ class BaseTaxonLevelAdmin(MPTTModelAdmin):
 		"scientific_name",
 		"rank",
 		"upper_taxon",
-		"num_children",
 		"verbatim_authorship",
 		"parsed_year",
 	]  # , 'num_references'
@@ -43,15 +42,9 @@ class BaseTaxonLevelAdmin(MPTTModelAdmin):
 	#
 	# 	return list(map_sources.keys())
 
-	def num_references(self, obj):
-		return obj.references.count()
-
-	def num_children(self, obj):
-		return obj.get_children().count()
-
 	def upper_taxon(self, obj):
 		full_taxon_str = ""
-		upper_taxa = obj.get_ancestors(ascending=True)
+		upper_taxa = obj.get_ancestors(ascending=True).exclude(rank=TaxonomicLevel.LIFE)
 		for taxon in upper_taxa:
 			full_taxon_str = f"{full_taxon_str} < {taxon}"
 

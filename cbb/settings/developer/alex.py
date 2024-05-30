@@ -4,6 +4,7 @@ SITE_URL = 'localhost:8000'
 DEBUG = True
 
 ALLOWED_HOSTS = ['*']
+SECRET_KEY = "django-insecure-=d^f%8dfm)s@he-zv@dk$z)24q!#6)90c5+!!e5qz-y%qq4txr"
 
 DATABASES = {
     'default': {

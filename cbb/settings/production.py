@@ -1,14 +1,14 @@
 from cbb.settings.base import *
 
-DEBUG = os.environ.get("DEBUG", "").lower() == "true"
+DEBUG = False
 
-SITE_PREFIX = "https://"
-SITE_URL = os.environ.get("SITE_URL")
-FULL_SITE_URL = f"{SITE_PREFIX}{SITE_URL}"
-CSRF_TRUSTED_ORIGINS = ["https://" + SITE_URL]
-ALLOWED_HOSTS = ["127.0.0.1", SITE_URL, "*"]
+STATIC_ROOT = "/var/www/site/static/"
+STATIC_URL = "/static/"
 
-CORS_ALLOWED_ORIGINS = ["127.0.0.1", SITE_URL, "*"]
+CSRF_TRUSTED_ORIGINS = ["http://cbbdb.uib.*", "https://cbbdb.uib.*", "http://130.206.132.33", "https://130.206.132.33"]
+ALLOWED_HOSTS = ['cbbdb.uib.*', 'localhost', '130.206.132.33']
+
+CORS_ALLOWED_ORIGINS = CSRF_TRUSTED_ORIGINS
 
 SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY")
 if not SECRET_KEY:

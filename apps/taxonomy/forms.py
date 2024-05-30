@@ -10,13 +10,8 @@ class TaxonomicLevelForm(IdFieldForm):
 	exact = forms.BooleanField(required=False)
 	rank = forms.CharField(max_length=100, required=False)
 	authorship = forms.CharField(max_length=256, required=False)
-	TRANSLATE_FIELDS = {
-		"taxon_rank": "rank",
-		"scientific_name_authorship": "authorship"	
-	}
-	CHOICES_FIELD = {
-		"rank": TaxonomicLevel.TRANSLATE_RANK
-	}
+	TRANSLATE_FIELDS = {"taxon_rank": "rank", "scientific_name_authorship": "authorship"}
+	CHOICES_FIELD = {"rank": TaxonomicLevel.TRANSLATE_RANK}
 
 	class Meta:
 		model = TaxonomicLevel
@@ -33,7 +28,7 @@ class TaxonomicLevelForm(IdFieldForm):
 
 	def clean(self):
 		cleaned_data = super().clean()
-		
+
 		if cleaned_data["taxon_rank"]:
 			cleaned_data["taxon_rank"] = cleaned_data["taxon_rank"].lower()
 

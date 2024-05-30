@@ -9,7 +9,7 @@ class GeographicLevelSerializer(CaseModelSerializer):
 
 	def get_rank(self, obj):
 		return obj.get_readable_rank()
-	
+
 	def get_name(self, obj):
 		return str(obj)
 

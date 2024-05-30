@@ -13,7 +13,7 @@ from .forms import SourceForm, OriginSourceForm
 
 class SourceView(APIView):
 	@swagger_auto_schema(
-        operation_description="Retrieve a Source by name",
+		operation_description="Retrieve a Source by name",
 		manual_parameters=[
 			openapi.Parameter(
 				"name",
@@ -28,19 +28,15 @@ class SourceView(APIView):
 				description="Whether to search for an exact match or not.",
 				type=openapi.TYPE_BOOLEAN,
 				required=False,
-			)
+			),
 		],
-		responses={
-            200: 'Success',
-            400: 'Bad Request',
-            404: 'Not Found'
-        }
-    )
+		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
+	)
 	def get(self, request):
 		source_form = SourceForm(self.request.GET)
 
 		if not source_form.is_valid():
-			raise ValidationError(source_form.errors)	
+			raise ValidationError(source_form.errors)
 
 		filters = {}
 
@@ -54,17 +50,13 @@ class SourceView(APIView):
 		except Source.DoesNotExist:
 			raise Http404
 
-		return Response((
-			SourceSerializer(
-				source,
-				many=False)
-		).data)
+		return Response((SourceSerializer(source, many=False)).data)
 
 
 class SourceList(APIView):
 	@swagger_auto_schema(
-        operation_description="List Sources with optional filters",
-        manual_parameters = [
+		operation_description="List Sources with optional filters",
+		manual_parameters=[
 			openapi.Parameter(
 				"name",
 				openapi.IN_QUERY,
@@ -86,16 +78,12 @@ class SourceList(APIView):
 				description="Origin of the source to search for.",
 				type=openapi.TYPE_STRING,
 				required=False,
-			)			
+			),
 		],
-        responses={
-            200: "Success",
-            400: "Bad Request",
-			404: "Not Found"
-        }
-    )
+		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
+	)
 	def get(self, request):
-		source_form = SourceForm(data = self.request.GET)
+		source_form = SourceForm(data=self.request.GET)
 		if not source_form.is_valid():
 			return Response(source_form.errors, status=400)
 
@@ -110,17 +98,13 @@ class SourceList(APIView):
 		else:
 			queryset = Source.objects.none()
 
-		return Response((
-			SourceSerializer(
-				queryset,
-				many=True)
-		).data)
+		return Response((SourceSerializer(queryset, many=True)).data)
 
 
 class OriginSourceView(APIView):
 	@swagger_auto_schema(
-        operation_description="List origin sources with optional filters",
-        manual_parameters=[
+		operation_description="List origin sources with optional filters",
+		manual_parameters=[
 			openapi.Parameter(
 				"origin_id",
 				openapi.IN_QUERY,
@@ -134,16 +118,12 @@ class OriginSourceView(APIView):
 				description="Source of the origin source to search for",
 				type=openapi.TYPE_INTEGER,
 				required=False,
-			)
+			),
 		],
-        responses={
-            200: 'Success',
-            400: 'Bad Request',
-            404: 'Not Found'
-        }
-    )
+		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
+	)
 	def get(self, request):
-		origin_source_form = OriginSourceForm(data = self.request.GET)
+		origin_source_form = OriginSourceForm(data=self.request.GET)
 
 		if not origin_source_form.is_valid():
 			raise ValidationError(origin_source_form.errors)
@@ -161,8 +141,4 @@ class OriginSourceView(APIView):
 		else:
 			queryset = OriginSource.objects.all()
 
-		return Response((
-			OriginSourceSerializer(
-				queryset,
-				many=True)
-		).data)
+		return Response((OriginSourceSerializer(queryset, many=True)).data)

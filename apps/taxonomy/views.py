@@ -90,7 +90,7 @@ class TaxonList(ListAPIView):
 		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
 	)
 	def get(self, request):
-		taxon_form = TaxonomicLevelForm(data = request.GET)
+		taxon_form = TaxonomicLevelForm(data=request.GET)
 
 		if not taxon_form.is_valid():
 			raise CBBAPIException(taxon_form.errors, code=400)
@@ -121,9 +121,6 @@ class TaxonList(ListAPIView):
 			raise Http404("No taxa have been found that meet the specified filters.")
 
 		return Response(BaseTaxonomicLevelSerializer(queryset, many=True).data)
-
-
-
 
 
 class TaxonCRUD(APIView):

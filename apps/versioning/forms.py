@@ -11,31 +11,30 @@ class SourceForm(TranslateForm):
 	CHOICES_FIELD = {
 		"origin": Source.TRANSLATE_CHOICES,
 	}
+
 	class Meta:
 		model = Source
 		fields = "__all__"
 
 	def __init__(self, *args, **kwargs):
 		super().__init__(*args, **kwargs)
-		self.fields['origin'].required = False
-		self.fields['name'].required = False
-		self.fields['unidecode_name'].required = False
-		self.fields['synonyms'].required = False
-		self.fields['accepted'].required = False
-		self.fields['accepted_modifier'].required = False
+		self.fields["origin"].required = False
+		self.fields["name"].required = False
+		self.fields["unidecode_name"].required = False
+		self.fields["synonyms"].required = False
+		self.fields["accepted"].required = False
+		self.fields["accepted_modifier"].required = False
 
 
 class OriginSourceForm(TranslateForm):
-
-
 	class Meta:
 		model = OriginSource
 		fields = "__all__"
-	
+
 	def __init__(self, *args, **kwargs):
 		super().__init__(*args, **kwargs)
-		self.fields['origin_id'].required = False
-		self.fields['source'].required = False
-	
+		self.fields["origin_id"].required = False
+		self.fields["source"].required = False
+
 	def validate_unique(self):
 		return

@@ -6,6 +6,5 @@ urlpatterns = [
 	path("list", GeographicLevelListView.as_view()),
 	path("level", GeographicLevelIdView.as_view()),
 	path("level/parent", GeographicLevelParent.as_view()),
-	path("level/children", GeographicLevelChildren.as_view())
-
+	path("level/children", GeographicLevelChildren.as_view()),
 ]

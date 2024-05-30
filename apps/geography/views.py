@@ -22,15 +22,11 @@ class GeographicLevelDetailView(APIView):
 				required=False,
 			)
 		],
-		responses={
-			200: "Success",
-			400: "Bad Request",
-			404: "Not Found"
-		}
+		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
 	)
 	def get(self, request):
 		geographic_form = GeographicLevelForm(data=self.request.GET)
-		
+
 		filters = {}
 
 		if not geographic_form.is_valid():
@@ -51,6 +47,7 @@ class GeographicLevelDetailView(APIView):
 
 		return Response(GeographicLevelSerializer(level, many=True).data)
 
+
 class GeographicLevelIdView(APIView):
 	@swagger_auto_schema(
 		operation_description="Retrieve a specific geographic level instance by its id",
@@ -63,18 +60,14 @@ class GeographicLevelIdView(APIView):
 				required=True,
 			)
 		],
-		responses={
-			200: "Success",
-			400: "Bad Request",
-			404: "Not Found"
-		},
+		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
 	)
 	def get(self, request):
 		geographic_form = GeographicLevelForm(self.request.GET)
 
 		if not geographic_form.is_valid():
 			raise CBBAPIException(geographic_form.errors, code=400)
-		
+
 		try:
 			level_id = geographic_form.cleaned_data.get("id")
 		except ValueError:
@@ -93,61 +86,47 @@ class GeographicLevelListView(APIView):
 		operation_description="List geographic levels with optional filters",
 		manual_parameters=[
 			openapi.Parameter(
-				name="rank",
-				in_=openapi.IN_QUERY,
-				description="Rank of the geographic level",
-				type=openapi.TYPE_STRING,
-				required=False
+				name="rank", in_=openapi.IN_QUERY, description="Rank of the geographic level", type=openapi.TYPE_STRING, required=False
 			),
 			openapi.Parameter(
 				name="parent",
 				in_=openapi.IN_QUERY,
 				description="Parent ID of the geographic level",
 				type=openapi.TYPE_INTEGER,
-				required=False
+				required=False,
 			),
 			openapi.Parameter(
 				name="decimalLatitude",
 				in_=openapi.IN_QUERY,
 				description="Decimal latitude of the geographic level",
 				type=openapi.TYPE_NUMBER,
-				required=False
+				required=False,
 			),
 			openapi.Parameter(
 				name="decimalLongitude",
 				in_=openapi.IN_QUERY,
 				description="Decimal longitude of the geographic level",
 				type=openapi.TYPE_NUMBER,
-				required=False
+				required=False,
 			),
 			openapi.Parameter(
 				name="coordinateUncertaintyInMeters",
 				in_=openapi.IN_QUERY,
 				description="Coordinate uncertainty in meters of the geographic level",
 				type=openapi.TYPE_INTEGER,
-				required=False
-			)
+				required=False,
+			),
 		],
-		responses={
-			200: "Success",
-			400: "Bad Request",
-			404: "Not Found"
-		}
+		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
 	)
 	def get(self, request):
-		geographic_form = GeographicLevelForm(data = request.GET)
+		geographic_form = GeographicLevelForm(data=request.GET)
 
 		if not geographic_form.is_valid():
 			return Response(geographic_form.errors, status=400)
 
 		str_fields = ["name"]
-		num_fields = [
-			"parent",
-			"rank",
-			"decimal_latitude",
-			"decimal_longitude",
-			"coordinate_uncertainty_in_meters"
-		]
+		num_fields = ["parent", "rank", "decimal_latitude", "decimal_longitude", "coordinate_uncertainty_in_meters"]
 
 		filters = {}
 
@@ -178,18 +157,10 @@ class GeographicLevelParent(APIView):
 		operation_description="Get the parents of the geographic level given its ID",
 		manual_parameters=[
 			openapi.Parameter(
-				name="id",
-				in_=openapi.IN_QUERY,
-				description="ID of the geographic level",
-				type=openapi.TYPE_INTEGER,
-				required=True
+				name="id", in_=openapi.IN_QUERY, description="ID of the geographic level", type=openapi.TYPE_INTEGER, required=True
 			),
 		],
-		responses={
-			200: "Success",
-			400: "Bad Request",
-			404: "Not Found"
-		}
+		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
 	)
 	def get(self, request):
 		geographic_form = GeographicLevelForm(self.request.GET)
@@ -212,7 +183,6 @@ class GeographicLevelParent(APIView):
 		if not ancestors:
 			raise CBBAPIException("No parent geographic levels have been found that meet the specified ID.", code=404)
 
-
 		return Response(GeographicLevelSerializer(ancestors, many=True).data)
 
 
@@ -228,18 +198,14 @@ class GeographicLevelChildren(APIView):
 				required=True,
 			)
 		],
-		responses={
-			200: "Success",
-			400: "Bad Request",
-			404: "Not Found"
-		},
+		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
 	)
 	def get(self, request):
 		geographic_form = GeographicLevelForm(self.request.GET)
 
 		if not geographic_form.is_valid():
 			raise CBBAPIException(geographic_form.errors, code=400)
-		
+
 		try:
 			level_id = geographic_form.cleaned_data.get("id")
 		except ValueError:
@@ -251,7 +217,7 @@ class GeographicLevelChildren(APIView):
 			raise CBBAPIException("No geographic levels have been found that meet the specified ID.", code=404)
 
 		children = level.get_children()
-		
+
 		if not children:
 			raise CBBAPIException("No children geographic levels have been found that meet the specified ID.", code=404)
 

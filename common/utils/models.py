@@ -31,7 +31,7 @@ class ReferencedModel(models.Model):
 		if kwargs and kwargs["action"] == "post_add":
 			obj = kwargs["instance"]
 
-			if hasattr(obj, 'sources'):
+			if hasattr(obj, "sources"):
 				sources = [s.source.name for s in obj.sources.all()]
 
 				if len(sources) != len(set(sources)):

@@ -128,8 +128,6 @@ PUBLIC_DIR = root("public")
 STATIC_ROOT = join(PUBLIC_DIR, "static")
 STATIC_URL = "/static/"
 
-STATICFILES_DIRS = (
-    'static',
-)
+STATICFILES_DIRS = ("static",)
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"

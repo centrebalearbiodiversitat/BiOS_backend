@@ -6,7 +6,7 @@ STATIC_ROOT = "/var/www/site/static/"
 STATIC_URL = "/static/"
 
 CSRF_TRUSTED_ORIGINS = ["http://cbbdb.uib.*", "https://cbbdb.uib.*", "http://130.206.132.33", "https://130.206.132.33"]
-ALLOWED_HOSTS = ['cbbdb.uib.*', 'localhost', '130.206.132.33']
+ALLOWED_HOSTS = ["cbbdb.uib.*", "localhost", "130.206.132.33"]
 
 CORS_ALLOWED_ORIGINS = CSRF_TRUSTED_ORIGINS
 

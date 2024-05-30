@@ -1,8 +1,8 @@
-from common.utils.forms import CamelCaseForm
+from common.utils.forms import CamelCaseForm, IdFieldForm
 from .models import Occurrence
 
 
-class OccurrenceForm(CamelCaseForm):
+class OccurrenceForm(IdFieldForm, CamelCaseForm):
 	TRANSLATE_FIELDS = {
 		"year": "collection_date_year",
 		"month": "collection_date_month",

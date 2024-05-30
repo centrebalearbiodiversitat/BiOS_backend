@@ -1,12 +1,13 @@
-from apps.taxonomy.models import TaxonomicLevel
-from apps.taxonomy.serializers import BaseTaxonomicLevelSerializer
+from apps.taxonomy.models import TaxonomicLevel, Authorship
+from apps.taxonomy.serializers import BaseTaxonomicLevelSerializer, AuthorshipSerializer
+from apps.API.exceptions import CBBAPIException
 from django.core.exceptions import ValidationError
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.generics import ListAPIView
-from .forms import TaxonomicLevelForm
+from .forms import TaxonomicLevelForm, AuthorshipForm
 
 TRANSLATE_PARAM = {"name": "name", "parent": "parent", "scientific_name_authorship": "authorship", "taxon_rank": "rank"}
 
@@ -32,12 +33,12 @@ class TaxonSearch(APIView):
 		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
 	)
 	def get(self, request):
-		taxon_form = TaxonomicLevelForm(request.GET)
+		taxon_form = TaxonomicLevelForm(self.request.GET)
 
 		filters = {}
 
 		if not taxon_form.is_valid():
-			return Response(taxon_form.errors, status=400)
+			raise CBBAPIException(taxon_form.errors, code=400)
 
 		query = taxon_form.cleaned_data.get("name", None)
 		exact = taxon_form.cleaned_data.get("exact", False)
@@ -56,9 +57,7 @@ class TaxonList(ListAPIView):
 	@swagger_auto_schema(
 		operation_description="Get a list of taxa, with optional filtering.",
 		manual_parameters=[
-			openapi.Parameter(
-				"name", openapi.IN_QUERY, description="Name of the taxon to search for.", type=openapi.TYPE_STRING
-			),
+			openapi.Parameter("name", openapi.IN_QUERY, description="Name of the taxon to search for.", type=openapi.TYPE_STRING),
 			openapi.Parameter(
 				"taxonRank",
 				openapi.IN_QUERY,
@@ -90,7 +89,7 @@ class TaxonList(ListAPIView):
 		taxon_form = TaxonomicLevelForm(self.request.GET)
 
 		if not taxon_form.is_valid():
-			return Response(taxon_form.errors, status=400)
+			raise CBBAPIException(taxon_form.errors, code=400)
 
 		exact = taxon_form.cleaned_data.get("exact", False)
 
@@ -135,10 +134,17 @@ class TaxonCRUD(APIView):
 		taxon_form = TaxonomicLevelForm(self.request.GET)
 
 		if not taxon_form.is_valid():
-			raise ValidationError(taxon_form.errors)
+			raise CBBAPIException(taxon_form.errors, code=400)
 
-		id = request.query_params.get("id")
-		taxon = TaxonomicLevel.objects.filter(id=id).first()
+		taxon_id = taxon_form.cleaned_data.get("id")
+
+		if not taxon_id:
+			raise CBBAPIException("Missing id parameter", code=400)
+
+		try:
+			taxon = TaxonomicLevel.objects.get(id=taxon_id)
+		except TaxonomicLevel.DoesNotExist:
+			raise CBBAPIException("Taxonomic level does not exist")
 
 		return Response(BaseTaxonomicLevelSerializer(taxon).data)
 
@@ -147,9 +153,7 @@ class TaxonParent(APIView):
 	@swagger_auto_schema(
 		operation_description="Get the parents of the taxon given its ID",
 		manual_parameters=[
-			openapi.Parameter(
-				name="id", in_=openapi.IN_QUERY, description="ID of the taxon", type=openapi.TYPE_INTEGER, required=True
-			),
+			openapi.Parameter(name="id", in_=openapi.IN_QUERY, description="ID of the taxon", type=openapi.TYPE_INTEGER, required=True),
 		],
 		responses={200: "Success", 204: "No Content", 400: "Bad Request"},
 	)
@@ -157,10 +161,18 @@ class TaxonParent(APIView):
 		taxon_form = TaxonomicLevelForm(self.request.GET)
 
 		if not taxon_form.is_valid():
-			raise ValidationError(taxon_form.errors)
+			raise CBBAPIException(taxon_form.errors, 400)
 
-		id = request.query_params.get("id")
-		taxon = TaxonomicLevel.objects.get(pk=id)
+		taxon_id = taxon_form.cleaned_data.get("id")
+
+		if not taxon_id:
+			raise CBBAPIException("Missing id parameter", 400)
+
+		try:
+			taxon = TaxonomicLevel.objects.get(id=taxon_id)
+		except TaxonomicLevel.DoesNotExist:
+			raise CBBAPIException("Taxonomic level does not exist", 404)
+
 		ancestors = taxon.get_ancestors()
 
 		return Response(BaseTaxonomicLevelSerializer(ancestors, many=True).data)
@@ -168,7 +180,7 @@ class TaxonParent(APIView):
 
 class TaxonChildren(APIView):
 	@swagger_auto_schema(
-		operation_description="Get the direct childrens of the taxon given its ID",
+		operation_description="Get the direct children of the taxon given its ID",
 		manual_parameters=[
 			openapi.Parameter(
 				name="id",
@@ -184,10 +196,49 @@ class TaxonChildren(APIView):
 		taxon_form = TaxonomicLevelForm(self.request.GET)
 
 		if not taxon_form.is_valid():
-			raise ValidationError(taxon_form.errors)
+			raise CBBAPIException(taxon_form.errors, code=400)
 
-		id = request.query_params.get("id")
-		taxon = TaxonomicLevel.objects.get(pk=id)
-		children = taxon.get_children()
+		taxon_id = taxon_form.cleaned_data.get("id")
 
-		return Response(BaseTaxonomicLevelSerializer(children, many=True).data)
+		if not taxon_id:
+			raise CBBAPIException("Missing id parameter", code=400)
+
+		try:
+			taxon = TaxonomicLevel.objects.get(id=taxon_id)
+		except TaxonomicLevel.DoesNotExist:
+			raise CBBAPIException("Taxonomic level does not exist", code=404)
+
+		return Response(BaseTaxonomicLevelSerializer(taxon.get_children(), many=True).data)
+
+
+class AuthorshipCRUD(APIView):
+	@swagger_auto_schema(
+		operation_description="Get authorship info by ID",
+		manual_parameters=[
+			openapi.Parameter(
+				name="id",
+				in_=openapi.IN_QUERY,
+				type=openapi.TYPE_INTEGER,
+				description="ID of the authorship",
+				required=True,
+			)
+		],
+		responses={200: "Success", 400: "Bad Request", 404: "Not found"},
+	)
+	def get(self, request):
+		authorship_form = AuthorshipForm(self.request.GET)
+
+		if not authorship_form.is_valid():
+			raise CBBAPIException(authorship_form.errors, code=400)
+
+		authorship_id = authorship_form.cleaned_data.get("id")
+
+		if not authorship_id:
+			raise CBBAPIException("Missing id parameter", code=400)
+
+		try:
+			authorship = Authorship.objects.get(id=authorship_id)
+		except Authorship.DoesNotExist:
+			raise CBBAPIException("Authorship does not exist", code=404)
+
+		return Response(AuthorshipSerializer(authorship).data)

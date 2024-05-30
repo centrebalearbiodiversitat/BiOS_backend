@@ -14,7 +14,7 @@ admin.site.register(Source, SourceAdmin)
 
 
 class OriginSourceAdmin(admin.ModelAdmin):
-	search_fields = ["origin_id", "source"]
+	search_fields = ["origin_id"]
 	list_filter = ["source"]
 
 

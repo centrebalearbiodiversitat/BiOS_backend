@@ -1,6 +1,6 @@
 from django.core.exceptions import ValidationError
 from django.db import models
-from django.db.models.signals import m2m_changed
+from django.db.models.signals import m2m_changed, pre_delete
 from unidecode import unidecode
 
 from common.utils.utils import str_clean_up
@@ -14,10 +14,7 @@ class LatLonModel(models.Model):
 	depth = models.IntegerField(null=True, blank=True, default=None)
 
 	def save(self, force_insert=False, force_update=False, using=None, update_fields=None):
-		if not (
-			(self.decimal_latitude is not None and self.decimal_longitude is not None)
-			or (self.latitude == self.longitude == None)
-		):
+		if not ((self.decimal_latitude is not None and self.decimal_longitude is not None) or (self.latitude == self.longitude == None)):
 			raise ValidationError("Latitude and longitude must both exist or None")
 		super().save(force_insert, force_update, using, update_fields)
 
@@ -34,20 +31,23 @@ class ReferencedModel(models.Model):
 		if kwargs and kwargs["action"] == "post_add":
 			obj = kwargs["instance"]
 
-			sources = [s.source.name for s in obj.sources.all()]
+			if hasattr(obj, "sources"):
+				sources = [s.source.name for s in obj.sources.all()]
 
-			if len(sources) != len(set(sources)):
-				raise ValidationError(f"Sources must be unique.\n{obj}\n{sources}")
+				if len(sources) != len(set(sources)):
+					raise ValidationError(f"Sources must be unique.\n{obj}\n{sources}")
 
-	def delete(self, using=None, keep_parents=False):
-		self.sources.all().delete()
-		return super().delete(using, keep_parents)
+	@staticmethod
+	def pre_delete(sender, instance, *args, **kwargs):
+		if issubclass(sender, ReferencedModel):
+			instance.sources.all().delete()
 
 	class Meta:
 		abstract = True
 
 
 m2m_changed.connect(ReferencedModel.clean_sources, sender=ReferencedModel.sources.through)
+pre_delete.connect(ReferencedModel.pre_delete)
 
 
 class SynonymManager(models.Manager):
@@ -109,7 +109,7 @@ class SynonymModel(models.Model):
 	ACCEPTED_MODIFIERS_CHOICES = (
 		(PROVISIONAL, "Provisional"),
 		(AMBIGUOUS, "Ambiguous"),
-		(MISAPPLIED, "Misaplied"),
+		(MISAPPLIED, "Misapplied"),
 	)
 	ACCEPTED_MODIFIERS_TRANSLATE = {
 		PROVISIONAL: "provisional",
@@ -124,9 +124,7 @@ class SynonymModel(models.Model):
 	unidecode_name = models.CharField(max_length=256, help_text="Unidecode name do not touch")
 	synonyms = models.ManyToManyField("self", blank=True, symmetrical=True)
 	accepted = models.BooleanField(null=False, blank=False)
-	accepted_modifier = models.PositiveSmallIntegerField(
-		choices=ACCEPTED_MODIFIERS_CHOICES, null=True, blank=True, default=None
-	)
+	accepted_modifier = models.PositiveSmallIntegerField(choices=ACCEPTED_MODIFIERS_CHOICES, null=True, blank=True, default=None)
 
 	def readable_accepted_modifier(self):
 		return SynonymModel.ACCEPTED_MODIFIERS_TRANSLATE.get(self.accepted_modifier)

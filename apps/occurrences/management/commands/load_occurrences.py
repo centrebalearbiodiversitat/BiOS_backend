@@ -89,9 +89,7 @@ def create_origin_source(ref_model_elem, origin_id, source):
 		ref_model_elem.sources.add(os)
 	else:
 		if not ref_model_elem.sources.filter(id=os.id).exists():
-			raise Exception(
-				f"Origin id already assigned to another model. {ref_model_elem}, {ref_model_elem.sources}, {os}"
-			)
+			raise Exception(f"Origin id already assigned to another model. {ref_model_elem}, {ref_model_elem.sources}, {os}")
 
 
 class Command(BaseCommand):
@@ -105,7 +103,7 @@ class Command(BaseCommand):
 	def handle(self, *args, **options):
 		file_name = options["file"]
 		delimiter = options["d"]
-		with open(file_name, encoding="windows-1252") as file:
+		with open(file_name, encoding="utf-8") as file:
 			csv_file = csv.DictReader(file, delimiter=delimiter)
 			batch = Batch.objects.create()
 			biota = TaxonomicLevel.objects.get(rank=TaxonomicLevel.LIFE)
@@ -153,19 +151,20 @@ class Command(BaseCommand):
 						taxonomy=taxonomy.first(),
 						batch=batch,
 						voucher=line["voucher"],
-						basis_of_record=Occurrence.TRANSLATE_BASIS_OF_RECORD.get(
-							line["basisOfRecord"], Occurrence.UNKNOWN
-						),
+						basis_of_record=Occurrence.TRANSLATE_BASIS_OF_RECORD.get(line["basisOfRecord"], Occurrence.UNKNOWN),
 						collection_date_year=int(line["year"]) if line["year"] else None,
 						collection_date_month=int(line["month"]) if line["month"] else None,
 						collection_date_day=int(line["day"]) if line["day"] else None,
 						geographical_location=find_gadm(line),
-						latitude=float(line["lat_lon"][0]) if line["lat_lon"] else None,
-						longitude=float(line["lat_lon"][1]) if line["lat_lon"] else None,
-						coordinatesUncertaintyMeters=int(line["coordinateUncertaintyInMeters"])
+						decimal_latitude=float(line["lat_lon"][0]) if line["lat_lon"] else None,
+						decimal_longitude=float(line["lat_lon"][1]) if line["lat_lon"] else None,
+						coordinate_uncertainty_in_meters=int(line["coordinateUncertaintyInMeters"])
 						if line["coordinateUncertaintyInMeters"]
 						else None,
-						elevationMeters=int(line["elevation"]) if line["elevation"] else None,
-						depthMeters=int(line["depth"]) if line["depth"] else None,
+						elevation=int(line["elevation"]) if line["elevation"] else None,
+						depth=int(line["depth"]) if line["depth"] else None,
 					)
-					occ.sources.add(os)
+				else:
+					occ = Occurrence.objects.get(sources=os)
+
+				occ.sources.add(os)

@@ -8,6 +8,7 @@ from rest_framework.response import Response
 from .models import Occurrence
 from .serializers import OccurrenceSerializer
 from .forms import OccurrenceForm
+from ..API.exceptions import CBBAPIException
 from ..geography.models import GeographicLevel
 from ..taxonomy.models import TaxonomicLevel
 
@@ -26,22 +27,24 @@ class OccurrenceDetail(APIView):
 		],
 		responses={
 			200: "Success",
-			204: "No Content",
 			400: "Bad Request",
 			404: "Not Found",
 		},
 	)
 	def get(self, request):
-		occurr_form = OccurrenceForm(data=self.request.GET)
+		occur_form = OccurrenceForm(data=self.request.GET)
 
-		if not occurr_form.is_valid():
-			raise ValidationError(occurr_form.errors)
+		if not occur_form.is_valid():
+			raise CBBAPIException(occur_form.errors, 400)
 
-		occur_id = request.query_params.get("id")
+		occur_id = occur_form.cleaned_data.get("id")
+		if not occur_id:
+			raise CBBAPIException("Missing id parameter", 400)
+
 		try:
 			occurrence = Occurrence.objects.get(id=occur_id)
 		except Occurrence.DoesNotExist:
-			raise Http404
+			raise CBBAPIException("Occurrence does not exist", 404)
 
 		return Response(OccurrenceSerializer(occurrence).data)
 
@@ -50,20 +53,21 @@ class OccurrenceFilter(APIView):
 	SPECIAL_FILTERS = {"geographical_location": GeographicLevel, "taxonomy": TaxonomicLevel}
 
 	def get(self, request):
-		occu_form = OccurrenceForm(data=request.GET)
-		if not occu_form.is_valid():
-			return Response(occu_form.errors, status=400)
+		occur_form = OccurrenceForm(data=request.GET)
+
+		if not occur_form.is_valid():
+			raise CBBAPIException(occur_form.errors, 400)
 
 		filters = {}
-		for param in occu_form.cleaned_data:
-			value = occu_form.cleaned_data.get(param)
+		for param in occur_form.cleaned_data:
+			value = occur_form.cleaned_data.get(param)
 			if value:
 				klass = OccurrenceFilter.SPECIAL_FILTERS.get(param, None)
 				if klass:
 					try:
 						obj = klass.objects.get(id=value.id)
 					except klass.DoesNotExist:
-						raise Http404(f"{param} does not exist")
+						raise CBBAPIException(f"{param} does not exist", 404)
 
 					filters[f"{param}__lft__gte"] = obj.lft
 					filters[f"{param}__rght__lte"] = obj.rght

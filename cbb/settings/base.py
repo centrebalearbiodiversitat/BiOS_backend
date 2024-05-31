@@ -31,16 +31,6 @@ sys.path.insert(0, root("apps"))  # All apps will live inside apps folder
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.0/howto/deployment/checklist/
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = "django-insecure-=d^f%8dfm)s@he-zv@dk$z)24q!#6)90c5+!!e5qz-y%qq4txr"
-
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
-
-SITE_URL = "localhost"
-
-ALLOWED_HOSTS = ["localhost", "127.0.0.1", SITE_URL]
-
 INSTALLED_APPS = [
 	"django.contrib.admin",
 	"django.contrib.auth",
@@ -137,9 +127,6 @@ USE_TZ = True
 PUBLIC_DIR = root("public")
 STATIC_ROOT = join(PUBLIC_DIR, "static")
 STATIC_URL = "/static/"
-
-# STATICFILES_DIRS = (
-#     abspath(join(PUBLIC_DIR, 'assets')),
-# )
+SILENCED_SYSTEM_CHECKS = ["urls.W002"]
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"

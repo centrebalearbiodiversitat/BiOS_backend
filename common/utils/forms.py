@@ -19,20 +19,23 @@ class CamelCaseForm(forms.ModelForm):
 				pre_parsed_data[translated_key] = value
 
 			kwargs["data"] = pre_parsed_data
-		super(CamelCaseForm, self).__init__(*args, **kwargs)
+
+		super().__init__(*args, **kwargs)
 
 
 class TranslateForm(CamelCaseForm):
 	CHOICES_FIELD = {}
 
-	def clean(self):
-		cleaned_data = super().clean()
-		for field, translate in self.CHOICES_FIELD.items():
-			if field in cleaned_data and cleaned_data[field]:
-				cleaned_data[field] = cleaned_data[field].lower()
+	def __init__(self, *args, **kwargs):
+		super().__init__(*args, **kwargs)
 
-				if cleaned_data[field] not in translate:
-					raise forms.ValidationError(f"Invalid {field}")
+		if hasattr(self, 'data'):
+			for field, translate in self.CHOICES_FIELD.items():
+				if field in self.data and self.data[field]:
+					self.data[field] = self.data[field].lower()
 
-				cleaned_data[field] = translate[cleaned_data[field]]
-		return cleaned_data
+					if self.data[field] not in translate:
+						raise forms.ValidationError(f"Invalid {field}")
+
+					self.data[field] = translate[self.data[field]]
+

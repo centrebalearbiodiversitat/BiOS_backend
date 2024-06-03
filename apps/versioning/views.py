@@ -9,6 +9,7 @@ from common.utils.serializers import CaseModelSerializer
 from .models import Source, Batch, OriginSource
 from .serializers import SourceSerializer, OriginSourceSerializer
 from .forms import SourceForm, OriginSourceForm
+from ..API.exceptions import CBBAPIException
 
 
 class SourceView(APIView):
@@ -36,7 +37,7 @@ class SourceView(APIView):
 		source_form = SourceForm(self.request.GET)
 
 		if not source_form.is_valid():
-			raise ValidationError(source_form.errors)
+			raise CBBAPIException(source_form.errors, code=400)
 
 		filters = {}
 
@@ -45,12 +46,7 @@ class SourceView(APIView):
 
 		filters["name__iexact" if exact else "name__icontains"] = query
 
-		try:
-			source = Source.objects.get(**filters)
-		except Source.DoesNotExist:
-			raise Http404
-
-		return Response((SourceSerializer(source, many=False)).data)
+		return Response(SourceSerializer(Source.objects.filter(**filters), many=True).data)
 
 
 class SourceList(APIView):
@@ -137,8 +133,8 @@ class OriginSourceView(APIView):
 			try:
 				queryset = OriginSource.objects.filter(**filters)
 			except OriginSource.DoesNotExist:
-				raise Http404
+				raise CBBAPIException('Origin source does not exist.', code=404)
 		else:
 			queryset = OriginSource.objects.all()
 
-		return Response((OriginSourceSerializer(queryset, many=True)).data)
+		return Response(OriginSourceSerializer(queryset, many=True).data)

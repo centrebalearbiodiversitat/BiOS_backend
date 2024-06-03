@@ -29,7 +29,7 @@ class TranslateForm(CamelCaseForm):
 	def __init__(self, *args, **kwargs):
 		super().__init__(*args, **kwargs)
 
-		if hasattr(self, 'data'):
+		if hasattr(self, "data"):
 			for field, translate in self.CHOICES_FIELD.items():
 				if field in self.data and self.data[field]:
 					self.data[field] = self.data[field].lower()
@@ -38,4 +38,3 @@ class TranslateForm(CamelCaseForm):
 						raise forms.ValidationError(f"Invalid {field}")
 
 					self.data[field] = translate[self.data[field]]
-

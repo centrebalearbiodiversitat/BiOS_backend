@@ -133,7 +133,7 @@ class OriginSourceView(APIView):
 			try:
 				queryset = OriginSource.objects.filter(**filters)
 			except OriginSource.DoesNotExist:
-				raise CBBAPIException('Origin source does not exist.', code=404)
+				raise CBBAPIException("Origin source does not exist.", code=404)
 		else:
 			queryset = OriginSource.objects.all()
 

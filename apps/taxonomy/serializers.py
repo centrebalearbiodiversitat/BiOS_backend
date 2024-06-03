@@ -1,8 +1,9 @@
-from rest_framework import serializers
 from apps.taxonomy.models import TaxonomicLevel, Authorship
+from common.utils.serializers import CaseModelSerializer
+from rest_framework import serializers
 
 
-class BaseTaxonomicLevelSerializer(serializers.ModelSerializer):
+class BaseTaxonomicLevelSerializer(CaseModelSerializer):
 	scientific_name_authorship = serializers.CharField(source="verbatim_authorship")
 	taxon_rank = serializers.SerializerMethodField()
 	name = serializers.SerializerMethodField()

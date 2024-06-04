@@ -1,10 +1,8 @@
 import csv
 import json
-
 from django.core.management.base import BaseCommand
 from django.db import transaction
 from django.utils.dateparse import parse_datetime
-
 from apps.genetics.models import GeneticFeatures, Produces, Gene, Product
 from apps.geography.models import GeographicLevel
 from apps.occurrences.models import Occurrence
@@ -19,8 +17,6 @@ TAXON_KEYS = [
 	("family", "familyKey", TaxonomicLevel.FAMILY),
 	("genus", "genusKey", TaxonomicLevel.GENUS),
 	("specificEpithet", "speciesKey", TaxonomicLevel.SPECIES),
-	# ("infraspecificEpithet", "subspeciesKey", TaxonomicLevel.SUBSPECIES),
-	# ('varietyEpithet', 'varietyKey', TaxonomicLevel.VARIETY),
 ]
 
 GEOGRAPHIC_LEVELS = [
@@ -31,66 +27,88 @@ GEOGRAPHIC_LEVELS = [
 	{"key": "WB_0", "rank": GeographicLevel.WATER_BODY},
 ]
 
-
 def parse_line(line: dict):
 	for key, value in line.items():
 		try:
 			line[key] = json.loads(value)
 		except:
 			pass  # is not json format
-
 	return line
 
 
-def genetic_sources(line: dict, batch):
+def genetic_sources(line: dict, batch, occ, os):
+
 	gfs, _ = GeneticFeatures.objects.get_or_create(
-		sample_id=line["sample_id"],
+		occurrence=occ,
 		defaults={
+			"batch": batch,
 			"isolate": line["isolate"],
 			"bp": line["bp"],
 			"definition": line["definition"],
 			"data_file_division": line["data_file_division"],
 			"published_date": parse_datetime(line["date"]) if line["date"] else None,
-			"collection_date": parse_datetime(line["collection_date"]) if line["collection_date"] else None,
+			"collection_date_year": int(line["year"]) if line["year"] else None,
+			"collection_date_month": int(line["month"]) if line["month"] else None,
+			"collection_date_day": int(line["day"]) if line["day"] else None,
 			"molecule_type": line["molecule_type"],
 			"sequence_version": line["sequence_version"],
 		},
 	)
 
-	gfs.references.add(batch)
+	if not gfs.sources.filter(id=os.id).exists():
+		gfs.sources.add(os)
 
 	for production in line["genetic_features"]:
 		gene = None
 		product = None
 		if production["gene"]:
-			gene, _ = Gene.objects.get_or_create(name=production["gene"], accepted=True)
-			gene.references.add(batch)
-		if production["product"]:
-			product, _ = Product.objects.get_or_create(name=production["product"], accepted=True)
-			product.references.add(batch)
-		prod_rel, _ = Produces.objects.get_or_create(gene=gene, product=product)
-		prod_rel.references.add(batch)
-		gfs.products.add(prod_rel)
 
+			gene, _ = Gene.objects.get_or_create(
+				name=production["gene"], 
+				defaults={
+					"name": production["gene"],
+					"batch": batch,
+					"accepted": True
+				}
+			)
+			if not gene.sources.filter(id=os.id).exists():
+				gene.sources.add(os)
+		
+		if production["product"]:
+			product, _ = Product.objects.get_or_create(
+				name=production["product"],
+				defaults={
+					"name": production["product"],
+					"batch": batch,
+					"accepted": True
+				}
+			)
+			if not product.sources.filter(id=os.id).exists():
+				product.sources.add(os)
+		prod_rel, _ = Produces.objects.get_or_create(
+			gene=gene,
+			product=product,
+			defaults={"batch": batch}
+		)
+		if not prod_rel.sources.filter(id=os.id).exists():
+			prod_rel.sources.add(os)
+		if not gfs.products.filter(id=prod_rel.id).exists():
+			gfs.products.add(prod_rel)
 
 def find_gadm(line):
 	gadm_query = ""
 	for gl_key in GEOGRAPHIC_LEVELS:
 		if line[gl_key["key"]]:
 			gadm_query = f'{gadm_query}, {line[gl_key["key"]]}'
-
 	return GeographicLevel.objects.search(location=gadm_query)
-
 
 def create_origin_source(ref_model_elem, origin_id, source):
 	os, new = OriginSource.objects.get_or_create(origin_id=origin_id, source=source)
-
 	if new:
 		ref_model_elem.sources.add(os)
 	else:
 		if not ref_model_elem.sources.filter(id=os.id).exists():
 			raise Exception(f"Origin id already assigned to another model. {ref_model_elem}, {ref_model_elem.sources}, {os}")
-
 
 class Command(BaseCommand):
 	help = "Loads occurrences from csv"
@@ -109,7 +127,6 @@ class Command(BaseCommand):
 			biota = TaxonomicLevel.objects.get(rank=TaxonomicLevel.LIFE)
 			line: dict
 			for line in csv_file:
-				# print(line)
 				line = parse_line(line)
 				source, _ = Source.objects.get_or_create(
 					name__icontains=line["occurrenceSource"],
@@ -128,15 +145,10 @@ class Command(BaseCommand):
 							raise Exception(f"Found multiple taxa for {taxon_key}:{taxon_id_key}.\n{line}")
 						elif taxon.count() == 0:
 							continue
-
 						taxon = taxon.first()
-
-						# if not taxon.sources.all().filter(origin_id=line[taxon_id_key], source=source).exists():
-						# 	taxon.sources.add(OriginSource.objects.get_or_create(origin_id=line[taxon_id_key], source=source))
 						create_origin_source(taxon, line[taxon_id_key], source)
 
 				taxonomy = TaxonomicLevel.objects.find(taxon=line["originalName"])
-
 				if taxonomy.count() == 0:
 					raise Exception(f"Taxonomy not found.\n{line}")
 				elif taxonomy.count() > 1:
@@ -164,7 +176,9 @@ class Command(BaseCommand):
 						elevation=int(line["elevation"]) if line["elevation"] else None,
 						depth=int(line["depth"]) if line["depth"] else None,
 					)
+					occ.sources.add(os)
 				else:
 					occ = Occurrence.objects.get(sources=os)
 
-				occ.sources.add(os)
+				if line["bp"]:
+					genetic_sources(line, batch, occ, os)

@@ -27,6 +27,7 @@ GEOGRAPHIC_LEVELS = [
 	{"key": "WB_0", "rank": GeographicLevel.WATER_BODY},
 ]
 
+
 def parse_line(line: dict):
 	for key, value in line.items():
 		try:
@@ -37,7 +38,6 @@ def parse_line(line: dict):
 
 
 def genetic_sources(line: dict, batch, occ, os):
-
 	gfs, _ = GeneticFeatures.objects.get_or_create(
 		occurrence=occ,
 		defaults={
@@ -62,38 +62,24 @@ def genetic_sources(line: dict, batch, occ, os):
 		gene = None
 		product = None
 		if production["gene"]:
-
 			gene, _ = Gene.objects.get_or_create(
-				name=production["gene"], 
-				defaults={
-					"name": production["gene"],
-					"batch": batch,
-					"accepted": True
-				}
+				name=production["gene"], defaults={"name": production["gene"], "batch": batch, "accepted": True}
 			)
 			if not gene.sources.filter(id=os.id).exists():
 				gene.sources.add(os)
-		
+
 		if production["product"]:
 			product, _ = Product.objects.get_or_create(
-				name=production["product"],
-				defaults={
-					"name": production["product"],
-					"batch": batch,
-					"accepted": True
-				}
+				name=production["product"], defaults={"name": production["product"], "batch": batch, "accepted": True}
 			)
 			if not product.sources.filter(id=os.id).exists():
 				product.sources.add(os)
-		prod_rel, _ = Produces.objects.get_or_create(
-			gene=gene,
-			product=product,
-			defaults={"batch": batch}
-		)
+		prod_rel, _ = Produces.objects.get_or_create(gene=gene, product=product, defaults={"batch": batch})
 		if not prod_rel.sources.filter(id=os.id).exists():
 			prod_rel.sources.add(os)
 		if not gfs.products.filter(id=prod_rel.id).exists():
 			gfs.products.add(prod_rel)
+
 
 def find_gadm(line):
 	gadm_query = ""
@@ -102,6 +88,7 @@ def find_gadm(line):
 			gadm_query = f'{gadm_query}, {line[gl_key["key"]]}'
 	return GeographicLevel.objects.search(location=gadm_query)
 
+
 def create_origin_source(ref_model_elem, origin_id, source):
 	os, new = OriginSource.objects.get_or_create(origin_id=origin_id, source=source)
 	if new:
@@ -109,6 +96,7 @@ def create_origin_source(ref_model_elem, origin_id, source):
 	else:
 		if not ref_model_elem.sources.filter(id=os.id).exists():
 			raise Exception(f"Origin id already assigned to another model. {ref_model_elem}, {ref_model_elem.sources}, {os}")
+
 
 class Command(BaseCommand):
 	help = "Loads occurrences from csv"

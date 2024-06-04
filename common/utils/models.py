@@ -14,7 +14,10 @@ class LatLonModel(models.Model):
 	depth = models.IntegerField(null=True, blank=True, default=None)
 
 	def save(self, force_insert=False, force_update=False, using=None, update_fields=None):
-		if not ((self.decimal_latitude is not None and self.decimal_longitude is not None) or (self.decimal_latitude == self.decimal_longitude == None)):
+		if not (
+			(self.decimal_latitude is not None and self.decimal_longitude is not None)
+			or (self.decimal_latitude == self.decimal_longitude == None)
+		):
 			raise ValidationError("Latitude and longitude must both exist or None")
 		super().save(force_insert, force_update, using, update_fields)
 

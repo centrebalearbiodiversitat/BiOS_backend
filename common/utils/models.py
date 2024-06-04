@@ -120,8 +120,8 @@ class SynonymModel(models.Model):
 		"misapplied": MISAPPLIED,
 	}
 
-	name = models.CharField(max_length=256)
-	unidecode_name = models.CharField(max_length=256, help_text="Unidecode name do not touch")
+	name = models.CharField(max_length=256, db_index=True)
+	unidecode_name = models.CharField(max_length=256, help_text="Unidecode name do not touch", db_index=True)
 	synonyms = models.ManyToManyField("self", blank=True, symmetrical=True)
 	accepted = models.BooleanField(null=False, blank=False)
 	accepted_modifier = models.PositiveSmallIntegerField(choices=ACCEPTED_MODIFIERS_CHOICES, null=True, blank=True, default=None)

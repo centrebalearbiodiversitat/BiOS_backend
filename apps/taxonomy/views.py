@@ -11,6 +11,7 @@ from .forms import TaxonomicLevelForm, AuthorshipForm
 
 class TaxonSearch(APIView):
 	@swagger_auto_schema(
+		tags=['Taxonomy'],
 		operation_description="Search for a taxon by name.",
 		manual_parameters=[
 			openapi.Parameter(
@@ -27,7 +28,11 @@ class TaxonSearch(APIView):
 				type=openapi.TYPE_BOOLEAN,
 			),
 		],
-		responses={200: "Success", 400: "Bad Request"},
+		responses={
+			200: "Success",
+			400: "Bad Request",
+			404: "Not Found"
+		},
 	)
 	def get(self, request):
 		taxon_form = TaxonomicLevelForm(data=self.request.GET)
@@ -51,6 +56,7 @@ class TaxonSearch(APIView):
 
 class TaxonList(ListAPIView):
 	@swagger_auto_schema(
+		tags=['Taxonomy'],
 		operation_description="Get a list of taxa, with optional filtering.",
 		manual_parameters=[
 			openapi.Parameter("name", openapi.IN_QUERY, description="Name of the taxon to search for.", type=openapi.TYPE_STRING),
@@ -79,7 +85,11 @@ class TaxonList(ListAPIView):
 				type=openapi.TYPE_BOOLEAN,
 			),
 		],
-		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
+		responses={
+			200: "Success",
+			400: "Bad Request",
+			404: "Not Found"
+		},
 	)
 	def get(self, request):
 		taxon_form = TaxonomicLevelForm(data=request.GET)
@@ -94,19 +104,19 @@ class TaxonList(ListAPIView):
 
 		filters = {}
 
-		for param in str_fields:
-			value = taxon_form.cleaned_data.get(param)
+		for param in taxon_form.cleaned_data:
+			if param != "exact":
+				if param in str_fields:
+					value = taxon_form.cleaned_data.get(param)
 
-			if value:
-				param = f"{param}__iexact" if exact else f"{param}__icontains"
-				filters[param] = value
-
-		for param in num_fields:
-			value = taxon_form.cleaned_data.get(param)
-
-			if value:
-				filters[param] = value
-
+					if value:
+						param = f"{param}__iexact" if exact else f"{param}__icontains"
+						filters[param] = value
+				else:
+					value = taxon_form.cleaned_data.get(param)
+					if value or isinstance(value, int):
+						filters[param] = value
+		print(filters)
 		queryset = TaxonomicLevel.objects.filter(**filters)
 
 		return Response(BaseTaxonomicLevelSerializer(queryset, many=True).data)
@@ -114,6 +124,7 @@ class TaxonList(ListAPIView):
 
 class TaxonCRUD(APIView):
 	@swagger_auto_schema(
+		tags=['Taxonomy'],
 		operation_description="Retrieve a specific TaxonomicLevel instance by its id",
 		manual_parameters=[
 			openapi.Parameter(
@@ -124,7 +135,11 @@ class TaxonCRUD(APIView):
 				required=True,
 			)
 		],
-		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
+		responses={
+			200: "Success",
+			400: "Bad Request",
+			404: "Not Found"
+		},
 	)
 	def get(self, request):
 		taxon_form = TaxonomicLevelForm(self.request.GET)
@@ -147,11 +162,16 @@ class TaxonCRUD(APIView):
 
 class TaxonParent(APIView):
 	@swagger_auto_schema(
+		tags=['Taxonomy'],
 		operation_description="Get the parents of the taxon given its ID",
 		manual_parameters=[
 			openapi.Parameter(name="id", in_=openapi.IN_QUERY, description="ID of the taxon", type=openapi.TYPE_INTEGER, required=True),
 		],
-		responses={200: "Success", 204: "No Content", 400: "Bad Request"},
+		responses={
+			200: "Success",
+			400: "Bad Request",
+			404: "Not Found"
+		},
 	)
 	def get(self, request):
 		taxon_form = TaxonomicLevelForm(self.request.GET)
@@ -176,6 +196,7 @@ class TaxonParent(APIView):
 
 class TaxonChildren(APIView):
 	@swagger_auto_schema(
+		tags=['Taxonomy'],
 		operation_description="Get the direct children of the taxon given its ID",
 		manual_parameters=[
 			openapi.Parameter(
@@ -186,7 +207,11 @@ class TaxonChildren(APIView):
 				required=True,
 			)
 		],
-		responses={200: "Success", 204: "No Content", 400: "Bad Request"},
+		responses={
+			200: "Success",
+			400: "Bad Request",
+			404: "Not Found"
+		},
 	)
 	def get(self, request):
 		taxon_form = TaxonomicLevelForm(self.request.GET)
@@ -209,6 +234,7 @@ class TaxonChildren(APIView):
 
 class AuthorshipCRUD(APIView):
 	@swagger_auto_schema(
+		tags=['Authorship'],
 		operation_description="Get authorship info by ID",
 		manual_parameters=[
 			openapi.Parameter(
@@ -219,7 +245,11 @@ class AuthorshipCRUD(APIView):
 				required=True,
 			)
 		],
-		responses={200: "Success", 400: "Bad Request", 404: "Not found"},
+		responses={
+			200: "Success",
+			400: "Bad Request",
+			404: "Not Found"
+		},
 	)
 	def get(self, request):
 		authorship_form = AuthorshipForm(self.request.GET)

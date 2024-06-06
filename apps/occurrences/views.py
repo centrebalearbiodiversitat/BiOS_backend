@@ -15,7 +15,7 @@ from ..taxonomy.models import TaxonomicLevel
 
 class OccurrenceDetail(APIView):
 	@swagger_auto_schema(
-		tags=['Occurrences'],
+		tags=["Occurrences"],
 		operation_description="Get details of a specific occurrence.",
 		manual_parameters=[
 			openapi.Parameter(
@@ -83,7 +83,7 @@ class OccurrenceFilter(APIView):
 
 class OccurrenceList(OccurrenceFilter):
 	@swagger_auto_schema(
-		tags=['Occurrences'],
+		tags=["Occurrences"],
 		operation_description="Filter occurrences based on query parameters.",
 		manual_parameters=[
 			openapi.Parameter(
@@ -135,11 +135,7 @@ class OccurrenceList(OccurrenceFilter):
 				type=openapi.TYPE_STRING,  # Ajusta el tipo de dato según el campo del modelo
 			),
 		],
-		responses={
-			200: "Success",
-			400: "Bad Request",
-			404: "Not Found"
-		},
+		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
 	)
 	def get(self, request):
 		return Response(OccurrenceSerializer(super().get(request), many=True).data)
@@ -147,7 +143,7 @@ class OccurrenceList(OccurrenceFilter):
 
 class OccurrenceCount(OccurrenceFilter):
 	@swagger_auto_schema(
-		tags=['Occurrences'],
+		tags=["Occurrences"],
 		operation_description="Counts the filtered occurrences based on the query parameters.",
 		manual_parameters=[
 			openapi.Parameter(
@@ -193,11 +189,7 @@ class OccurrenceCount(OccurrenceFilter):
 				type=openapi.TYPE_STRING,  # Ajusta el tipo de dato según el campo del modelo
 			),
 		],
-		responses={
-			200: "Success",
-			400: "Bad Request",
-			404: "Not Found"
-		},
+		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
 	)
 	def get(self, request):
 		return Response(super().get(request).count())

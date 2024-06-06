@@ -9,4 +9,4 @@ urlpatterns = [
 	path("taxon/parent", TaxonParent.as_view()),
 	path("taxon/children", TaxonChildren.as_view()),
 	path("authorship", AuthorshipCRUD.as_view()),
-	]
+]

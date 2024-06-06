@@ -83,11 +83,7 @@ class GeographicLevelListView(APIView):
 		operation_description="List geographic levels with optional filters",
 		manual_parameters=[
 			openapi.Parameter(
-				name="rank",
-				in_=openapi.IN_QUERY,
-				description="Rank of the geographic level",
-				type=openapi.TYPE_STRING,
-				required=False
+				name="rank", in_=openapi.IN_QUERY, description="Rank of the geographic level", type=openapi.TYPE_STRING, required=False
 			),
 			openapi.Parameter(
 				name="parent",
@@ -118,11 +114,7 @@ class GeographicLevelListView(APIView):
 				required=False,
 			),
 		],
-		responses={
-			200: "Success",
-			400: "Bad Request",
-			404: "Not Found"
-		},
+		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
 	)
 	def get(self, request):
 		geographic_form = GeographicLevelForm(data=request.GET)
@@ -158,18 +150,10 @@ class GeographicLevelParent(APIView):
 		operation_description="Get the parents of the geographic level given its ID",
 		manual_parameters=[
 			openapi.Parameter(
-				name="id",
-				in_=openapi.IN_QUERY,
-				description="ID of the geographic level",
-				type=openapi.TYPE_INTEGER,
-				required=True
+				name="id", in_=openapi.IN_QUERY, description="ID of the geographic level", type=openapi.TYPE_INTEGER, required=True
 			),
 		],
-		responses={
-			200: "Success",
-			400: "Bad Request",
-			404: "Not Found"
-		},
+		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
 	)
 	def get(self, request):
 		geographic_form = GeographicLevelForm(self.request.GET)
@@ -202,11 +186,7 @@ class GeographicLevelChildren(APIView):
 				required=True,
 			)
 		],
-		responses={
-			200: "Success",
-			400: "Bad Request",
-			404: "Not Found"
-		},
+		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
 	)
 	def get(self, request):
 		geographic_form = GeographicLevelForm(self.request.GET)

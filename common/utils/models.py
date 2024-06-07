@@ -60,7 +60,7 @@ class SynonymManager(models.Manager):
 
 	def filter(self, *args, **kwargs):
 		self._override_args(kwargs)
-		return super().filter(**kwargs)
+		return super().filter(*args, **kwargs)
 
 	def aggregate(self, *args, **kwargs):
 		self._override_args(kwargs)

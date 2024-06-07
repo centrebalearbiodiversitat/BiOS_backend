@@ -113,27 +113,18 @@ class TaxonomicLevel(SynonymModel, MPTTModel, ReferencedModel):
 		return TaxonomicLevel.TRANSLATE_RANK[self.rank]
 
 	def scientific_name(self):
-		ancestors = self.get_ancestors(include_self=False, ascending=True).filter(
-			rank__in=[TaxonomicLevel.GENUS, TaxonomicLevel.SPECIES, TaxonomicLevel.SUBSPECIES, TaxonomicLevel.VARIETY]
-		)
+		ancestors = TaxonomicLevel.objects.none()
+		if self.rank in [TaxonomicLevel.SPECIES, TaxonomicLevel.SUBSPECIES, TaxonomicLevel.VARIETY]:
+			ancestors = self.get_ancestors(include_self=False, ascending=True).filter(
+				rank__in=[TaxonomicLevel.GENUS, TaxonomicLevel.SPECIES, TaxonomicLevel.SUBSPECIES, TaxonomicLevel.VARIETY]
+			)
+
 		full_name = self.name
 
 		for an in ancestors:
 			full_name = f"{an.name} {full_name}"
 
 		return full_name
-
-	# def clean(self):
-	#     super().clean()
-	# if not ((not self.parent and isinstance(self, Kingdom)) or (self.parent and isinstance(self.parent, self.PARENT))):
-	#     raise ValidationError('Parent taxonomic level error')
-
-	# if TaxonomicLevel.RANK_CAPITALIZE[self.RANK]:
-	#     self.accepted.name = self.accepted.name.capitalize()
-	# else:
-	#     self.accepted.name = self.accepted.name.lower()
-
-	# self.accepted.save()
 
 	class Meta:
 		unique_together = ("parent", "name", "rank")

@@ -14,7 +14,7 @@ from ..API.exceptions import CBBAPIException
 
 class SourceView(APIView):
 	@swagger_auto_schema(
-		tags=['Versioning'],
+		tags=["Versioning"],
 		operation_description="Retrieve a Source by name",
 		manual_parameters=[
 			openapi.Parameter(
@@ -32,11 +32,7 @@ class SourceView(APIView):
 				required=False,
 			),
 		],
-		responses={
-			200: "Success",
-			400: "Bad Request",
-			404: "Not Found"
-		},
+		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
 	)
 	def get(self, request):
 		source_form = SourceForm(self.request.GET)
@@ -56,7 +52,7 @@ class SourceView(APIView):
 
 class SourceList(APIView):
 	@swagger_auto_schema(
-		tags=['Versioning'],
+		tags=["Versioning"],
 		operation_description="List Sources with optional filters",
 		manual_parameters=[
 			openapi.Parameter(
@@ -82,11 +78,7 @@ class SourceList(APIView):
 				required=False,
 			),
 		],
-		responses={
-			200: "Success",
-			400: "Bad Request",
-			404: "Not Found"
-		},
+		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
 	)
 	def get(self, request):
 		source_form = SourceForm(data=self.request.GET)
@@ -109,7 +101,7 @@ class SourceList(APIView):
 
 class OriginSourceView(APIView):
 	@swagger_auto_schema(
-		tags=['Versioning'],
+		tags=["Versioning"],
 		operation_description="List origin sources with optional filters",
 		manual_parameters=[
 			openapi.Parameter(
@@ -127,11 +119,7 @@ class OriginSourceView(APIView):
 				required=False,
 			),
 		],
-		responses={
-			200: "Success",
-			400: "Bad Request",
-			404: "Not Found"
-		},
+		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
 	)
 	def get(self, request):
 		origin_source_form = OriginSourceForm(data=self.request.GET)

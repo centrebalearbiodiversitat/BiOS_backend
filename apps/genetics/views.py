@@ -11,7 +11,7 @@ from .models import Gene, Product, Produces, GeneticFeatures
 
 class GeneCRUDView(APIView):
 	@swagger_auto_schema(
-		tags=['Genetic'],
+		tags=["Genetic"],
 		operation_description="Get details of a specific gene.",
 		manual_parameters=[
 			openapi.Parameter(
@@ -64,7 +64,7 @@ class GeneDetailView(APIView):
 				description="Indicates whether to search for an exact match. Defaults to False.",
 				type=openapi.TYPE_BOOLEAN,
 				required=False,
-				default=False
+				default=False,
 			),
 		],
 		responses={
@@ -133,14 +133,10 @@ class GeneListView(APIView):
 				description="Whether to search for accepted or not.",
 				type=openapi.TYPE_BOOLEAN,
 				required=False,
-				default=False
+				default=False,
 			),
 		],
-		responses={
-			200: "Success",
-			400: "Bad Request",
-			404: "Not Found"
-		},
+		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
 	)
 	def get(self, request):
 		gene_form = GeneForm(data=self.request.GET)
@@ -151,8 +147,8 @@ class GeneListView(APIView):
 		str_fields = ["name", "unidecode_name"]
 		exact = gene_form.cleaned_data.get("exact", False)
 
-		filters = {}			
-		
+		filters = {}
+
 		for param in gene_form.cleaned_data:
 			if param != "exact":
 				if param in str_fields:
@@ -168,7 +164,7 @@ class GeneListView(APIView):
 
 		if filters:
 			queryset = Gene.objects.filter(**filters)
-		
+
 		else:
 			raise CBBAPIException("You must specify a field to filter by", 400)
 
@@ -230,8 +226,7 @@ class ProductDetailView(APIView):
 				description="Indicates whether to search for an exact match. Defaults to False.",
 				type=openapi.TYPE_BOOLEAN,
 				required=False,
-				default=False
-
+				default=False,
 			),
 		],
 		responses={
@@ -300,15 +295,10 @@ class ProductListView(APIView):
 				description="Whether to search for accepted or not.",
 				type=openapi.TYPE_BOOLEAN,
 				required=False,
-				default=False
-
+				default=False,
 			),
 		],
-		responses={
-			200: "Success",
-			400: "Bad Request",
-			404: "Not Found"
-		},
+		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
 	)
 	def get(self, request):
 		product_form = ProductForm(data=self.request.GET)
@@ -319,8 +309,8 @@ class ProductListView(APIView):
 		str_fields = ["name", "unidecode_name"]
 		exact = product_form.cleaned_data.get("exact", False)
 
-		filters = {}			
-		
+		filters = {}
+
 		for param in product_form.cleaned_data:
 			if param != "exact":
 				if param in str_fields:
@@ -332,7 +322,6 @@ class ProductListView(APIView):
 				else:
 					value = product_form.cleaned_data.get(param)
 					if value or isinstance(value, int):
-
 						filters[param] = value
 
 		if filters:
@@ -405,14 +394,10 @@ class ProducesListView(APIView):
 				description="Whether to search for accepted or not.",
 				type=openapi.TYPE_BOOLEAN,
 				required=False,
-				default=False
+				default=False,
 			),
 		],
-		responses={
-			200: "Success",
-			400: "Bad Request",
-			404: "Not Found"
-		},
+		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
 	)
 	def get(self, request):
 		product_form = ProducesForm(data=self.request.GET)
@@ -422,8 +407,8 @@ class ProducesListView(APIView):
 		str_fields = ["name", "unidecode_name"]
 		exact = product_form.cleaned_data.get("exact", False)
 
-		filters = {}			
-		
+		filters = {}
+
 		for param in product_form.cleaned_data:
 			if param != "exact":
 				if param in str_fields:
@@ -435,7 +420,6 @@ class ProducesListView(APIView):
 				else:
 					value = product_form.cleaned_data.get(param)
 					if value or isinstance(value, int):
-
 						filters[param] = value
 
 		if filters:
@@ -575,57 +559,52 @@ class GeneticFeaturesListView(APIView):
 				openapi.IN_QUERY,
 				description="Indicates whether to search for an exact match. Defaults to False.",
 				type=openapi.TYPE_BOOLEAN,
-				required=False
+				required=False,
 			),
 			openapi.Parameter(
 				"collectionDateYear",
 				openapi.IN_QUERY,
 				description="Indicates whether to search for an exact match. Defaults to False.",
 				type=openapi.TYPE_BOOLEAN,
-				required=False
+				required=False,
 			),
 			openapi.Parameter(
 				"collectionDateMonth",
 				openapi.IN_QUERY,
 				description="Indicates whether to search for an exact match. Defaults to False.",
 				type=openapi.TYPE_BOOLEAN,
-				required=False
+				required=False,
 			),
 			openapi.Parameter(
 				"collectionDateDay",
 				openapi.IN_QUERY,
 				description="Indicates whether to search for an exact match. Defaults to False.",
 				type=openapi.TYPE_BOOLEAN,
-				required=False
+				required=False,
 			),
 			openapi.Parameter(
 				"moleculeType",
 				openapi.IN_QUERY,
 				description="Indicates whether to search for an exact match. Defaults to False.",
 				type=openapi.TYPE_BOOLEAN,
-				required=False
+				required=False,
 			),
 			openapi.Parameter(
 				"sequenceVersion",
 				openapi.IN_QUERY,
 				description="Indicates whether to search for an exact match. Defaults to False.",
 				type=openapi.TYPE_BOOLEAN,
-				required=False
+				required=False,
 			),
 			openapi.Parameter(
 				"products",
 				openapi.IN_QUERY,
 				description="Indicates whether to search for an exact match. Defaults to False.",
 				type=openapi.TYPE_BOOLEAN,
-				required=False
+				required=False,
 			),
-			
 		],
-		responses={
-			200: "Success",
-			400: "Bad Request",
-			404: "Not Found"
-		},
+		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
 	)
 	def get(self, request):
 		gfs_form = GeneticFeaturesForm(data=self.request.GET)
@@ -636,8 +615,8 @@ class GeneticFeaturesListView(APIView):
 		str_fields = ["definition"]
 		exact = gfs_form.cleaned_data.get("exact", False)
 
-		filters = {}			
-		
+		filters = {}
+
 		for param in gfs_form.cleaned_data:
 			if param != "exact":
 				if param in str_fields:
@@ -649,14 +628,12 @@ class GeneticFeaturesListView(APIView):
 				else:
 					value = gfs_form.cleaned_data.get(param)
 					if value or isinstance(value, int):
-
 						filters[param] = value
 
 		if filters:
 			queryset = GeneticFeatures.objects.filter(**filters)
-		
+
 		else:
 			raise CBBAPIException("You must specify a field to filter by", 400)
 
 		return Response((GeneticFeaturesSerializer(queryset, many=True)).data)
-

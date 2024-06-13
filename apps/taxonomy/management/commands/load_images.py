@@ -16,7 +16,7 @@ def add_taxonomic_image(line):
     taxon = taxon_query.first() if taxon_query.exists() else None
 
     if taxon:
-        taxon.image_id = line["image_id"]
+        taxon.image_path = line["image_path"]
         taxon.attribution = line["attribution"]
         taxon.save()
 

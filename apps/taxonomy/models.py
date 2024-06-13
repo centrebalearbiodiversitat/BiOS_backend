@@ -94,7 +94,7 @@ class TaxonomicLevel(SynonymModel, MPTTModel, ReferencedModel):
 	parsed_year = models.PositiveIntegerField(null=True, default=None, blank=True)
 	authorship = models.ManyToManyField(Authorship, blank=True, symmetrical=False)
 	parent = TreeForeignKey("self", on_delete=models.CASCADE, null=True, default=None, blank=True)
-	image_id = models.CharField(max_length=256, null=True, default=None, blank=True)
+	image_path = models.CharField(max_length=256, null=True, default=None, blank=True)
 	attribution = models.CharField(max_length=256, null=True, default=None, blank=True)
 
 	def clean(self):

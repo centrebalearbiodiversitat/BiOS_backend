@@ -20,15 +20,7 @@ class BaseTaxonomicLevelSerializer(CaseModelSerializer):
 
 	class Meta:
 		model = TaxonomicLevel
-		fields = ["id",
-				  "name",
-				  "taxon_rank",
-				  "scientific_name_authorship",
-				  "accepted",
-				  "accepted_modifier",
-				  "image_path",
-				  "attribution"
-		]
+		fields = ["id", "name", "taxon_rank", "scientific_name_authorship", "accepted", "accepted_modifier", "image_path", "attribution"]
 
 
 class AuthorshipSerializer(serializers.ModelSerializer):

@@ -4,10 +4,9 @@ from django import forms
 
 
 class GeneForm(IdFieldForm, CamelCaseForm):
-	sources = forms.IntegerField(
-		required=False)
+	sources = forms.IntegerField(required=False)
 	exact = forms.BooleanField(required=False)
-	
+
 	def __init__(self, *args, **kwargs):
 		super().__init__(*args, **kwargs)
 		self.fields["batch"].required = False
@@ -19,10 +18,11 @@ class GeneForm(IdFieldForm, CamelCaseForm):
 		model = Gene
 		fields = "__all__"
 
+
 class ProductForm(IdFieldForm, CamelCaseForm):
 	sources = forms.IntegerField(required=False)
 	exact = forms.BooleanField(required=False)
-	
+
 	def __init__(self, *args, **kwargs):
 		super().__init__(*args, **kwargs)
 		self.fields["batch"].required = False
@@ -34,13 +34,14 @@ class ProductForm(IdFieldForm, CamelCaseForm):
 		model = Product
 		fields = "__all__"
 
+
 class ProducesForm(IdFieldForm, CamelCaseForm):
 	sources = forms.IntegerField(required=False)
 
 	class Meta:
 		model = Produces
 		fields = "__all__"
-	
+
 	def __init__(self, *args, **kwargs):
 		super().__init__(*args, **kwargs)
 		self.fields["batch"].required = False
@@ -56,7 +57,7 @@ class GeneticFeaturesForm(IdFieldForm, CamelCaseForm):
 	class Meta:
 		model = GeneticFeatures
 		fields = "__all__"
-	
+
 	def __init__(self, *args, **kwargs):
 		super().__init__(*args, **kwargs)
 		self.fields["batch"].required = False

@@ -97,7 +97,7 @@ def create_taxonomic_level(line, parent, batch, idx_name, rank, idx_author, idx_
 				"accepted_modifier": accepted_modifier,
 				"verbatim_authorship": verb_auth,
 				"parsed_year": parsed_year,
-				"batch": batch
+				"batch": batch,
 			},
 		)
 

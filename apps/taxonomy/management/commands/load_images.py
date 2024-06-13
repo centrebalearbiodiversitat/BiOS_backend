@@ -9,18 +9,19 @@ from apps.versioning.models import Batch
 
 @transaction.atomic
 def add_taxonomic_image(line):
-    if not line["taxon"]:
-        return "No taxon name"
+	if not line["taxon"]:
+		return "No taxon name"
 
-    taxon_query = TaxonomicLevel.objects.find(line["taxon"])
-    taxon = taxon_query.first() if taxon_query.exists() else None
+	taxon_query = TaxonomicLevel.objects.find(line["taxon"])
+	taxon = taxon_query.first() if taxon_query.exists() else None
 
-    if taxon:
-        taxon.image_path = line["image_path"]
-        taxon.attribution = line["attribution"]
-        taxon.save()
+	if taxon:
+		taxon.image_path = line["image_path"]
+		taxon.attribution = line["attribution"]
+		taxon.save()
 
-    return taxon
+	return taxon
+
 
 class Command(BaseCommand):
 	help = "Loads taxon image from csv"
@@ -39,7 +40,6 @@ class Command(BaseCommand):
 			batch = Batch.objects.create()
 
 			for line in csv_file:
-
 				try:
 					add_taxonomic_image(line, batch)
 				except:

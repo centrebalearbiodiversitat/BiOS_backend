@@ -9,7 +9,7 @@ from rest_framework.generics import ListAPIView
 from .forms import TaxonomicLevelForm, AuthorshipForm
 
 
-class TaxonSearch(APIView):
+class TaxonSearchView(APIView):
 	@swagger_auto_schema(
 		tags=["Taxonomy"],
 		operation_description="Search for a taxon by name.",
@@ -50,7 +50,7 @@ class TaxonSearch(APIView):
 		return Response(BaseTaxonomicLevelSerializer(queryset, many=True).data)
 
 
-class TaxonList(ListAPIView):
+class TaxonListView(ListAPIView):
 	@swagger_auto_schema(
 		tags=["Taxonomy"],
 		operation_description="Get a list of taxa, with optional filtering.",
@@ -90,31 +90,38 @@ class TaxonList(ListAPIView):
 			raise CBBAPIException(taxon_form.errors, code=400)
 
 		exact = taxon_form.cleaned_data.get("exact", False)
-
+		synonym = taxon_form.cleaned_data.get("synonym", False)
 		str_fields = ["name"]
 		num_fields = ["parent", "authorship", "rank"]
 
 		filters = {}
 
 		for param in taxon_form.cleaned_data:
+
 			if param != "exact":
+
 				if param in str_fields:
 					value = taxon_form.cleaned_data.get(param)
 
 					if value:
 						param = f"{param}__iexact" if exact else f"{param}__icontains"
 						filters[param] = value
+
 				else:
 					value = taxon_form.cleaned_data.get(param)
+
 					if value or isinstance(value, int):
 						filters[param] = value
-		print(filters)
+
+		if synonym:
+			filters["accepted"] = False
+
 		queryset = TaxonomicLevel.objects.filter(**filters)
 
 		return Response(BaseTaxonomicLevelSerializer(queryset, many=True).data)
 
 
-class TaxonCRUD(APIView):
+class TaxonCRUDView(APIView):
 	@swagger_auto_schema(
 		tags=["Taxonomy"],
 		operation_description="Retrieve a specific TaxonomicLevel instance by its id",
@@ -148,7 +155,7 @@ class TaxonCRUD(APIView):
 		return Response(BaseTaxonomicLevelSerializer(taxon).data)
 
 
-class TaxonParent(APIView):
+class TaxonParentView(APIView):
 	@swagger_auto_schema(
 		tags=["Taxonomy"],
 		operation_description="Get the parents of the taxon given its ID",
@@ -178,7 +185,7 @@ class TaxonParent(APIView):
 		return Response(BaseTaxonomicLevelSerializer(ancestors, many=True).data)
 
 
-class TaxonChildren(APIView):
+class TaxonChildrenView(APIView):
 	@swagger_auto_schema(
 		tags=["Taxonomy"],
 		operation_description="Get the direct children of the taxon given its ID",
@@ -212,7 +219,39 @@ class TaxonChildren(APIView):
 		return Response(BaseTaxonomicLevelSerializer(taxon.get_children(), many=True).data)
 
 
-class AuthorshipCRUD(APIView):
+class TaxonSynonymView(ListAPIView):
+	@swagger_auto_schema(
+		tags=["Taxonomy"],
+		operation_description="Get a list of taxa, with optional filtering.",
+		manual_parameters=[
+			openapi.Parameter(
+				"id",
+				openapi.IN_QUERY,
+				description="ID of the taxon to retrieve its synonym",
+				type=openapi.TYPE_STRING,
+			)
+		],
+		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
+	)
+	def get(self, request):
+		taxon_form = TaxonomicLevelForm(self.request.GET)
+
+		if not taxon_form.is_valid():
+			raise CBBAPIException(taxon_form.errors, code=400)
+
+		taxon_id = taxon_form.cleaned_data.get("id")
+
+		if not taxon_id:
+			raise CBBAPIException("Missing id parameter", code=400)
+
+		try:
+			taxon = TaxonomicLevel.objects.get(id=taxon_id)
+		except TaxonomicLevel.DoesNotExist:
+			raise CBBAPIException("Taxonomic level does not exist.", code=404)
+
+		return Response(BaseTaxonomicLevelSerializer(taxon.synonyms, many=True).data)
+
+class AuthorshipCRUDView(APIView):
 	@swagger_auto_schema(
 		tags=["Authorship"],
 		operation_description="Get authorship info by ID",

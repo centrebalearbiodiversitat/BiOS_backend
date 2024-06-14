@@ -168,5 +168,5 @@ class Command(BaseCommand):
 				else:
 					occ = Occurrence.objects.get(sources=os)
 
-				if line["bp"]:
+				if "bp" in line and line["bp"] is not None:
 					genetic_sources(line, batch, occ, os)

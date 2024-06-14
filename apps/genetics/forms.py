@@ -59,6 +59,7 @@ class GeneticFeaturesForm(IdFieldForm, CamelCaseForm):
 	
 	def __init__(self, *args, **kwargs):
 		super().__init__(*args, **kwargs)
+		self.fields["occurrence"].required = False
 		self.fields["batch"].required = False
 		self.fields["sources"].required = False
 		self.fields["occurrence"].required = False

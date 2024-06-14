@@ -2,11 +2,13 @@ from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework import status
 from .forms import GeneForm, ProductForm, ProducesForm, GeneticFeaturesForm
+from apps.occurrences.forms import OccurrenceForm
+from apps.taxonomy.models import TaxonomicLevel
+from apps.geography.models import GeographicLevel
 from .serializers import GeneSerializer, ProductSerializer, ProducesSerializer, GeneticFeaturesSerializer
 from ..API.exceptions import CBBAPIException
-from .models import Gene, Product, Produces, GeneticFeatures
+from .models import Gene, Product, Produces, GeneticFeatures, Occurrence
 
 
 class GeneCRUDView(APIView):
@@ -637,3 +639,101 @@ class GeneticFeaturesListView(APIView):
 			raise CBBAPIException("You must specify a field to filter by", 400)
 
 		return Response((GeneticFeaturesSerializer(queryset, many=True)).data)
+
+
+class TaxonGeneticFilter(APIView):
+	SPECIAL_FILTERS = {"geographical_location": GeographicLevel, "taxonomy": TaxonomicLevel}
+
+	def get(self, request):
+		occur_form = OccurrenceForm(data=request.GET)
+
+		if not occur_form.is_valid():
+			raise CBBAPIException(occur_form.errors, 400)
+
+		filters = {}
+		taxon_ids = set()
+		value = occur_form.cleaned_data.get("taxonomy")
+
+		if not value:
+			raise CBBAPIException("Missing id parameter", code=400)
+
+		if value:
+			klass = TaxonGeneticView.SPECIAL_FILTERS.get("taxonomy", None)
+
+			if klass:
+
+				try:
+					obj = klass.objects.get(id=value.id)
+				except klass.DoesNotExist:
+					raise CBBAPIException("Taxonomic level does not exist", 404)
+
+				filters["taxonomy__lft__gte"] = obj.lft
+				filters["taxonomy__rght__lte"] = obj.rght
+				taxon_ids.add(obj.id)
+				synonyms = obj.synonyms.filter(accepted=False)
+
+				for synonym in synonyms:
+					taxon_ids.add(synonym.id)
+
+		if not filters:
+			return Occurrence.objects.none()
+
+		try:
+			occurrences = Occurrence.objects.filter(
+				taxonomy__in=taxon_ids,
+				geneticfeatures__bp__isnull=False
+			).distinct()
+
+			genetic_features = GeneticFeatures.objects.filter(occurrence__in=occurrences)
+			return genetic_features
+
+		except Occurrence.DoesNotExist:
+			raise CBBAPIException("Occurrences do not exist.", code=404)
+
+
+class TaxonGeneticView(TaxonGeneticFilter):
+
+	@swagger_auto_schema(
+		tags=["Taxonomy"],
+		operation_description="Retrieve the genetic information of a taxonomic level by its id",
+		manual_parameters=[
+			openapi.Parameter(
+				"id",
+				openapi.IN_QUERY,
+				description="ID of the taxon from which all its genetic features will be retrieved",
+				type=openapi.TYPE_INTEGER,
+				required=True,
+			)
+		],
+		responses={
+			200: "Success",
+			400: "Bad Request",
+			404: "Not Found"
+		},
+	)
+	def get(self, request):
+		return Response(GeneticFeaturesSerializer(super().get(request), many=True).data)
+
+
+class TaxonGeneticCountView(TaxonGeneticFilter):
+
+	@swagger_auto_schema(
+		tags=["Taxonomy"],
+		operation_description="Retrieve the genetic information count of a taxonomic level by its id.",
+		manual_parameters=[
+			openapi.Parameter(
+				"id",
+				openapi.IN_QUERY,
+				description="ID of the taxon from which all its genetic features will be retrieved",
+				type=openapi.TYPE_INTEGER,
+				required=True,
+			)
+		],
+		responses={
+			200: "Success",
+			400: "Bad Request",
+			404: "Not Found"
+		},
+	)
+	def get(self, request):
+		return Response(super().get(request).count())

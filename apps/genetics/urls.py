@@ -11,6 +11,8 @@ from .views import (
     GeneticFeaturesCRUDView,
     GeneticFeaturesDetailView,
     GeneticFeaturesListView,
+    TaxonGeneticView,
+    TaxonGeneticCountView
 )
 urlpatterns = [
     path('gene', GeneCRUDView.as_view()),
@@ -27,4 +29,7 @@ urlpatterns = [
     path('genetic-features', GeneticFeaturesCRUDView.as_view()),
     path('genetic-features/search', GeneticFeaturesDetailView.as_view()),
     path('genetic-features/list', GeneticFeaturesListView.as_view()),
+    path('genetic_features/taxon', TaxonGeneticView.as_view()),
+    path('genetic_features/taxon/count', TaxonGeneticCountView.as_view())
+
 ]

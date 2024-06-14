@@ -106,10 +106,8 @@ class TaxonList(ListAPIView):
 		exact = taxon_form.cleaned_data.get("exact", False)
 
 		str_fields = ["name"]
-		num_fields = ["parent", "authorship", "rank"]
 
 		filters = {}
-
 		for param in taxon_form.cleaned_data:
 			if param != "exact":
 				if param in str_fields:
@@ -122,10 +120,13 @@ class TaxonList(ListAPIView):
 					value = taxon_form.cleaned_data.get(param)
 					if value or isinstance(value, int):
 						filters[param] = value
-		print(filters)
-		queryset = TaxonomicLevel.objects.filter(**filters)
 
-		return Response(BaseTaxonomicLevelSerializer(queryset, many=True).data)
+		if filters:
+			query = TaxonomicLevel.objects.filter(**filters)
+		else:
+			query = TaxonomicLevel.objects.none()
+
+		return Response(BaseTaxonomicLevelSerializer(query, many=True).data)
 
 
 class TaxonCRUD(APIView):
@@ -157,7 +158,7 @@ class TaxonCRUD(APIView):
 		try:
 			taxon = TaxonomicLevel.objects.get(id=taxon_id)
 		except TaxonomicLevel.DoesNotExist:
-			raise CBBAPIException("Taxonomic level does not exist.", code=404)
+			raise CBBAPIException("Taxonomic level does not exist", code=404)
 
 		return Response(BaseTaxonomicLevelSerializer(taxon).data)
 

@@ -23,7 +23,7 @@ schema_view = get_schema_view(
 )
 
 urlpatterns = [
-	re_path("docs/?$", schema_view.with_ui("swagger", cache_timeout=0), name="schema-swagger-ui"),
-	path("v1/", include("apps.API.v1.urls")),
-	path("status/", APIStatus.as_view()),
+	re_path("/docs/?$", schema_view.with_ui("swagger", cache_timeout=0), name="schema-swagger-ui"),
+	path("/v1", include("apps.API.v1.urls")),
+	path("/status", APIStatus.as_view()),
 ]

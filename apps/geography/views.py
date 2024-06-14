@@ -1,7 +1,5 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework.exceptions import ValidationError, NotFound
-from django.http import Http404
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 from .models import GeographicLevel
@@ -37,7 +35,7 @@ class GeographicLevelDetailView(APIView):
 		exact = geographic_form.cleaned_data.get("exact", False)
 
 		if not query:
-			raise CBBAPIException("Missing name parameter.", code=400)
+			return Response(GeographicLevelSerializer(GeographicLevel.objects.none(), many=True).data)
 
 		filters["name__iexact" if exact else "name__icontains"] = query
 
@@ -67,7 +65,7 @@ class GeographicLevelIdView(APIView):
 
 		level_id = geographic_form.cleaned_data.get("id", None)
 		if not level_id:
-			raise CBBAPIException("Missing id parameter.", code=400)
+			raise CBBAPIException("Missing id parameter", code=400)
 
 		try:
 			level = GeographicLevel.objects.get(id=level_id)
@@ -122,11 +120,10 @@ class GeographicLevelListView(APIView):
 		if not geographic_form.is_valid():
 			raise CBBAPIException(geographic_form.errors, code=400)
 
-		str_fields = ["name"]
-		num_fields = ["parent", "rank", "decimal_latitude", "decimal_longitude", "coordinate_uncertainty_in_meters"]
 
 		filters = {}
 
+		str_fields = ["name"]
 		for param in str_fields:
 			value = geographic_form.cleaned_data.get(param)
 
@@ -135,13 +132,19 @@ class GeographicLevelListView(APIView):
 				param = f"{param}__iexact" if exact else f"{param}__icontains"
 				filters[param] = value
 
+		num_fields = ["parent", "rank", "decimal_latitude", "decimal_longitude", "coordinate_uncertainty_in_meters"]
 		for param in num_fields:
 			value = geographic_form.cleaned_data.get(param)
 
 			if value:
 				filters[param] = value
 
-		return Response(GeographicLevelSerializer(GeographicLevel.objects.filter(**filters), many=True).data)
+		if filters:
+			query = GeographicLevel.objects.filter(**filters)
+		else:
+			query = GeographicLevel.objects.none()
+
+		return Response(GeographicLevelSerializer(query, many=True).data)
 
 
 class GeographicLevelParent(APIView):
@@ -163,12 +166,12 @@ class GeographicLevelParent(APIView):
 
 		level_id = geographic_form.cleaned_data.get("id", None)
 		if not level_id:
-			raise CBBAPIException("Missing id parameter.", code=400)
+			raise CBBAPIException("Missing id parameter", code=400)
 
 		try:
 			level = GeographicLevel.objects.get(id=level_id)
 		except GeographicLevel.DoesNotExist:
-			raise CBBAPIException("Geographic level does not exist.", code=404)
+			raise CBBAPIException("Geographic level does not exist", code=404)
 
 		return Response(GeographicLevelSerializer(level.get_ancestors(), many=True).data)
 
@@ -202,6 +205,6 @@ class GeographicLevelChildren(APIView):
 		try:
 			level = GeographicLevel.objects.get(id=level_id)
 		except GeographicLevel.DoesNotExist:
-			raise CBBAPIException("Geographic level does not exist.", code=404)
+			raise CBBAPIException("Geographic level does not exist", code=404)
 
 		return Response(GeographicLevelSerializer(level.get_children(), many=True).data)

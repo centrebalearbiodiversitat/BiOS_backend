@@ -2,7 +2,6 @@ from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework import status
 from .forms import GeneForm, ProductForm, ProducesForm, GeneticFeaturesForm
 from .serializers import GeneSerializer, ProductSerializer, ProducesSerializer, GeneticFeaturesSerializer
 from ..API.exceptions import CBBAPIException
@@ -36,7 +35,7 @@ class GeneCRUDView(APIView):
 
 		gene_id = gene_form.cleaned_data.get("id")
 		if not gene_id:
-			raise CBBAPIException("Missing gene ID", 400)
+			raise CBBAPIException("Missing id parameter", 400)
 
 		try:
 			gene = Gene.objects.get(id=gene_id)
@@ -88,9 +87,7 @@ class GeneDetailView(APIView):
 
 		filters["name__iexact" if exact else "name__icontains"] = query
 
-		queryset = Gene.objects.filter(**filters)[:10]
-
-		return Response(GeneSerializer(queryset, many=True).data)
+		return Response(GeneSerializer(Gene.objects.filter(**filters)[:10], many=True).data)
 
 
 class GeneListView(APIView):
@@ -164,9 +161,8 @@ class GeneListView(APIView):
 
 		if filters:
 			queryset = Gene.objects.filter(**filters)
-
 		else:
-			raise CBBAPIException("You must specify a field to filter by", 400)
+			queryset = Gene.objects.none()
 
 		return Response((GeneSerializer(queryset, many=True)).data)
 
@@ -198,7 +194,7 @@ class ProductCRUDView(APIView):
 
 		product_id = product_form.cleaned_data.get("id")
 		if not product_id:
-			raise CBBAPIException("Missing product ID", 400)
+			raise CBBAPIException("Missing product id parameter", 400)
 
 		try:
 			product = Product.objects.get(id=product_id)
@@ -246,13 +242,11 @@ class ProductDetailView(APIView):
 		exact = product_form.cleaned_data.get("exact", False)
 
 		if not query:
-			raise CBBAPIException("You must specify a name", 400)
+			return Response(ProductSerializer(Product.objects.none(), many=True).data)
 
 		filters["name__iexact" if exact else "name__icontains"] = query
 
-		queryset = Product.objects.filter(**filters)[:10]
-
-		return Response(ProductSerializer(queryset, many=True).data)
+		return Response(ProductSerializer(Product.objects.filter(**filters)[:10], many=True).data)
 
 
 class ProductListView(APIView):
@@ -310,7 +304,6 @@ class ProductListView(APIView):
 		exact = product_form.cleaned_data.get("exact", False)
 
 		filters = {}
-
 		for param in product_form.cleaned_data:
 			if param != "exact":
 				if param in str_fields:
@@ -327,9 +320,9 @@ class ProductListView(APIView):
 		if filters:
 			queryset = Product.objects.filter(**filters)
 		else:
-			raise CBBAPIException("You must specify a field to filter by", 400)
+			queryset = Product.objects.none()
 
-		return Response((ProductSerializer(queryset, many=True)).data)
+		return Response(ProductSerializer(queryset, many=True).data)
 
 
 class ProducesCRUDView(APIView):
@@ -359,12 +352,12 @@ class ProducesCRUDView(APIView):
 
 		produce_id = produce_form.cleaned_data.get("id")
 		if not produce_id:
-			raise CBBAPIException("Missing produce ID", 400)
+			raise CBBAPIException("Missing produces relation id parameter", 400)
 
 		try:
 			produce = Produces.objects.get(id=produce_id)
 		except Produces.DoesNotExist:
-			raise CBBAPIException("Produce does not exist", 404)
+			raise CBBAPIException("Produces relation does not exist", 404)
 
 		return Response(ProducesSerializer(produce).data)
 
@@ -401,6 +394,7 @@ class ProducesListView(APIView):
 	)
 	def get(self, request):
 		product_form = ProducesForm(data=self.request.GET)
+
 		if not product_form.is_valid():
 			return Response(product_form.errors, status=400)
 
@@ -408,7 +402,6 @@ class ProducesListView(APIView):
 		exact = product_form.cleaned_data.get("exact", False)
 
 		filters = {}
-
 		for param in product_form.cleaned_data:
 			if param != "exact":
 				if param in str_fields:
@@ -425,7 +418,7 @@ class ProducesListView(APIView):
 		if filters:
 			queryset = Produces.objects.filter(**filters)
 		else:
-			raise CBBAPIException("You must specify a field to filter by", 400)
+			queryset = Produces.objects.none()
 
 		return Response((ProducesSerializer(queryset, many=True)).data)
 
@@ -457,12 +450,12 @@ class GeneticFeaturesCRUDView(APIView):
 
 		gfs_id = gfs_form.cleaned_data.get("id")
 		if not gfs_id:
-			raise CBBAPIException("Missing genetic feature ID", 400)
+			raise CBBAPIException("Missing sequence id", 400)
 
 		try:
 			gfs = GeneticFeatures.objects.get(id=gfs_id)
 		except GeneticFeatures.DoesNotExist:
-			raise CBBAPIException("Genetic feature does not exist", 404)
+			raise CBBAPIException("Sequence does not exist", 404)
 
 		return Response(GeneticFeaturesSerializer(gfs).data)
 
@@ -498,13 +491,11 @@ class GeneticFeaturesDetailView(APIView):
 		exact = gfs_form.cleaned_data.get("exact", False)
 
 		if not query:
-			raise CBBAPIException("You must specify a definition", 400)
+			Response(GeneticFeaturesSerializer(GeneticFeatures.objects.none(), many=True).data)
 
 		filters["definition__iexact" if exact else "definition__icontains"] = query
 
-		queryset = GeneticFeatures.objects.filter(**filters)[:10]
-
-		return Response(GeneticFeaturesSerializer(queryset, many=True).data)
+		return Response(GeneticFeaturesSerializer(GeneticFeatures.objects.filter(**filters)[:10], many=True).data)
 
 
 class GeneticFeaturesListView(APIView):
@@ -616,7 +607,6 @@ class GeneticFeaturesListView(APIView):
 		exact = gfs_form.cleaned_data.get("exact", False)
 
 		filters = {}
-
 		for param in gfs_form.cleaned_data:
 			if param != "exact":
 				if param in str_fields:
@@ -632,8 +622,7 @@ class GeneticFeaturesListView(APIView):
 
 		if filters:
 			queryset = GeneticFeatures.objects.filter(**filters)
-
 		else:
-			raise CBBAPIException("You must specify a field to filter by", 400)
+			queryset = GeneticFeatures.objects.none()
 
 		return Response((GeneticFeaturesSerializer(queryset, many=True)).data)

@@ -97,9 +97,7 @@ class TaxonListView(ListAPIView):
 		filters = {}
 
 		for param in taxon_form.cleaned_data:
-
 			if param != "exact":
-
 				if param in str_fields:
 					value = taxon_form.cleaned_data.get(param)
 
@@ -250,6 +248,7 @@ class TaxonSynonymView(ListAPIView):
 			raise CBBAPIException("Taxonomic level does not exist.", code=404)
 
 		return Response(BaseTaxonomicLevelSerializer(taxon.synonyms, many=True).data)
+
 
 class AuthorshipCRUDView(APIView):
 	@swagger_auto_schema(

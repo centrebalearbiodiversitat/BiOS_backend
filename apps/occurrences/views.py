@@ -206,11 +206,7 @@ class OccurrenceTaxonView(APIView):
 				type=openapi.TYPE_INTEGER,
 			)
 		],
-		responses={
-			200: "Success",
-			400: "Bad Request",
-			404: "Not Found"
-		},
+		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
 	)
 	def get(self, request):
 		occur_form = OccurrenceForm(data=request.GET)
@@ -226,7 +222,6 @@ class OccurrenceTaxonView(APIView):
 			klass = OccurrenceFilter.SPECIAL_FILTERS.get("taxonomy", None)
 
 			if klass:
-
 				try:
 					obj = klass.objects.get(id=value.id)
 				except klass.DoesNotExist:

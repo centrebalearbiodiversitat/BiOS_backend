@@ -661,7 +661,6 @@ class TaxonGeneticFilter(APIView):
 			klass = TaxonGeneticView.SPECIAL_FILTERS.get("taxonomy", None)
 
 			if klass:
-
 				try:
 					obj = klass.objects.get(id=value.id)
 				except klass.DoesNotExist:
@@ -679,10 +678,7 @@ class TaxonGeneticFilter(APIView):
 			return Occurrence.objects.none()
 
 		try:
-			occurrences = Occurrence.objects.filter(
-				taxonomy__in=taxon_ids,
-				geneticfeatures__bp__isnull=False
-			).distinct()
+			occurrences = Occurrence.objects.filter(taxonomy__in=taxon_ids, geneticfeatures__bp__isnull=False).distinct()
 
 			genetic_features = GeneticFeatures.objects.filter(occurrence__in=occurrences)
 			return genetic_features
@@ -692,7 +688,6 @@ class TaxonGeneticFilter(APIView):
 
 
 class TaxonGeneticView(TaxonGeneticFilter):
-
 	@swagger_auto_schema(
 		tags=["Taxonomy"],
 		operation_description="Retrieve the genetic information of a taxonomic level by its id",
@@ -705,18 +700,13 @@ class TaxonGeneticView(TaxonGeneticFilter):
 				required=True,
 			)
 		],
-		responses={
-			200: "Success",
-			400: "Bad Request",
-			404: "Not Found"
-		},
+		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
 	)
 	def get(self, request):
 		return Response(GeneticFeaturesSerializer(super().get(request), many=True).data)
 
 
 class TaxonGeneticCountView(TaxonGeneticFilter):
-
 	@swagger_auto_schema(
 		tags=["Taxonomy"],
 		operation_description="Retrieve the genetic information count of a taxonomic level by its id.",
@@ -729,11 +719,7 @@ class TaxonGeneticCountView(TaxonGeneticFilter):
 				required=True,
 			)
 		],
-		responses={
-			200: "Success",
-			400: "Bad Request",
-			404: "Not Found"
-		},
+		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
 	)
 	def get(self, request):
 		return Response(super().get(request).count())

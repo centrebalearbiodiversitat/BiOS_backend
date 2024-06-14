@@ -7,7 +7,7 @@ from apps.taxonomy.views import (
 	TaxonParentView,
 	TaxonChildrenView,
 	TaxonSynonymView,
-	AuthorshipCRUDView
+	AuthorshipCRUDView,
 )
 
 urlpatterns = [

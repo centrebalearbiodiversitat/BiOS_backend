@@ -120,7 +120,6 @@ class GeographicLevelListView(APIView):
 		if not geographic_form.is_valid():
 			raise CBBAPIException(geographic_form.errors, code=400)
 
-
 		filters = {}
 
 		str_fields = ["name"]

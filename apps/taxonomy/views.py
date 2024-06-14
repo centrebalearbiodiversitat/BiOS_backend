@@ -1,3 +1,4 @@
+from django.db.models import Q
 from apps.taxonomy.models import TaxonomicLevel, Authorship
 from apps.taxonomy.serializers import BaseTaxonomicLevelSerializer, AuthorshipSerializer
 from apps.API.exceptions import CBBAPIException
@@ -43,11 +44,24 @@ class TaxonSearch(APIView):
 		if not query:
 			return Response(BaseTaxonomicLevelSerializer(TaxonomicLevel.objects.none(), many=True).data)
 
-		filters["name__iexact" if exact else "name__icontains"] = query
+		queryset = TaxonomicLevel.objects
+		for query in query.split(" "):
+			filters["name__iexact" if exact else "name__icontains"] = query
 
-		queryset = TaxonomicLevel.objects.filter(**filters)[:10]
+			queryset = queryset.filter(**filters)
 
-		return Response(BaseTaxonomicLevelSerializer(queryset, many=True).data)
+			if len(query) > 3:
+				sub_genus = None
+				for instance in queryset.filter(rank=TaxonomicLevel.GENUS):
+					if sub_genus:
+						sub_genus |= Q(tree_id=instance.tree_id, lft__gte=instance.lft, rght__lte=instance.rght)
+					else:
+						sub_genus = Q(tree_id=instance.tree_id, lft__gte=instance.lft, rght__lte=instance.rght)
+
+				if sub_genus:
+					queryset |= TaxonomicLevel.objects.filter(sub_genus)
+
+		return Response(BaseTaxonomicLevelSerializer(queryset[:10], many=True).data)
 
 
 class TaxonList(ListAPIView):

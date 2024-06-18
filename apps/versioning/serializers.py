@@ -11,6 +11,7 @@ class SourceSerializer(serializers.ModelSerializer):
 
 class OriginSourceSerializer(serializers.ModelSerializer):
 	source = SourceSerializer(read_only=True)
+
 	class Meta:
 		model = OriginSource
 		fields = "__all__"

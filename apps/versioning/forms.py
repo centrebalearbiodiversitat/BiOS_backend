@@ -26,7 +26,7 @@ class SourceForm(IdFieldForm, TranslateForm):
 		self.fields["accepted_modifier"].required = False
 
 
-class OriginSourceForm(IdFieldForm,TranslateForm):
+class OriginSourceForm(IdFieldForm, TranslateForm):
 	class Meta:
 		model = OriginSource
 		fields = "__all__"

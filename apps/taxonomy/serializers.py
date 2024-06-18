@@ -29,13 +29,14 @@ class TaxonomicSourcesSerializer(serializers.ModelSerializer):
 
 	class Meta:
 		model = TaxonomicLevel
-		fields = ['sources']
+		fields = ["sources"]
 
 	def to_representation(self, instance):
 		representation = super().to_representation(instance)
 		sources = instance.sources.all()
-		representation['sources'] = OriginSourceSerializer(sources, many=True).data
+		representation["sources"] = OriginSourceSerializer(sources, many=True).data
 		return representation
+
 
 class AuthorshipSerializer(serializers.ModelSerializer):
 	class Meta:

@@ -8,7 +8,7 @@ from apps.taxonomy.views import (
 	TaxonChildrenView,
 	TaxonSynonymView,
 	TaxonSourceView,
-	AuthorshipCRUDView
+	AuthorshipCRUDView,
 )
 
 urlpatterns = [

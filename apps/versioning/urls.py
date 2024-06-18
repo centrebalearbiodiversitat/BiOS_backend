@@ -1,11 +1,6 @@
 from django.urls import path
 
-from apps.versioning.views import (
-	SourceView,
-	SourceCRUDView,
-	SourceList,
-	OriginSourceView
-)
+from apps.versioning.views import SourceView, SourceCRUDView, SourceList, OriginSourceView
 
 urlpatterns = [
 	path("source/search", SourceView.as_view()),

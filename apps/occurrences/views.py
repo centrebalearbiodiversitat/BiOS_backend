@@ -15,6 +15,7 @@ from ..taxonomy.models import TaxonomicLevel
 
 class OccurrenceDetail(APIView):
 	@swagger_auto_schema(
+		tags=["Occurrences"],
 		operation_description="Get details of a specific occurrence.",
 		manual_parameters=[
 			openapi.Parameter(
@@ -82,6 +83,7 @@ class OccurrenceFilter(APIView):
 
 class OccurrenceList(OccurrenceFilter):
 	@swagger_auto_schema(
+		tags=["Occurrences"],
 		operation_description="Filter occurrences based on query parameters.",
 		manual_parameters=[
 			openapi.Parameter(
@@ -141,6 +143,7 @@ class OccurrenceList(OccurrenceFilter):
 
 class OccurrenceCount(OccurrenceFilter):
 	@swagger_auto_schema(
+		tags=["Occurrences"],
 		operation_description="Counts the filtered occurrences based on the query parameters.",
 		manual_parameters=[
 			openapi.Parameter(

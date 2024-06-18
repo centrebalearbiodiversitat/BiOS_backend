@@ -1,12 +1,8 @@
-from django.core.exceptions import ValidationError
-from django.http import Http404
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from common.utils.models import SynonymModel
-from common.utils.serializers import CaseModelSerializer
-from .models import Source, Batch, OriginSource
+from .models import Source, OriginSource
 from .serializers import SourceSerializer, OriginSourceSerializer
 from .forms import SourceForm, OriginSourceForm
 from ..API.exceptions import CBBAPIException
@@ -14,6 +10,7 @@ from ..API.exceptions import CBBAPIException
 
 class SourceView(APIView):
 	@swagger_auto_schema(
+		tags=["Versioning"],
 		operation_description="Retrieve a Source by name",
 		manual_parameters=[
 			openapi.Parameter(
@@ -39,18 +36,23 @@ class SourceView(APIView):
 		if not source_form.is_valid():
 			raise CBBAPIException(source_form.errors, code=400)
 
-		filters = {}
-
 		query = source_form.cleaned_data.get("name")
 		exact = source_form.cleaned_data.get("exact", False)
 
+		filters = {}
 		filters["name__iexact" if exact else "name__icontains"] = query
 
-		return Response(SourceSerializer(Source.objects.filter(**filters), many=True).data)
+		if filters:
+			queryset = Source.objects.filter(**filters)
+		else:
+			queryset = Source.objects.none()
+
+		return Response(SourceSerializer(queryset, many=True).data)
 
 
 class SourceList(APIView):
 	@swagger_auto_schema(
+		tags=["Versioning"],
 		operation_description="List Sources with optional filters",
 		manual_parameters=[
 			openapi.Parameter(
@@ -80,6 +82,7 @@ class SourceList(APIView):
 	)
 	def get(self, request):
 		source_form = SourceForm(data=self.request.GET)
+
 		if not source_form.is_valid():
 			return Response(source_form.errors, status=400)
 
@@ -88,17 +91,18 @@ class SourceList(APIView):
 			value = source_form.cleaned_data.get(param)
 			if value or isinstance(value, int):
 				filters[param] = value
+
 		if filters:
 			queryset = Source.objects.filter(**filters)
-
 		else:
 			queryset = Source.objects.none()
 
-		return Response((SourceSerializer(queryset, many=True)).data)
+		return Response(SourceSerializer(queryset, many=True).data)
 
 
 class OriginSourceView(APIView):
 	@swagger_auto_schema(
+		tags=["Versioning"],
 		operation_description="List origin sources with optional filters",
 		manual_parameters=[
 			openapi.Parameter(
@@ -122,19 +126,17 @@ class OriginSourceView(APIView):
 		origin_source_form = OriginSourceForm(data=self.request.GET)
 
 		if not origin_source_form.is_valid():
-			raise ValidationError(origin_source_form.errors)
+			raise CBBAPIException(origin_source_form.errors, 400)
 
 		filters = {}
 		for param in origin_source_form.cleaned_data:
 			value = origin_source_form.cleaned_data.get(param)
 			if value or isinstance(value, int):
 				filters[param] = value
+
 		if filters:
-			try:
-				queryset = OriginSource.objects.filter(**filters)
-			except OriginSource.DoesNotExist:
-				raise CBBAPIException("Origin source does not exist.", code=404)
+			queryset = OriginSource.objects.filter(**filters)
 		else:
-			queryset = OriginSource.objects.all()
+			queryset = OriginSource.objects.none()
 
 		return Response(OriginSourceSerializer(queryset, many=True).data)

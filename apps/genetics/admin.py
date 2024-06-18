@@ -4,7 +4,7 @@ from apps.genetics.models import Gene, GeneticFeatures, Produces, Product
 
 
 class GeneAdmin(admin.ModelAdmin):
-	search_fields = ["c"]
+	search_fields = ["unidecode_name"]
 	autocomplete_fields = ["synonyms"]
 
 

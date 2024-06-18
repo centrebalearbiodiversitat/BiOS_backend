@@ -7,6 +7,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.generics import ListAPIView
 from .forms import TaxonomicLevelForm, AuthorshipForm
+from .serializers import TaxonomicSourcesSerializer
 
 
 class TaxonSearchView(APIView):
@@ -97,7 +98,9 @@ class TaxonListView(ListAPIView):
 		filters = {}
 
 		for param in taxon_form.cleaned_data:
+
 			if param != "exact":
+
 				if param in str_fields:
 					value = taxon_form.cleaned_data.get(param)
 
@@ -249,6 +252,37 @@ class TaxonSynonymView(ListAPIView):
 
 		return Response(BaseTaxonomicLevelSerializer(taxon.synonyms, many=True).data)
 
+class TaxonSourceView(ListAPIView):
+	@swagger_auto_schema(
+		tags=["Taxonomy"],
+		operation_description="Get a list of sources, with optional filtering.",
+		manual_parameters=[
+			openapi.Parameter(
+				"id",
+				openapi.IN_QUERY,
+				description="ID of the taxon to retrieve its sources",
+				type=openapi.TYPE_STRING,
+			)
+		],
+		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
+	)
+	def get(self, request):
+		taxon_form = self.request.GET
+
+		taxon_id = taxon_form.get("id")
+
+		if not taxon_id:
+			raise CBBAPIException(taxon_form.errors, code=400)
+
+		if not taxon_id:
+			raise CBBAPIException("Missing id parameter", code=400)
+
+		try:
+			taxon = TaxonomicLevel.objects.get(id=taxon_id)
+		except TaxonomicLevel.DoesNotExist:
+			raise CBBAPIException("Taxonomic level does not exist.", code=404)
+		print(taxon)
+		return Response(TaxonomicSourcesSerializer(taxon).data)
 
 class AuthorshipCRUDView(APIView):
 	@swagger_auto_schema(

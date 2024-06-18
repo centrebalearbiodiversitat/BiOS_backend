@@ -2,11 +2,11 @@ from datetime import datetime
 from django import forms
 from django.forms import ModelForm
 from common.utils.models import SynonymModel
-from common.utils.forms import TranslateForm
+from common.utils.forms import TranslateForm, IdFieldForm
 from .models import Source, Batch, OriginSource
 
 
-class SourceForm(TranslateForm):
+class SourceForm(IdFieldForm, TranslateForm):
 	origin = forms.CharField(required=False)
 	CHOICES_FIELD = {
 		"origin": Source.TRANSLATE_CHOICES,
@@ -26,7 +26,7 @@ class SourceForm(TranslateForm):
 		self.fields["accepted_modifier"].required = False
 
 
-class OriginSourceForm(TranslateForm):
+class OriginSourceForm(IdFieldForm,TranslateForm):
 	class Meta:
 		model = OriginSource
 		fields = "__all__"

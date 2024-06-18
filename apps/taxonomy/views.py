@@ -1,3 +1,4 @@
+from django.db.models import Q
 from apps.taxonomy.models import TaxonomicLevel, Authorship
 from apps.taxonomy.serializers import BaseTaxonomicLevelSerializer, AuthorshipSerializer
 from apps.API.exceptions import CBBAPIException
@@ -44,11 +45,24 @@ class TaxonSearchView(APIView):
 		if not query:
 			return Response(BaseTaxonomicLevelSerializer(TaxonomicLevel.objects.none(), many=True).data)
 
-		filters["name__iexact" if exact else "name__icontains"] = query
+		queryset = TaxonomicLevel.objects
+		for query in query.split(" "):
+			filters["name__iexact" if exact else "name__icontains"] = query
 
-		queryset = TaxonomicLevel.objects.filter(**filters)[:10]
+			queryset = queryset.filter(**filters)
 
-		return Response(BaseTaxonomicLevelSerializer(queryset, many=True).data)
+			if len(query) > 3:
+				sub_genus = None
+				for instance in queryset.filter(rank=TaxonomicLevel.GENUS):
+					if sub_genus:
+						sub_genus |= Q(tree_id=instance.tree_id, lft__gte=instance.lft, rght__lte=instance.rght)
+					else:
+						sub_genus = Q(tree_id=instance.tree_id, lft__gte=instance.lft, rght__lte=instance.rght)
+
+				if sub_genus:
+					queryset |= TaxonomicLevel.objects.filter(sub_genus)
+
+		return Response(BaseTaxonomicLevelSerializer(queryset[:10], many=True).data)
 
 
 class TaxonListView(ListAPIView):
@@ -93,10 +107,8 @@ class TaxonListView(ListAPIView):
 		exact = taxon_form.cleaned_data.get("exact", False)
 		synonym = taxon_form.cleaned_data.get("synonym", False)
 		str_fields = ["name"]
-		num_fields = ["parent", "authorship", "rank"]
 
 		filters = {}
-
 		for param in taxon_form.cleaned_data:
 			if param != "exact":
 				if param in str_fields:
@@ -105,19 +117,20 @@ class TaxonListView(ListAPIView):
 					if value:
 						param = f"{param}__iexact" if exact else f"{param}__icontains"
 						filters[param] = value
-
 				else:
 					value = taxon_form.cleaned_data.get(param)
-
 					if value or isinstance(value, int):
 						filters[param] = value
 
 		if synonym:
 			filters["accepted"] = False
 
-		queryset = TaxonomicLevel.objects.filter(**filters)
+		if filters:
+			query = TaxonomicLevel.objects.filter(**filters)
+		else:
+			query = TaxonomicLevel.objects.none()
 
-		return Response(BaseTaxonomicLevelSerializer(queryset, many=True).data)
+		return Response(BaseTaxonomicLevelSerializer(query, many=True).data)
 
 
 class TaxonCRUDView(APIView):
@@ -149,7 +162,7 @@ class TaxonCRUDView(APIView):
 		try:
 			taxon = TaxonomicLevel.objects.get(id=taxon_id)
 		except TaxonomicLevel.DoesNotExist:
-			raise CBBAPIException("Taxonomic level does not exist.", code=404)
+			raise CBBAPIException("Taxonomic level does not exist", code=404)
 
 		return Response(BaseTaxonomicLevelSerializer(taxon).data)
 

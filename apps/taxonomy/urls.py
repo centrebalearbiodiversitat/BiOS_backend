@@ -8,7 +8,7 @@ urlpatterns = [
 	path("/taxon", TaxonCRUDView.as_view()),
 	path("/taxon/parent", TaxonParentView.as_view()),
 	path("/taxon/children", TaxonChildrenView.as_view()),
-	path("/taxon/synonym", TaxonSynonymView.as_view()),
-	path("/taxon/source", TaxonSourceView.as_view()),
+	path("/taxon/synonyms", TaxonSynonymView.as_view()),
+	path("/taxon/sources", TaxonSourceView.as_view()),
 	path("/authorship", AuthorshipCRUDView.as_view()),
 ]

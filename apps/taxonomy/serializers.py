@@ -21,21 +21,7 @@ class BaseTaxonomicLevelSerializer(CaseModelSerializer):
 
 	class Meta:
 		model = TaxonomicLevel
-		fields = ["id", "name", "taxon_rank", "scientific_name_authorship", "accepted", "accepted_modifier", "image_path", "attribution"]
-
-
-class TaxonomicSourcesSerializer(serializers.ModelSerializer):
-	sources = OriginSourceSerializer(many=True, read_only=True)
-
-	class Meta:
-		model = TaxonomicLevel
-		fields = ["sources"]
-
-	def to_representation(self, instance):
-		representation = super().to_representation(instance)
-		sources = instance.sources.all()
-		representation["sources"] = OriginSourceSerializer(sources, many=True).data
-		return representation
+		fields = ["id", "name", "taxon_rank", "scientific_name_authorship", "accepted", "accepted_modifier", "image_id", "attribution"]
 
 
 class AuthorshipSerializer(serializers.ModelSerializer):

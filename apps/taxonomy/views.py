@@ -8,7 +8,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.generics import ListAPIView
 from .forms import TaxonomicLevelForm, AuthorshipForm
-from .serializers import TaxonomicSourcesSerializer
+from ..versioning.serializers import OriginSourceSerializer
 
 
 class TaxonSearchView(APIView):
@@ -293,8 +293,8 @@ class TaxonSourceView(ListAPIView):
 			taxon = TaxonomicLevel.objects.get(id=taxon_id)
 		except TaxonomicLevel.DoesNotExist:
 			raise CBBAPIException("Taxonomic level does not exist.", code=404)
-		print(taxon)
-		return Response(TaxonomicSourcesSerializer(taxon).data)
+
+		return Response(OriginSourceSerializer(taxon.sources, many=True).data)
 
 
 class AuthorshipCRUDView(APIView):

@@ -1,6 +1,15 @@
 from django.urls import path
 
-from apps.taxonomy.views import TaxonSearchView, TaxonListView, TaxonCRUDView, TaxonParentView, TaxonChildrenView, TaxonSynonymView, TaxonSourceView, AuthorshipCRUDView
+from apps.taxonomy.views import (
+	TaxonSearchView,
+	TaxonListView,
+	TaxonCRUDView,
+	TaxonParentView,
+	TaxonChildrenView,
+	TaxonSynonymView,
+	TaxonSourceView,
+	AuthorshipCRUDView,
+)
 
 urlpatterns = [
 	path("/search", TaxonSearchView.as_view()),

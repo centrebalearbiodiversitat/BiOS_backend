@@ -11,7 +11,7 @@ from .views import (
 	SequenceCRUDView,
 	SequenceSearchView,
 	SequenceListView,
-	SequenceListCountView
+	SequenceListCountView,
 )
 
 urlpatterns = [
@@ -27,5 +27,4 @@ urlpatterns = [
 	path("/sequences/search", SequenceSearchView.as_view()),
 	path("/sequences/list", SequenceListView.as_view()),
 	path("/sequences/list/count", SequenceListCountView.as_view()),
-
 ]

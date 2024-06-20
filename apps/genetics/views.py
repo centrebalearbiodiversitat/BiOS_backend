@@ -489,7 +489,6 @@ class SequenceSearchView(APIView):
 
 
 class SequenceFilter(APIView):
-
 	def get(self, request):
 		occur_form = OccurrenceForm(data=request.GET)
 

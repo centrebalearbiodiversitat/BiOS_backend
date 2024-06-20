@@ -14,7 +14,10 @@ class LatLonModel(models.Model):
 	depth = models.IntegerField(null=True, blank=True, default=None)
 
 	def save(self, force_insert=False, force_update=False, using=None, update_fields=None):
-		if not ((self.decimal_latitude is not None and self.decimal_longitude is not None) or (self.latitude == self.longitude == None)):
+		if not (
+			(self.decimal_latitude is not None and self.decimal_longitude is not None)
+			or (self.decimal_latitude == self.decimal_longitude == None)
+		):
 			raise ValidationError("Latitude and longitude must both exist or None")
 		super().save(force_insert, force_update, using, update_fields)
 
@@ -32,7 +35,7 @@ class ReferencedModel(models.Model):
 			obj = kwargs["instance"]
 
 			if hasattr(obj, "sources"):
-				sources = [s.source.name for s in obj.sources.all()]
+				sources = [(s.source.name, s.origin_id) for s in obj.sources.all()]
 
 				if len(sources) != len(set(sources)):
 					raise ValidationError(f"Sources must be unique.\n{obj}\n{sources}")
@@ -60,7 +63,7 @@ class SynonymManager(models.Manager):
 
 	def filter(self, *args, **kwargs):
 		self._override_args(kwargs)
-		return super().filter(**kwargs)
+		return super().filter(*args, **kwargs)
 
 	def aggregate(self, *args, **kwargs):
 		self._override_args(kwargs)
@@ -120,8 +123,8 @@ class SynonymModel(models.Model):
 		"misapplied": MISAPPLIED,
 	}
 
-	name = models.CharField(max_length=256)
-	unidecode_name = models.CharField(max_length=256, help_text="Unidecode name do not touch")
+	name = models.CharField(max_length=256, db_index=True)
+	unidecode_name = models.CharField(max_length=256, help_text="Unidecode name do not touch", db_index=True)
 	synonyms = models.ManyToManyField("self", blank=True, symmetrical=True)
 	accepted = models.BooleanField(null=False, blank=False)
 	accepted_modifier = models.PositiveSmallIntegerField(choices=ACCEPTED_MODIFIERS_CHOICES, null=True, blank=True, default=None)

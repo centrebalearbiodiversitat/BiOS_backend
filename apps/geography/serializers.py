@@ -1,13 +1,17 @@
 from rest_framework import serializers
-
+from common.utils.serializers import CaseModelSerializer
 from apps.geography.models import GeographicLevel
 
 
-class GeographicLevelSerializer(serializers.ModelSerializer):
+class GeographicLevelSerializer(CaseModelSerializer):
 	rank = serializers.SerializerMethodField()
+	name = serializers.SerializerMethodField()
 
 	def get_rank(self, obj):
 		return obj.get_readable_rank()
+
+	def get_name(self, obj):
+		return str(obj)
 
 	class Meta:
 		model = GeographicLevel

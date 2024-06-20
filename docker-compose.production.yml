@@ -18,18 +18,8 @@ services:
       - postgres
     environment:
       - DJANGO_SETTINGS_MODULE=cbb.settings.production
-    command: "/usr/local/bin/gunicorn cbb.wsgi:application -w 2 -b 0.0.0.0:8000 --keyfile=/etc/ssl/private/cbbdb.uib.es.key --certfile=/etc/ssl/certs/cbbdb.uib.es_2024.cer -k uvicorn.workers.UvicornWorker"
+    command: "/usr/local/bin/uvicorn cbb.asgi:application --workers 2 --host 0.0.0.0:8000 --port 8000"
     env_file: .env
-
-  nginx:
-    image: nginx:latest
-    volumes:
-      - ./nginx.conf:/etc/nginx/conf.d/default.conf
-      - /var/www:/var/www
-    ports:
-      - "80:80"
-    depends_on:
-      - django
 
 
 volumes:

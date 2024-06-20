@@ -1,28 +1,29 @@
 from django.contrib import admin
 
-from apps.genetics.models import Gene, GeneticFeatures, Produces, Product
+from apps.genetics.models import Gene, Sequence, Produces, Product
 
 
 class GeneAdmin(admin.ModelAdmin):
-	search_fields = ["c"]
-	autocomplete_fields = ["synonyms"]
+	search_fields = ["unidecode_name"]
+	autocomplete_fields = ["synonyms", "sources"]
 
 
 class ProductAdmin(admin.ModelAdmin):
 	search_fields = ["unidecode_name"]
-	autocomplete_fields = ["synonyms"]
+	autocomplete_fields = ["synonyms", "sources"]
 
 
 class ProducesAdmin(admin.ModelAdmin):
 	search_fields = ["gene", "product"]
-	autocomplete_fields = ["gene", "product"]
+	autocomplete_fields = ["gene", "product", "sources"]
 
 
-class GeneticFeaturesAdmin(admin.ModelAdmin):
-	autocomplete_fields = ["products"]
+class SequenceAdmin(admin.ModelAdmin):
+	readonly_fields = ["occurrence"]
+	autocomplete_fields = ["products", "sources"]
 
 
 admin.site.register(Gene, GeneAdmin)
 admin.site.register(Product, ProductAdmin)
 admin.site.register(Produces, ProducesAdmin)
-admin.site.register(GeneticFeatures, GeneticFeaturesAdmin)
+admin.site.register(Sequence, SequenceAdmin)

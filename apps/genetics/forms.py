@@ -1,5 +1,5 @@
 from common.utils.forms import CamelCaseForm, IdFieldForm
-from .models import Gene, Product, Produces, GeneticFeatures
+from .models import Gene, Product, Produces, Sequence
 from django import forms
 
 
@@ -50,12 +50,12 @@ class ProducesForm(IdFieldForm, CamelCaseForm):
 		self.fields["product"].required = False
 
 
-class GeneticFeaturesForm(IdFieldForm, CamelCaseForm):
+class SequenceForm(IdFieldForm, CamelCaseForm):
 	sources = forms.IntegerField(required=False)
 	exact = forms.BooleanField(required=False)
 
 	class Meta:
-		model = GeneticFeatures
+		model = Sequence
 		fields = "__all__"
 
 	def __init__(self, *args, **kwargs):

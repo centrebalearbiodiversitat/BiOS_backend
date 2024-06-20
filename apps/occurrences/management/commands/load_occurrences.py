@@ -3,7 +3,7 @@ import json
 from django.core.management.base import BaseCommand
 from django.db import transaction
 from django.utils.dateparse import parse_datetime
-from apps.genetics.models import GeneticFeatures, Produces, Gene, Product
+from apps.genetics.models import Sequence, Produces, Gene, Product
 from apps.geography.models import GeographicLevel
 from apps.occurrences.models import Occurrence
 from apps.taxonomy.models import TaxonomicLevel
@@ -38,7 +38,7 @@ def parse_line(line: dict):
 
 
 def genetic_sources(line: dict, batch, occ, os):
-	gfs, _ = GeneticFeatures.objects.get_or_create(
+	gfs, _ = Sequence.objects.get_or_create(
 		occurrence=occ,
 		defaults={
 			"batch": batch,
@@ -47,9 +47,6 @@ def genetic_sources(line: dict, batch, occ, os):
 			"definition": line["definition"],
 			"data_file_division": line["data_file_division"],
 			"published_date": parse_datetime(line["date"]) if line["date"] else None,
-			"collection_date_year": int(line["year"]) if line["year"] else None,
-			"collection_date_month": int(line["month"]) if line["month"] else None,
-			"collection_date_day": int(line["day"]) if line["day"] else None,
 			"molecule_type": line["molecule_type"],
 			"sequence_version": line["sequence_version"],
 		},

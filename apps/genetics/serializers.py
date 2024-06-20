@@ -1,5 +1,5 @@
 from common.utils.serializers import CaseModelSerializer
-from .models import Gene, Product, Produces, GeneticFeatures
+from .models import Gene, Product, Produces, Sequence
 
 
 class GeneSerializer(CaseModelSerializer):
@@ -20,7 +20,7 @@ class ProducesSerializer(CaseModelSerializer):
 		fields = "__all__"
 
 
-class GeneticFeaturesSerializer(CaseModelSerializer):
+class SequenceSerializer(CaseModelSerializer):
 	class Meta:
-		model = GeneticFeatures
+		model = Sequence
 		fields = "__all__"

@@ -2,13 +2,13 @@ from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from .forms import GeneForm, ProductForm, ProducesForm, GeneticFeaturesForm
+from .forms import GeneForm, ProductForm, ProducesForm, SequenceForm
 from apps.occurrences.forms import OccurrenceForm
 from apps.taxonomy.models import TaxonomicLevel
 from apps.geography.models import GeographicLevel
-from .serializers import GeneSerializer, ProductSerializer, ProducesSerializer, GeneticFeaturesSerializer
+from .serializers import GeneSerializer, ProductSerializer, ProducesSerializer, SequenceSerializer
 from ..API.exceptions import CBBAPIException
-from .models import Gene, Product, Produces, GeneticFeatures, Occurrence
+from .models import Gene, Product, Produces, Sequence, Occurrence
 
 
 class GeneCRUDView(APIView):
@@ -426,7 +426,7 @@ class ProducesListView(APIView):
 		return Response((ProducesSerializer(queryset, many=True)).data)
 
 
-class GeneticFeaturesCRUDView(APIView):
+class SequenceCRUDView(APIView):
 	@swagger_auto_schema(
 		tags=["Genetic"],
 		operation_description="Get details of a specific genetic feature.",
@@ -446,24 +446,24 @@ class GeneticFeaturesCRUDView(APIView):
 		},
 	)
 	def get(self, request):
-		gfs_form = GeneticFeaturesForm(data=self.request.GET)
+		seq_form = SequenceForm(data=self.request.GET)
 
-		if not gfs_form.is_valid():
-			raise CBBAPIException(gfs_form.errors, 400)
+		if not seq_form.is_valid():
+			raise CBBAPIException(seq_form.errors, 400)
 
-		gfs_id = gfs_form.cleaned_data.get("id")
-		if not gfs_id:
+		seq_id = seq_form.cleaned_data.get("id")
+		if not seq_id:
 			raise CBBAPIException("Missing sequence id", 400)
 
 		try:
-			gfs = GeneticFeatures.objects.get(id=gfs_id)
-		except GeneticFeatures.DoesNotExist:
+			gfs = Sequence.objects.get(id=seq_id)
+		except Sequence.DoesNotExist:
 			raise CBBAPIException("Sequence does not exist", 404)
 
-		return Response(GeneticFeaturesSerializer(gfs).data)
+		return Response(SequenceSerializer(gfs).data)
 
 
-class GeneticFeaturesDetailView(APIView):
+class SequenceSearchView(APIView):
 	@swagger_auto_schema(
 		tags=["Genetic"],
 		operation_description="Search for a genetic feature by definition.",
@@ -474,56 +474,36 @@ class GeneticFeaturesDetailView(APIView):
 				description="Definition of the genetic feature to search for.",
 				type=openapi.TYPE_STRING,
 				required=True,
-			),
-			openapi.Parameter(
-				"exact",
-				openapi.IN_QUERY,
-				description="Indicates whether to search for an exact match. Defaults to False.",
-				type=openapi.TYPE_BOOLEAN,
-			),
+			)
 		],
 		responses={200: "Success", 400: "Bad Request"},
 	)
 	def get(self, request):
-		gfs_form = GeneticFeaturesForm(data=self.request.GET)
-		if not gfs_form.is_valid():
-			raise CBBAPIException(gfs_form.errors, code=400)
+		seq_form = SequenceForm(data=self.request.GET)
+		if not seq_form.is_valid():
+			raise CBBAPIException(seq_form.errors, code=400)
 
-		filters = {}
-		query = gfs_form.cleaned_data.get("definition", None)
-		exact = gfs_form.cleaned_data.get("exact", False)
+		definition = seq_form.cleaned_data.get("definition", None)
 
-		if not query:
-			Response(GeneticFeaturesSerializer(GeneticFeatures.objects.none(), many=True).data)
-
-		filters["definition__iexact" if exact else "definition__icontains"] = query
-
-		return Response(GeneticFeaturesSerializer(GeneticFeatures.objects.filter(**filters)[:10], many=True).data)
+		return Response(SequenceSerializer(Sequence.objects.filter(definition__icontains=definition), many=True).data)
 
 
-class GeneticFeaturesListView(APIView):
+class SequenceListView(APIView):
 	@swagger_auto_schema(
 		tags=["Genetic"],
-		operation_description="List products with optional filters",
+		operation_description="Filter sequences",
 		manual_parameters=[
-			openapi.Parameter(
-				"batch",
-				openapi.IN_QUERY,
-				description="Batch to search for.",
-				type=openapi.TYPE_INTEGER,
-				required=False,
-			),
 			openapi.Parameter(
 				"sources",
 				openapi.IN_QUERY,
-				description="Source ID to search for.",
+				description="Source ID.",
 				type=openapi.TYPE_INTEGER,
 				required=False,
 			),
 			openapi.Parameter(
 				"isolate",
 				openapi.IN_QUERY,
-				description="ID of the isolate to filter for.",
+				description="ID of the isolate.",
 				type=openapi.TYPE_STRING,
 				required=False,
 			),
@@ -535,16 +515,9 @@ class GeneticFeaturesListView(APIView):
 				required=False,
 			),
 			openapi.Parameter(
-				"definition",
-				openapi.IN_QUERY,
-				description="Definition of the genetic feature to search for.",
-				type=openapi.TYPE_STRING,
-				required=False,
-			),
-			openapi.Parameter(
 				"dataFileDivision",
 				openapi.IN_QUERY,
-				description="Whether to search for accepted or not.",
+				description="Data file division type.",
 				type=openapi.TYPE_BOOLEAN,
 				required=False,
 			),
@@ -601,7 +574,7 @@ class GeneticFeaturesListView(APIView):
 		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
 	)
 	def get(self, request):
-		gfs_form = GeneticFeaturesForm(data=self.request.GET)
+		gfs_form = SequenceForm(data=self.request.GET)
 
 		if not gfs_form.is_valid():
 			return Response(gfs_form.errors, status=400)
@@ -624,11 +597,11 @@ class GeneticFeaturesListView(APIView):
 						filters[param] = value
 
 		if filters:
-			queryset = GeneticFeatures.objects.filter(**filters)
+			queryset = Sequence.objects.filter(**filters)
 		else:
-			queryset = GeneticFeatures.objects.none()
+			queryset = Sequence.objects.none()
 
-		return Response((GeneticFeaturesSerializer(queryset, many=True)).data)
+		return Response(SequenceSerializer(queryset, many=True).data)
 
 
 class TaxonGeneticFilter(APIView):
@@ -647,32 +620,27 @@ class TaxonGeneticFilter(APIView):
 		if not value:
 			raise CBBAPIException("Missing id parameter", code=400)
 
-		if value:
-			klass = TaxonGeneticView.SPECIAL_FILTERS.get("taxonomy", None)
+		try:
+			obj = TaxonomicLevel.objects.get(id=value.id)
+		except TaxonomicLevel.DoesNotExist:
+			raise CBBAPIException("Taxonomic level does not exist", 404)
 
-			if klass:
-				try:
-					obj = klass.objects.get(id=value.id)
-				except klass.DoesNotExist:
-					raise CBBAPIException("Taxonomic level does not exist", 404)
+		filters["taxonomy__lft__gte"] = obj.lft
+		filters["taxonomy__rght__lte"] = obj.rght
+		taxon_ids.add(obj.id)
+		synonyms = obj.synonyms.filter(accepted=False)
 
-				filters["taxonomy__lft__gte"] = obj.lft
-				filters["taxonomy__rght__lte"] = obj.rght
-				taxon_ids.add(obj.id)
-				synonyms = obj.synonyms.filter(accepted=False)
-
-				for synonym in synonyms:
-					taxon_ids.add(synonym.id)
+		for synonym in synonyms:
+			taxon_ids.add(synonym.id)
 
 		if not filters:
 			return Occurrence.objects.none()
 
 		try:
-			occurrences = Occurrence.objects.filter(taxonomy__in=taxon_ids, geneticfeatures__bp__isnull=False).distinct()
+			occurrences = Occurrence.objects.filter(taxonomy__in=taxon_ids, sequence__bp__isnull=False).distinct()
+			genetic_features = Sequence.objects.filter(occurrence__in=occurrences)
 
-			genetic_features = GeneticFeatures.objects.filter(occurrence__in=occurrences)
 			return genetic_features
-
 		except Occurrence.DoesNotExist:
 			raise CBBAPIException("Occurrences do not exist.", code=404)
 
@@ -693,7 +661,8 @@ class TaxonGeneticView(TaxonGeneticFilter):
 		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
 	)
 	def get(self, request):
-		return Response(GeneticFeaturesSerializer(super().get(request), many=True).data)
+		Sequence.objects.filter(occurrence__taxonomy__synonyms=7065)
+		return Response(SequenceSerializer(super().get(request), many=True).data)
 
 
 class TaxonGeneticCountView(TaxonGeneticFilter):

@@ -1,5 +1,5 @@
 from common.utils.forms import CamelCaseForm, IdFieldForm
-from .models import Gene, Product, Produces, GeneticFeatures
+from .models import Gene, Product, Produces, Sequence
 from django import forms
 
 
@@ -50,16 +50,17 @@ class ProducesForm(IdFieldForm, CamelCaseForm):
 		self.fields["product"].required = False
 
 
-class GeneticFeaturesForm(IdFieldForm, CamelCaseForm):
+class SequenceForm(IdFieldForm, CamelCaseForm):
 	sources = forms.IntegerField(required=False)
 	exact = forms.BooleanField(required=False)
 
 	class Meta:
-		model = GeneticFeatures
+		model = Sequence
 		fields = "__all__"
 
 	def __init__(self, *args, **kwargs):
 		super().__init__(*args, **kwargs)
+		self.fields["occurrence"].required = False
 		self.fields["batch"].required = False
 		self.fields["sources"].required = False
 		self.fields["occurrence"].required = False
@@ -68,9 +69,6 @@ class GeneticFeaturesForm(IdFieldForm, CamelCaseForm):
 		self.fields["definition"].required = False
 		self.fields["data_file_division"].required = False
 		self.fields["published_date"].required = False
-		self.fields["collection_date_year"].required = False
-		self.fields["collection_date_month"].required = False
-		self.fields["collection_date_day"].required = False
 		self.fields["molecule_type"].required = False
 		self.fields["sequence_version"].required = False
 		self.fields["products"].required = False

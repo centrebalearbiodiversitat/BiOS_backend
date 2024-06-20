@@ -1,6 +1,3 @@
-from django.core.exceptions import ValidationError
-from django.http import Http404
-from django.shortcuts import get_object_or_404
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.views import APIView
@@ -13,7 +10,7 @@ from ..geography.models import GeographicLevel
 from ..taxonomy.models import TaxonomicLevel
 
 
-class OccurrenceDetail(APIView):
+class OccurrenceCRUDView(APIView):
 	@swagger_auto_schema(
 		tags=["Occurrences"],
 		operation_description="Get details of a specific occurrence.",
@@ -81,7 +78,7 @@ class OccurrenceFilter(APIView):
 		return Occurrence.objects.filter(**filters)
 
 
-class OccurrenceList(OccurrenceFilter):
+class OccurrenceListView(OccurrenceFilter):
 	@swagger_auto_schema(
 		tags=["Occurrences"],
 		operation_description="Filter occurrences based on query parameters.",
@@ -141,7 +138,7 @@ class OccurrenceList(OccurrenceFilter):
 		return Response(OccurrenceSerializer(super().get(request), many=True).data)
 
 
-class OccurrenceCount(OccurrenceFilter):
+class OccurrenceCountView(OccurrenceFilter):
 	@swagger_auto_schema(
 		tags=["Occurrences"],
 		operation_description="Counts the filtered occurrences based on the query parameters.",
@@ -193,3 +190,53 @@ class OccurrenceCount(OccurrenceFilter):
 	)
 	def get(self, request):
 		return Response(super().get(request).count())
+
+
+class OccurrenceTaxonView(APIView):
+	SPECIAL_FILTERS = {"geographical_location": GeographicLevel, "taxonomy": TaxonomicLevel}
+
+	@swagger_auto_schema(
+		tags=["Occurrences"],
+		operation_description="Filter occurrences based on query parameters.",
+		manual_parameters=[
+			openapi.Parameter(
+				"taxonomy",
+				openapi.IN_QUERY,
+				description="Filter occurrences by taxon id.",
+				type=openapi.TYPE_INTEGER,
+			)
+		],
+		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
+	)
+	def get(self, request):
+		occur_form = OccurrenceForm(data=request.GET)
+
+		if not occur_form.is_valid():
+			raise CBBAPIException(occur_form.errors, 400)
+
+		filters = {}
+		taxon_ids = set()
+		value = occur_form.cleaned_data.get("taxonomy")
+
+		if value:
+			klass = OccurrenceFilter.SPECIAL_FILTERS.get("taxonomy", None)
+
+			if klass:
+				try:
+					obj = klass.objects.get(id=value.id)
+				except klass.DoesNotExist:
+					raise CBBAPIException(f"Taxonomic level does not exist", 404)
+
+				filters["taxonomy__lft__gte"] = obj.lft
+				filters["taxonomy__rght__lte"] = obj.rght
+				taxon_ids.add(obj.id)
+				synonyms = obj.synonyms.filter(accepted=False)
+
+				for synonym in synonyms:
+					taxon_ids.add(synonym.id)
+
+		if not filters:
+			return Occurrence.objects.none()
+
+		occurrences = Occurrence.objects.filter(taxonomy__in=taxon_ids)
+		return Response(OccurrenceSerializer(occurrences, many=True).data)

@@ -1,6 +1,7 @@
 from apps.taxonomy.models import TaxonomicLevel, Authorship
 from common.utils.serializers import CaseModelSerializer
 from rest_framework import serializers
+from ..versioning.serializers import OriginSourceSerializer, SourceSerializer
 
 
 class BaseTaxonomicLevelSerializer(CaseModelSerializer):

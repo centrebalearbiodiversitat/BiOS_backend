@@ -3,7 +3,7 @@ import json
 from django.core.management.base import BaseCommand
 from django.db import transaction
 from django.utils.dateparse import parse_datetime
-from apps.genetics.models import GeneticFeatures, Produces, Gene, Product
+from apps.genetics.models import Sequence, Produces, Gene, Product
 from apps.geography.models import GeographicLevel
 from apps.occurrences.models import Occurrence
 from apps.taxonomy.models import TaxonomicLevel
@@ -38,7 +38,7 @@ def parse_line(line: dict):
 
 
 def genetic_sources(line: dict, batch, occ, os):
-	gfs, _ = GeneticFeatures.objects.get_or_create(
+	seq, _ = Sequence.objects.get_or_create(
 		occurrence=occ,
 		defaults={
 			"batch": batch,
@@ -47,16 +47,13 @@ def genetic_sources(line: dict, batch, occ, os):
 			"definition": line["definition"],
 			"data_file_division": line["data_file_division"],
 			"published_date": parse_datetime(line["date"]) if line["date"] else None,
-			"collection_date_year": int(line["year"]) if line["year"] else None,
-			"collection_date_month": int(line["month"]) if line["month"] else None,
-			"collection_date_day": int(line["day"]) if line["day"] else None,
 			"molecule_type": line["molecule_type"],
 			"sequence_version": line["sequence_version"],
 		},
 	)
 
-	if not gfs.sources.filter(id=os.id).exists():
-		gfs.sources.add(os)
+	if not seq.sources.filter(id=os.id).exists():
+		seq.sources.add(os)
 
 	for production in line["genetic_features"]:
 		gene = None
@@ -77,8 +74,8 @@ def genetic_sources(line: dict, batch, occ, os):
 		prod_rel, _ = Produces.objects.get_or_create(gene=gene, product=product, defaults={"batch": batch})
 		if not prod_rel.sources.filter(id=os.id).exists():
 			prod_rel.sources.add(os)
-		if not gfs.products.filter(id=prod_rel.id).exists():
-			gfs.products.add(prod_rel)
+		if not seq.products.filter(id=prod_rel.id).exists():
+			seq.products.add(prod_rel)
 
 
 def find_gadm(line):
@@ -168,5 +165,5 @@ class Command(BaseCommand):
 				else:
 					occ = Occurrence.objects.get(sources=os)
 
-				if line["bp"]:
+				if "bp" in line and line["bp"] is not None:
 					genetic_sources(line, batch, occ, os)

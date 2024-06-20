@@ -8,9 +8,10 @@ from .views import (
 	ProductListView,
 	ProducesCRUDView,
 	ProducesListView,
-	GeneticFeaturesCRUDView,
-	GeneticFeaturesDetailView,
-	GeneticFeaturesListView,
+	SequenceCRUDView,
+	SequenceSearchView,
+	SequenceListView,
+	SequenceListCountView,
 )
 
 urlpatterns = [
@@ -22,7 +23,8 @@ urlpatterns = [
 	path("/product/list", ProductListView.as_view()),
 	path("/produces", ProducesCRUDView.as_view()),
 	path("/produces/list", ProducesListView.as_view()),
-	path("/sequences", GeneticFeaturesCRUDView.as_view()),
-	path("/sequences/search", GeneticFeaturesDetailView.as_view()),
-	path("/sequences/list", GeneticFeaturesListView.as_view()),
+	path("/sequences", SequenceCRUDView.as_view()),
+	path("/sequences/search", SequenceSearchView.as_view()),
+	path("/sequences/list", SequenceListView.as_view()),
+	path("/sequences/list/count", SequenceListCountView.as_view()),
 ]

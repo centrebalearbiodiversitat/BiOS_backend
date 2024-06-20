@@ -22,19 +22,16 @@ class Produces(ReferencedModel):
 		verbose_name_plural = "Produces"
 
 
-class GeneticFeatures(ReferencedModel):
+class Sequence(ReferencedModel):
 	occurrence = models.ForeignKey(Occurrence, on_delete=models.CASCADE)
 	isolate = models.CharField(max_length=255, null=True, blank=True)
 	bp = models.PositiveIntegerField()
 	definition = models.TextField()
 	data_file_division = models.CharField(max_length=255)
 	published_date = models.DateField(blank=True, null=True)
-	collection_date_year = models.PositiveSmallIntegerField(null=True, blank=True)
-	collection_date_month = models.PositiveSmallIntegerField(null=True, blank=True)
-	collection_date_day = models.PositiveSmallIntegerField(null=True, blank=True)
 	molecule_type = models.CharField(max_length=255)
 	sequence_version = models.PositiveIntegerField()
 	products = models.ManyToManyField(Produces)
 
-	class Meta:
-		verbose_name_plural = "Genetic Features"
+	def __str__(self):
+		return self.definition

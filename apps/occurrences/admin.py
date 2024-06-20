@@ -21,6 +21,7 @@ class OccurrenceAdmin(admin.ModelAdmin):
 		"depth",
 	]
 	autocomplete_fields = ["taxonomy", "sources"]
+	search_fields = ["taxonomy__name", "voucher"]
 
 
 admin.site.register(Occurrence, OccurrenceAdmin)

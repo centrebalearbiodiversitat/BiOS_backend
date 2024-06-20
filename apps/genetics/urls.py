@@ -11,7 +11,8 @@ from .views import (
 	SequenceCRUDView,
 	SequenceListView,
 	TaxonGeneticView,
-	TaxonGeneticCountView, SequenceSearchView,
+	TaxonGeneticCountView,
+	SequenceSearchView,
 )
 
 urlpatterns = [

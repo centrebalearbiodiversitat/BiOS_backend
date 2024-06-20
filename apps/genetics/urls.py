@@ -9,10 +9,9 @@ from .views import (
 	ProducesCRUDView,
 	ProducesListView,
 	SequenceCRUDView,
-	SequenceListView,
-	TaxonGeneticView,
-	TaxonGeneticCountView,
 	SequenceSearchView,
+	SequenceListView,
+	SequenceListCountView
 )
 
 urlpatterns = [
@@ -27,6 +26,6 @@ urlpatterns = [
 	path("/sequences", SequenceCRUDView.as_view()),
 	path("/sequences/search", SequenceSearchView.as_view()),
 	path("/sequences/list", SequenceListView.as_view()),
-	path("/sequences/taxon", TaxonGeneticView.as_view()),
-	path("/sequences/taxon/count", TaxonGeneticCountView.as_view()),
+	path("/sequences/list/count", SequenceListCountView.as_view()),
+
 ]

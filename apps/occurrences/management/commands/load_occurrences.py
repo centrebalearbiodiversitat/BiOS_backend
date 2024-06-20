@@ -38,7 +38,7 @@ def parse_line(line: dict):
 
 
 def genetic_sources(line: dict, batch, occ, os):
-	gfs, _ = Sequence.objects.get_or_create(
+	seq, _ = Sequence.objects.get_or_create(
 		occurrence=occ,
 		defaults={
 			"batch": batch,
@@ -52,8 +52,8 @@ def genetic_sources(line: dict, batch, occ, os):
 		},
 	)
 
-	if not gfs.sources.filter(id=os.id).exists():
-		gfs.sources.add(os)
+	if not seq.sources.filter(id=os.id).exists():
+		seq.sources.add(os)
 
 	for production in line["genetic_features"]:
 		gene = None
@@ -74,8 +74,8 @@ def genetic_sources(line: dict, batch, occ, os):
 		prod_rel, _ = Produces.objects.get_or_create(gene=gene, product=product, defaults={"batch": batch})
 		if not prod_rel.sources.filter(id=os.id).exists():
 			prod_rel.sources.add(os)
-		if not gfs.products.filter(id=prod_rel.id).exists():
-			gfs.products.add(prod_rel)
+		if not seq.products.filter(id=prod_rel.id).exists():
+			seq.products.add(prod_rel)
 
 
 def find_gadm(line):

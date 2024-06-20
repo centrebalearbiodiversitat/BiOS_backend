@@ -488,124 +488,7 @@ class SequenceSearchView(APIView):
 		return Response(SequenceSerializer(Sequence.objects.filter(definition__icontains=definition), many=True).data)
 
 
-class SequenceListView(APIView):
-	@swagger_auto_schema(
-		tags=["Genetic"],
-		operation_description="Filter sequences",
-		manual_parameters=[
-			openapi.Parameter(
-				"sources",
-				openapi.IN_QUERY,
-				description="Source ID.",
-				type=openapi.TYPE_INTEGER,
-				required=False,
-			),
-			openapi.Parameter(
-				"isolate",
-				openapi.IN_QUERY,
-				description="ID of the isolate.",
-				type=openapi.TYPE_STRING,
-				required=False,
-			),
-			openapi.Parameter(
-				"bp",
-				openapi.IN_QUERY,
-				description="Number of bp to filter for",
-				type=openapi.TYPE_STRING,
-				required=False,
-			),
-			openapi.Parameter(
-				"dataFileDivision",
-				openapi.IN_QUERY,
-				description="Data file division type.",
-				type=openapi.TYPE_BOOLEAN,
-				required=False,
-			),
-			openapi.Parameter(
-				"publishedDate",
-				openapi.IN_QUERY,
-				description="Indicates whether to search for an exact match. Defaults to False.",
-				type=openapi.TYPE_BOOLEAN,
-				required=False,
-			),
-			openapi.Parameter(
-				"collectionDateYear",
-				openapi.IN_QUERY,
-				description="Indicates whether to search for an exact match. Defaults to False.",
-				type=openapi.TYPE_BOOLEAN,
-				required=False,
-			),
-			openapi.Parameter(
-				"collectionDateMonth",
-				openapi.IN_QUERY,
-				description="Indicates whether to search for an exact match. Defaults to False.",
-				type=openapi.TYPE_BOOLEAN,
-				required=False,
-			),
-			openapi.Parameter(
-				"collectionDateDay",
-				openapi.IN_QUERY,
-				description="Indicates whether to search for an exact match. Defaults to False.",
-				type=openapi.TYPE_BOOLEAN,
-				required=False,
-			),
-			openapi.Parameter(
-				"moleculeType",
-				openapi.IN_QUERY,
-				description="Indicates whether to search for an exact match. Defaults to False.",
-				type=openapi.TYPE_BOOLEAN,
-				required=False,
-			),
-			openapi.Parameter(
-				"sequenceVersion",
-				openapi.IN_QUERY,
-				description="Indicates whether to search for an exact match. Defaults to False.",
-				type=openapi.TYPE_BOOLEAN,
-				required=False,
-			),
-			openapi.Parameter(
-				"products",
-				openapi.IN_QUERY,
-				description="Indicates whether to search for an exact match. Defaults to False.",
-				type=openapi.TYPE_BOOLEAN,
-				required=False,
-			),
-		],
-		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
-	)
-	def get(self, request):
-		gfs_form = SequenceForm(data=self.request.GET)
-
-		if not gfs_form.is_valid():
-			return Response(gfs_form.errors, status=400)
-
-		str_fields = ["definition"]
-		exact = gfs_form.cleaned_data.get("exact", False)
-
-		filters = {}
-		for param in gfs_form.cleaned_data:
-			if param != "exact":
-				if param in str_fields:
-					value = gfs_form.cleaned_data.get(param)
-
-					if value:
-						param = f"{param}__iexact" if exact else f"{param}__icontains"
-						filters[param] = value
-				else:
-					value = gfs_form.cleaned_data.get(param)
-					if value or isinstance(value, int):
-						filters[param] = value
-
-		if filters:
-			queryset = Sequence.objects.filter(**filters)
-		else:
-			queryset = Sequence.objects.none()
-
-		return Response(SequenceSerializer(queryset, many=True).data)
-
-
-class TaxonGeneticFilter(APIView):
-	SPECIAL_FILTERS = {"geographical_location": GeographicLevel, "taxonomy": TaxonomicLevel}
+class SequenceFilter(APIView):
 
 	def get(self, request):
 		occur_form = OccurrenceForm(data=request.GET)
@@ -637,23 +520,22 @@ class TaxonGeneticFilter(APIView):
 			return Occurrence.objects.none()
 
 		try:
-			occurrences = Occurrence.objects.filter(taxonomy__in=taxon_ids, sequence__bp__isnull=False).distinct()
-			genetic_features = Sequence.objects.filter(occurrence__in=occurrences)
+			genetic_features = Sequence.objects.filter(occurrence__taxonomy__in=taxon_ids)
 
 			return genetic_features
-		except Occurrence.DoesNotExist:
-			raise CBBAPIException("Occurrences do not exist.", code=404)
+		except Sequence.DoesNotExist:
+			raise CBBAPIException("Sequence do not exist.", code=404)
 
 
-class TaxonGeneticView(TaxonGeneticFilter):
+class SequenceListView(SequenceFilter):
 	@swagger_auto_schema(
-		tags=["Taxonomy"],
-		operation_description="Retrieve the genetic information of a taxonomic level by its id",
+		tags=["Genetic"],
+		operation_description="Retrieve the sequences of a taxonomic level by its id",
 		manual_parameters=[
 			openapi.Parameter(
 				"id",
 				openapi.IN_QUERY,
-				description="ID of the taxon from which all its genetic features will be retrieved",
+				description="ID of the taxon from which all its sequences will be retrieved",
 				type=openapi.TYPE_INTEGER,
 				required=True,
 			)
@@ -661,19 +543,18 @@ class TaxonGeneticView(TaxonGeneticFilter):
 		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
 	)
 	def get(self, request):
-		Sequence.objects.filter(occurrence__taxonomy__synonyms=7065)
 		return Response(SequenceSerializer(super().get(request), many=True).data)
 
 
-class TaxonGeneticCountView(TaxonGeneticFilter):
+class SequenceListCountView(SequenceFilter):
 	@swagger_auto_schema(
-		tags=["Taxonomy"],
-		operation_description="Retrieve the genetic information count of a taxonomic level by its id.",
+		tags=["Genetic"],
+		operation_description="Retrieve the sequences count of a taxonomic level by its id.",
 		manual_parameters=[
 			openapi.Parameter(
 				"id",
 				openapi.IN_QUERY,
-				description="ID of the taxon from which all its genetic features will be retrieved",
+				description="ID of the taxon from which all its sequences will be retrieved",
 				type=openapi.TYPE_INTEGER,
 				required=True,
 			)

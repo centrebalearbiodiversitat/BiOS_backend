@@ -103,6 +103,8 @@ def create_taxonomic_level(line, parent, batch, idx_name, rank, idx_author, idx_
 
 		os, new_source = OriginSource.objects.get_or_create(origin_id=line[COL_ID], source=source)
 		if new_source:
+			if child.sources.filter(source=source).exists():
+				raise Exception(f"Origin source id already existing. {os}\n{line}")
 			child.sources.add(os)
 			child.save()
 		elif not child.sources.filter(id=os.id).exists():

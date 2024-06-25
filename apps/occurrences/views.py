@@ -64,7 +64,6 @@ class OccurrenceFilter(APIView):
 				klass = OccurrenceFilter.SPECIAL_FILTERS.get(param, None)
 
 				if klass:
-
 					try:
 						obj = klass.objects.get(id=value.id)
 					except klass.DoesNotExist:
@@ -72,7 +71,7 @@ class OccurrenceFilter(APIView):
 
 					filters[f"{param}__lft__gte"] = obj.lft
 					filters[f"{param}__rght__lte"] = obj.rght
-				
+
 				else:
 					filters[param] = value
 

@@ -8,7 +8,7 @@ class OccurrenceForm(IdFieldForm, TranslateForm):
 		"year": "collection_date_year",
 		"month": "collection_date_month",
 		"day": "collection_date_day",
-		"location": "geographical_location"
+		"location": "geographical_location",
 	}
 
 	def __init__(self, *args, **kwargs):
@@ -26,6 +26,4 @@ class OccurrenceForm(IdFieldForm, TranslateForm):
 	class Meta:
 		model = Occurrence
 		fields = "__all__"
-		default_values = {
-            'geographical_location': GeographicLevel.objects.get(id=1)
-        }
+		default_values = {"geographical_location": GeographicLevel.objects.get(id=1)}

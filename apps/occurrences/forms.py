@@ -1,6 +1,7 @@
 from common.utils.forms import TranslateForm, IdFieldForm
 from .models import Occurrence
-from apps.geography.models import GeographicLevel
+
+BALEARIC_ISLANDS = 1
 
 
 class OccurrenceForm(IdFieldForm, TranslateForm):
@@ -26,4 +27,5 @@ class OccurrenceForm(IdFieldForm, TranslateForm):
 	class Meta:
 		model = Occurrence
 		fields = "__all__"
-		default_values = {"geographical_location": GeographicLevel.objects.get(id=1)}
+		# Comentar si no se han cargado los GADM
+		default_values = {"geographical_location": BALEARIC_ISLANDS}

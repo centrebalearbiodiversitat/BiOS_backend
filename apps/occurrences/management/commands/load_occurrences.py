@@ -27,6 +27,9 @@ GEOGRAPHIC_LEVELS = [
 	{"key": "WB_0", "rank": GeographicLevel.WATER_BODY},
 ]
 
+OCCURRENCE = 1
+SEQUENCE = 2
+
 
 def parse_line(line: dict):
 	for key, value in line.items():
@@ -60,14 +63,20 @@ def genetic_sources(line: dict, batch, occ, os):
 		product = None
 		if production["gene"]:
 			gene, _ = Gene.objects.get_or_create(
-				name=production["gene"], defaults={"name": production["gene"], "batch": batch, "accepted": True}
+				name=production["gene"],
+				defaults={"name": production["gene"], "batch": batch, "accepted": True},
 			)
 			if not gene.sources.filter(id=os.id).exists():
 				gene.sources.add(os)
 
 		if production["product"]:
 			product, _ = Product.objects.get_or_create(
-				name=production["product"], defaults={"name": production["product"], "batch": batch, "accepted": True}
+				name=production["product"],
+				defaults={
+					"name": production["product"],
+					"batch": batch,
+					"accepted": True,
+				},
 			)
 			if not product.sources.filter(id=os.id).exists():
 				product.sources.add(os)
@@ -113,12 +122,19 @@ class Command(BaseCommand):
 			line: dict
 			for line in csv_file:
 				line = parse_line(line)
+				if "bp" in line and line["bp"] is not None:
+					data_type = SEQUENCE
+				else:
+					data_type = OCCURRENCE
 				source, _ = Source.objects.get_or_create(
 					name__icontains=line["occurrenceSource"],
+					data_type=data_type,
 					defaults={
 						"name": line["occurrenceSource"],
 						"accepted": True,
 						"origin": Source.TRANSLATE_CHOICES[line["occurrenceOrigin"]],
+						"url": None,
+						"data_type": data_type,  # data_type depends on whether it is an OCCURRENCE or a SEQUENCE
 					},
 				)
 
@@ -149,15 +165,15 @@ class Command(BaseCommand):
 						batch=batch,
 						voucher=line["voucher"],
 						basis_of_record=Occurrence.TRANSLATE_BASIS_OF_RECORD.get(line["basisOfRecord"], Occurrence.UNKNOWN),
-						collection_date_year=int(line["year"]) if line["year"] else None,
-						collection_date_month=int(line["month"]) if line["month"] else None,
+						collection_date_year=(int(line["year"]) if line["year"] else None),
+						collection_date_month=(int(line["month"]) if line["month"] else None),
 						collection_date_day=int(line["day"]) if line["day"] else None,
 						geographical_location=find_gadm(line),
-						decimal_latitude=float(line["lat_lon"][0]) if line["lat_lon"] else None,
-						decimal_longitude=float(line["lat_lon"][1]) if line["lat_lon"] else None,
-						coordinate_uncertainty_in_meters=int(line["coordinateUncertaintyInMeters"])
-						if line["coordinateUncertaintyInMeters"]
-						else None,
+						decimal_latitude=(float(line["lat_lon"][0]) if line["lat_lon"] else None),
+						decimal_longitude=(float(line["lat_lon"][1]) if line["lat_lon"] else None),
+						coordinate_uncertainty_in_meters=(
+							int(line["coordinateUncertaintyInMeters"]) if line["coordinateUncertaintyInMeters"] else None
+						),
 						elevation=int(line["elevation"]) if line["elevation"] else None,
 						depth=int(line["depth"]) if line["depth"] else None,
 					)

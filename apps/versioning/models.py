@@ -1,7 +1,7 @@
 from django.core.exceptions import ValidationError
 from django.db import models
 
-from common.utils.models import SynonymModel, ReferencedModel
+from common.utils.models import SynonymModel
 
 
 class Batch(models.Model):
@@ -82,6 +82,7 @@ class Source(SynonymModel):
 class OriginSource(models.Model):
 	origin_id = models.CharField(max_length=255, blank=False, null=False)
 	source = models.ForeignKey(Source, on_delete=models.CASCADE)
+	attribution = models.CharField(max_length=512, null=True, default=None, blank=True)
 
 	def save(self, force_insert=False, force_update=False, using=None, update_fields=None):
 		super().save(force_insert, force_update, using, update_fields)

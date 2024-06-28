@@ -297,6 +297,42 @@ class TaxonSourceView(ListAPIView):
 		return Response(OriginSourceSerializer(taxon.sources, many=True).data)
 
 
+class TaxonChecklistView(APIView):
+	def get_taxonomic_hierarchy(self, taxon):
+		children = taxon.get_children()
+		taxon_data = BaseTaxonomicLevelSerializer(taxon).data
+		taxon_data["children"] = [self.get_taxonomic_hierarchy(child) for child in children]
+		return taxon_data
+
+	@swagger_auto_schema(
+		tags=["Taxonomy"],
+		operation_description="Get a checklist of a taxonomic level.",
+		manual_parameters=[
+			openapi.Parameter(
+				"id",
+				openapi.IN_QUERY,
+				description="ID of the taxon to retrieve all its childrens",
+				type=openapi.TYPE_INTEGER,
+			)
+		],
+		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
+	)
+	def get(self, request):
+		taxon_form = TaxonomicLevelForm(self.request.GET)
+
+		if not taxon_form.is_valid():
+			raise CBBAPIException(taxon_form.errors, code=400)
+
+		try:
+			taxon = TaxonomicLevel.objects.get(id=taxon_form.cleaned_data.get("id"))
+		except TaxonomicLevel.DoesNotExist:
+			raise CBBAPIException("Taxonomic level does not exist", code=404)
+
+		taxonomic_hierarchy = self.get_taxonomic_hierarchy(taxon)
+
+		return Response(taxonomic_hierarchy)
+
+
 class AuthorshipCRUDView(APIView):
 	@swagger_auto_schema(
 		tags=["Authorship"],

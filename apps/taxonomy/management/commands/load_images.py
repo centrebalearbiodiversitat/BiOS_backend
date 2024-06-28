@@ -16,9 +16,8 @@ def add_taxonomic_image(line, batch):
 
 	if line["image_id"]:
 		taxon = TaxonomicLevel.objects.find(line["taxon"]).first()
-		taxon.attribution = line["attribution"]
 		source = get_or_create_source(line["source"], line["origin"], batch)
-		os, new_os = OriginSource.objects.get_or_create(origin_id=line["image_path"], source=source)
+		os, new_os = OriginSource.objects.get_or_create(origin_id=line["image_path"], source=source, attribution=line["attribution"])
 
 		if new_os:
 			if taxon.sources.filter(source=os.source, origin_id=os.origin_id).exists():

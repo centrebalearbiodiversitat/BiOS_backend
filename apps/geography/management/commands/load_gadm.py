@@ -26,7 +26,6 @@ class Command(BaseCommand):
 		file_name = options["file"]
 		db = gpd.read_file(file_name)
 		levels = db.loc[:]
-		print(levels)
 
 		for i in range(len(levels)):
 			parent = None
@@ -49,7 +48,6 @@ class Command(BaseCommand):
 
 		if not name:
 			return parent
-		print(parent, name, rank)
 		if rank == new_rank:
 			gl, _ = GeographicLevel.objects.get_or_create(
 				parent=parent,

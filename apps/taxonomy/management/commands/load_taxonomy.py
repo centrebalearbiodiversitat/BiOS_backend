@@ -298,7 +298,6 @@ class Command(BaseCommand):
 
 			for line in csv_file:
 				parent = biota
-				# print(line[ORIGINAL_NAME])
 				clean_up_input_line(line)
 
 				try:

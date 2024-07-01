@@ -298,12 +298,6 @@ class TaxonSourceView(ListAPIView):
 
 
 class TaxonChecklistView(APIView):
-	def get_taxonomic_hierarchy(self, taxon):
-		children = taxon.get_children()
-		taxon_data = BaseTaxonomicLevelSerializer(taxon).data
-		taxon_data["children"] = [self.get_taxonomic_hierarchy(child) for child in children]
-		return taxon_data
-
 	@swagger_auto_schema(
 		tags=["Taxonomy"],
 		operation_description="Get a checklist of a taxonomic level.",
@@ -328,9 +322,9 @@ class TaxonChecklistView(APIView):
 		except TaxonomicLevel.DoesNotExist:
 			raise CBBAPIException("Taxonomic level does not exist", code=404)
 
-		taxonomic_hierarchy = self.get_taxonomic_hierarchy(taxon)
+		checklist = taxon.get_descendants()
 
-		return Response(taxonomic_hierarchy)
+		return Response(BaseTaxonomicLevelSerializer(checklist, many=True).data)
 
 
 class AuthorshipCRUDView(APIView):

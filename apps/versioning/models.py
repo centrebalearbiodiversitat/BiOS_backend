@@ -4,6 +4,26 @@ from django.db import models
 from common.utils.models import SynonymModel, ReferencedModel
 
 
+class Batch(models.Model):
+	PENDING = 0
+	ACCEPTED = 1
+	REJECTED = 2
+	STATUS_CHOICES = (
+		(PENDING, "Pending"),
+		(ACCEPTED, "Accepted"),
+		(REJECTED, "Rejected"),
+	)
+
+	created_at = models.DateTimeField(auto_now_add=True, editable=False)
+	status = models.PositiveSmallIntegerField(choices=STATUS_CHOICES, default=PENDING)
+
+	def __str__(self):
+		return f"{self.created_at.year}-{self.created_at.month}-{self.created_at.day}__{self.id}"
+
+	class Meta:
+		verbose_name_plural = "batches"
+
+
 class Source(SynonymModel):
 	DATABASE = 0
 	JOURNAL_ARTICLE = 1
@@ -39,30 +59,24 @@ class Source(SynonymModel):
 		"expert": EXPERT,
 	}
 
+	TAXON = 0
+	OCCURRENCE = 1
+	SEQUENCE = 2
+	IMAGE = 3
+	DATA_TYPE_CHOICES = (
+		(TAXON, "taxon"),
+		(OCCURRENCE, "occurrence"),
+		(SEQUENCE, "sequence"),
+		(IMAGE, "image"),
+	)
+
 	origin = models.PositiveSmallIntegerField(choices=ORIGIN_CHOICES)
+	url = models.URLField(null=True, blank=True, default=None)
+	data_type = models.PositiveSmallIntegerField(choices=DATA_TYPE_CHOICES)
+	batch = models.ForeignKey(Batch, on_delete=models.CASCADE, null=True, blank=True, default=None)
 
 	def __str__(self):
 		return self.name
-
-
-class Batch(models.Model):
-	PENDING = 0
-	ACCEPTED = 1
-	REJECTED = 2
-	STATUS_CHOICES = (
-		(PENDING, "Pending"),
-		(ACCEPTED, "Accepted"),
-		(REJECTED, "Rejected"),
-	)
-
-	created_at = models.DateTimeField(auto_now_add=True, editable=False)
-	status = models.PositiveSmallIntegerField(choices=STATUS_CHOICES, default=PENDING)
-
-	def __str__(self):
-		return f"{self.created_at.year}-{self.created_at.month}-{self.created_at.day}__{self.id}"
-
-	class Meta:
-		verbose_name_plural = "batches"
 
 
 class OriginSource(models.Model):

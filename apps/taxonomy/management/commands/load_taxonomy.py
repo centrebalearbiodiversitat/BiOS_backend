@@ -9,35 +9,20 @@ from apps.taxonomy.models import Authorship, TaxonomicLevel
 from apps.versioning.models import Batch, Source, OriginSource
 from common.utils.utils import str_clean_up
 
-KINGDOM, AUTH_KINGDOM, SOURCE_KINGDOM, SOURCE_ORIGIN_KINGDOM = (
-	"Kingdom",
-	"kingdomAuthor",
-	"kingdomSource",
-	"kingdomOrigin",
-)
+KINGDOM, AUTH_KINGDOM, SOURCE_KINGDOM, SOURCE_ORIGIN_KINGDOM = "Kingdom", "kingdomAuthor", "kingdomSource", "kingdomOrigin"
 PHYLUM, AUTH_PHYLUM, SOURCE_PHYLUM, SOURCE_ORIGIN_PHYLUM = "Phylum", "phylumAuthor", "phylumSource", "phylumOrigin"
 CLASS, AUTH_CLASS, SOURCE_CLASS, SOURCE_ORIGIN_CLASS = "Class", "classAuthor", "classSource", "classOrigin"
 ORDER, AUTH_ORDER, SOURCE_ORDER, SOURCE_ORIGIN_ORDER = "Order", "orderAuthor", "orderSource", "orderOrigin"
 FAM, AUTH_FAM, SOURCE_FAM, SOURCE_ORIGIN_FAM = "Family", "familyAuthor", "familySource", "familyOrigin"
 GENUS, AUTH_GENUS, SOURCE_GENUS, SOURCE_ORIGIN_GENUS = "Genus", "genusAuthor", "genusSource", "genusOrigin"
-SPECIES, AUTH_SPECIES, SOURCE_SPECIES, SOURCE_ORIGIN_SPECIES = (
-	"Species",
-	"speciesAuthor",
-	"speciesSource",
-	"speciesOrigin",
-)
+SPECIES, AUTH_SPECIES, SOURCE_SPECIES, SOURCE_ORIGIN_SPECIES = "Species", "speciesAuthor", "speciesSource", "speciesOrigin"
 SUBSPECIES, AUTH_SUBSPECIES, SOURCE_SUBSPECIES, SOURCE_ORIGIN_SUBSPECIES = (
 	"Subspecies",
 	"subspeciesAuthor",
 	"subspeciesSource",
 	"subspeciesOrigin",
 )
-VARIETY, AUTH_VARIETY, SOURCE_VARIETY, SOURCE_ORIGIN_VARIETY = (
-	"Variety",
-	"varietyAuthor",
-	"varietySource",
-	"varietyOrigin",
-)
+VARIETY, AUTH_VARIETY, SOURCE_VARIETY, SOURCE_ORIGIN_VARIETY = "Variety", "varietyAuthor", "varietySource", "varietyOrigin"
 TAXON_RANK = "taxonRank"
 ORIGINAL_NAME = "originalName"
 ORIGINAL_STATUS = "originalStatus"
@@ -47,15 +32,35 @@ COL_ID = "colID"
 LEVELS = [KINGDOM, PHYLUM, CLASS, ORDER, FAM, GENUS, SPECIES, SUBSPECIES, VARIETY]
 
 LEVELS_PARAMS = {
-	KINGDOM: [TaxonomicLevel.KINGDOM, AUTH_KINGDOM, SOURCE_KINGDOM, SOURCE_ORIGIN_KINGDOM],
+	KINGDOM: [
+		TaxonomicLevel.KINGDOM,
+		AUTH_KINGDOM,
+		SOURCE_KINGDOM,
+		SOURCE_ORIGIN_KINGDOM,
+	],
 	PHYLUM: [TaxonomicLevel.PHYLUM, AUTH_PHYLUM, SOURCE_PHYLUM, SOURCE_ORIGIN_PHYLUM],
 	CLASS: [TaxonomicLevel.CLASS, AUTH_CLASS, SOURCE_CLASS, SOURCE_ORIGIN_CLASS],
 	ORDER: [TaxonomicLevel.ORDER, AUTH_ORDER, SOURCE_ORDER, SOURCE_ORIGIN_ORDER],
 	FAM: [TaxonomicLevel.FAMILY, AUTH_FAM, SOURCE_FAM, SOURCE_ORIGIN_FAM],
 	GENUS: [TaxonomicLevel.GENUS, AUTH_GENUS, SOURCE_GENUS, SOURCE_ORIGIN_GENUS],
-	SPECIES: [TaxonomicLevel.SPECIES, AUTH_SPECIES, SOURCE_SPECIES, SOURCE_ORIGIN_SPECIES],
-	SUBSPECIES: [TaxonomicLevel.SUBSPECIES, AUTH_SUBSPECIES, SOURCE_SUBSPECIES, SOURCE_ORIGIN_SUBSPECIES],
-	VARIETY: [TaxonomicLevel.VARIETY, AUTH_VARIETY, SOURCE_VARIETY, SOURCE_ORIGIN_VARIETY],
+	SPECIES: [
+		TaxonomicLevel.SPECIES,
+		AUTH_SPECIES,
+		SOURCE_SPECIES,
+		SOURCE_ORIGIN_SPECIES,
+	],
+	SUBSPECIES: [
+		TaxonomicLevel.SUBSPECIES,
+		AUTH_SUBSPECIES,
+		SOURCE_SUBSPECIES,
+		SOURCE_ORIGIN_SUBSPECIES,
+	],
+	VARIETY: [
+		TaxonomicLevel.VARIETY,
+		AUTH_VARIETY,
+		SOURCE_VARIETY,
+		SOURCE_ORIGIN_VARIETY,
+	],
 }
 
 
@@ -65,7 +70,6 @@ def create_taxonomic_level(line, parent, batch, idx_name, rank, idx_author, idx_
 		return parent
 	if not line[idx_name]:
 		return parent
-
 	source = get_or_create_source(line, idx_source, idx_source_origin)
 	verb_auth, auths, parsed_year = get_or_create_authorship(line, idx_author, batch, source)
 
@@ -102,11 +106,14 @@ def create_taxonomic_level(line, parent, batch, idx_name, rank, idx_author, idx_
 		)
 
 		os, new_source = OriginSource.objects.get_or_create(origin_id=line[COL_ID], source=source)
+
 		if new_source:
-			if child.sources.filter(source=source).exists():
+			if child.sources.filter(source=os.source, origin_id=os.origin_id).exists():
 				raise Exception(f"Origin source id already existing. {os}\n{line}")
+
 			child.sources.add(os)
 			child.save()
+
 		elif not child.sources.filter(id=os.id).exists():
 			raise Exception(f"Origin source id already existing. {os}\n{line}")
 
@@ -203,10 +210,13 @@ def get_or_create_source(line, idx_source, idx_source_origin):
 
 	source, _ = Source.objects.get_or_create(
 		name__iexact=line[idx_source],
+		data_type=Source.TAXON,  # Filter out 2 sources with the same name and data_type
 		defaults={
 			"name": line[idx_source],
 			"accepted": True,
 			"origin": Source.TRANSLATE_CHOICES[line[idx_source_origin]],
+			"data_type": Source.TAXON,
+			"url": None,
 		},
 	)
 

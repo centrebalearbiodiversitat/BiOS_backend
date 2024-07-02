@@ -135,3 +135,40 @@ class SourceList(APIView):
 			queryset = Source.objects.none()
 
 		return Response(SourceSerializer(queryset, many=True).data)
+
+
+class OriginSourceCRUDView(APIView):
+	@swagger_auto_schema(
+		tags=["Versioning"],
+		operation_description="Get details of a specific source.",
+		manual_parameters=[
+			openapi.Parameter(
+				"id",
+				openapi.IN_QUERY,
+				description="Unique identifier of the source to retrieve.",
+				type=openapi.TYPE_INTEGER,
+				required=True,
+			),
+		],
+		responses={
+			200: "Success",
+			400: "Bad Request",
+			404: "Not Found",
+		},
+	)
+	def get(self, request):
+		os_form = OriginSourceForm(data=self.request.GET)
+
+		if not os_form.is_valid():
+			raise CBBAPIException(os_form.errors, 400)
+
+		os_id = os_form.cleaned_data.get("id")
+		if not os_id:
+			raise CBBAPIException("Missing id parameter", 400)
+
+		try:
+			os = OriginSource.objects.get(origin_id=os_id)
+		except Source.DoesNotExist:
+			raise CBBAPIException("Source does not exist", 404)
+
+		return Response(OriginSourceSerializer(os).data)

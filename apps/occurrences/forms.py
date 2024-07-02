@@ -1,10 +1,10 @@
 from django import forms
 
-from common.utils.forms import CamelCaseForm, IdFieldForm
+from common.utils.forms import TranslateForm, IdFieldForm
 from .models import Occurrence
 
 
-class OccurrenceForm(IdFieldForm, CamelCaseForm):
+class OccurrenceForm(IdFieldForm, TranslateForm):
 	TRANSLATE_FIELDS = {
 		"year": "collection_date_year",
 		"month": "collection_date_month",

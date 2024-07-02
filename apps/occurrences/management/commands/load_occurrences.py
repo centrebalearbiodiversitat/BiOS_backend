@@ -38,7 +38,22 @@ def parse_line(line: dict):
 	return line
 
 
-def genetic_sources(line: dict, batch, occ, os):
+def genetic_sources(line: dict, batch, occ):
+	source, _ = Source.objects.get_or_create(
+		name__icontains=line["occurrenceSource"],
+		data_type=Source.SEQUENCE,
+		defaults={
+			"name": line["occurrenceSource"],
+			"accepted": True,
+			"origin": Source.TRANSLATE_CHOICES[line["occurrenceOrigin"]],
+			"url": None,
+		},
+	)
+
+	os, new = OriginSource.objects.get_or_create(origin_id=line["sample_id"], source=source)
+	if not new:
+		raise Exception(f"OriginSource already exists\n{line}")
+
 	seq, _ = Sequence.objects.get_or_create(
 		occurrence=occ,
 		defaults={
@@ -118,10 +133,12 @@ class Command(BaseCommand):
 				line = parse_line(line)
 				source, _ = Source.objects.get_or_create(
 					name__icontains=line["occurrenceSource"],
+					data_type=Source.OCCURRENCE,
 					defaults={
 						"name": line["occurrenceSource"],
 						"accepted": True,
 						"origin": Source.TRANSLATE_CHOICES[line["occurrenceOrigin"]],
+						"url": None,
 					},
 				)
 
@@ -169,4 +186,4 @@ class Command(BaseCommand):
 					occ = Occurrence.objects.get(sources=os)
 
 				if "bp" in line and line["bp"] is not None:
-					genetic_sources(line, batch, occ, os)
+					genetic_sources(line, batch, occ)

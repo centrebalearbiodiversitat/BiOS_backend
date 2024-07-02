@@ -9,60 +9,15 @@ from apps.taxonomy.models import Authorship, TaxonomicLevel
 from apps.versioning.models import Batch, Source, OriginSource
 from common.utils.utils import str_clean_up
 
-KINGDOM, AUTH_KINGDOM, SOURCE_KINGDOM, SOURCE_ORIGIN_KINGDOM = (
-	"Kingdom",
-	"kingdomAuthor",
-	"kingdomSource",
-	"kingdomOrigin",
-)
-PHYLUM, AUTH_PHYLUM, SOURCE_PHYLUM, SOURCE_ORIGIN_PHYLUM = (
-	"Phylum",
-	"phylumAuthor",
-	"phylumSource",
-	"phylumOrigin",
-)
-CLASS, AUTH_CLASS, SOURCE_CLASS, SOURCE_ORIGIN_CLASS = (
-	"Class",
-	"classAuthor",
-	"classSource",
-	"classOrigin",
-)
-ORDER, AUTH_ORDER, SOURCE_ORDER, SOURCE_ORIGIN_ORDER = (
-	"Order",
-	"orderAuthor",
-	"orderSource",
-	"orderOrigin",
-)
-FAM, AUTH_FAM, SOURCE_FAM, SOURCE_ORIGIN_FAM = (
-	"Family",
-	"familyAuthor",
-	"familySource",
-	"familyOrigin",
-)
-GENUS, AUTH_GENUS, SOURCE_GENUS, SOURCE_ORIGIN_GENUS = (
-	"Genus",
-	"genusAuthor",
-	"genusSource",
-	"genusOrigin",
-)
-SPECIES, AUTH_SPECIES, SOURCE_SPECIES, SOURCE_ORIGIN_SPECIES = (
-	"Species",
-	"speciesAuthor",
-	"speciesSource",
-	"speciesOrigin",
-)
-SUBSPECIES, AUTH_SUBSPECIES, SOURCE_SUBSPECIES, SOURCE_ORIGIN_SUBSPECIES = (
-	"Subspecies",
-	"subspeciesAuthor",
-	"subspeciesSource",
-	"subspeciesOrigin",
-)
-VARIETY, AUTH_VARIETY, SOURCE_VARIETY, SOURCE_ORIGIN_VARIETY = (
-	"Variety",
-	"varietyAuthor",
-	"varietySource",
-	"varietyOrigin",
-)
+KINGDOM, AUTH_KINGDOM, SOURCE_KINGDOM, SOURCE_ORIGIN_KINGDOM = "Kingdom", "kingdomAuthor", "kingdomSource", "kingdomOrigin"
+PHYLUM, AUTH_PHYLUM, SOURCE_PHYLUM, SOURCE_ORIGIN_PHYLUM = "Phylum", "phylumAuthor", "phylumSource", "phylumOrigin"
+CLASS, AUTH_CLASS, SOURCE_CLASS, SOURCE_ORIGIN_CLASS = "Class", "classAuthor", "classSource", "classOrigin"
+ORDER, AUTH_ORDER, SOURCE_ORDER, SOURCE_ORIGIN_ORDER = "Order", "orderAuthor", "orderSource", "orderOrigin"
+FAM, AUTH_FAM, SOURCE_FAM, SOURCE_ORIGIN_FAM = "Family",  "familyAuthor",  "familySource",  "familyOrigin"
+GENUS, AUTH_GENUS, SOURCE_GENUS, SOURCE_ORIGIN_GENUS = "Genus", "genusAuthor", "genusSource", "genusOrigin"
+SPECIES, AUTH_SPECIES, SOURCE_SPECIES, SOURCE_ORIGIN_SPECIES = "Species", "speciesAuthor", "speciesSource", "speciesOrigin"
+SUBSPECIES, AUTH_SUBSPECIES, SOURCE_SUBSPECIES, SOURCE_ORIGIN_SUBSPECIES = "Subspecies", "subspeciesAuthor", "subspeciesSource", "subspeciesOrigin"
+VARIETY, AUTH_VARIETY, SOURCE_VARIETY, SOURCE_ORIGIN_VARIETY = "Variety", "varietyAuthor", "varietySource", "varietyOrigin"
 TAXON_RANK = "taxonRank"
 ORIGINAL_NAME = "originalName"
 ORIGINAL_STATUS = "originalStatus"
@@ -102,8 +57,6 @@ LEVELS_PARAMS = {
 		SOURCE_ORIGIN_VARIETY,
 	],
 }
-
-TAXON = 0
 
 
 @transaction.atomic
@@ -192,7 +145,8 @@ def create_taxonomic_level(line, parent, batch, idx_name, rank, idx_author, idx_
 
 		if not child.accepted:
 			raise Exception(f"Higher taxonomy must be accepted {child.readable_rank()}:{child.name}\n{line}")
-		elif child.verbatim_authorship != verb_auth or set(auths) != set(child.authorship.all() if child.authorship else []):
+		elif child.verbatim_authorship != verb_auth or set(auths) != set(
+				child.authorship.all() if child.authorship else []):
 			raise Exception(
 				f'Trying to update higher taxonomy author for {child.readable_rank()}:{child.name}. Verbatim: {child.verbatim_authorship} Original: {verb_auth}. Inferred: {child.authorship or "None"} New inferred: {auths or "None"}\n{line}'
 			)
@@ -252,12 +206,12 @@ def get_or_create_source(line, idx_source, idx_source_origin):
 
 	source, _ = Source.objects.get_or_create(
 		name__iexact=line[idx_source],
-		data_type=TAXON,  # Filter out 2 sources with the same name and data_type
+		data_type=Source.TAXON,  # Filter out 2 sources with the same name and data_type
 		defaults={
 			"name": line[idx_source],
 			"accepted": True,
 			"origin": Source.TRANSLATE_CHOICES[line[idx_source_origin]],
-			"data_type": TAXON,  # data_type equal to 0 (TAXON)
+			"data_type": Source.TAXON,
 			"url": None,
 		},
 	)

@@ -1,3 +1,5 @@
+from django import forms
+
 from common.utils.forms import CamelCaseForm, IdFieldForm
 from .models import Occurrence
 
@@ -8,6 +10,8 @@ class OccurrenceForm(IdFieldForm, CamelCaseForm):
 		"month": "collection_date_month",
 		"day": "collection_date_day",
 	}
+
+	add_synonyms = forms.BooleanField(required=False, initial=True)
 
 	def __init__(self, *args, **kwargs):
 		super().__init__(*args, **kwargs)

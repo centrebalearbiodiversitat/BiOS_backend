@@ -99,41 +99,11 @@ class GeneListView(APIView):
 		operation_description="List genes with optional filters",
 		manual_parameters=[
 			openapi.Parameter(
-				"name",
+				"taxonomy",
 				openapi.IN_QUERY,
 				description="Name of the gene to search for.",
 				type=openapi.TYPE_STRING,
 				required=False,
-			),
-			openapi.Parameter(
-				"exact",
-				openapi.IN_QUERY,
-				description="Indicates whether to search for an exact match. Defaults to False.",
-				type=openapi.TYPE_BOOLEAN,
-				required=False,
-				default=False,
-			),
-			openapi.Parameter(
-				"batch",
-				openapi.IN_QUERY,
-				description="Batch to search for.",
-				type=openapi.TYPE_INTEGER,
-				required=False,
-			),
-			openapi.Parameter(
-				"sources",
-				openapi.IN_QUERY,
-				description="Source ID to search for.",
-				type=openapi.TYPE_INTEGER,
-				required=False,
-			),
-			openapi.Parameter(
-				"accepted",
-				openapi.IN_QUERY,
-				description="Whether to search for accepted or not.",
-				type=openapi.TYPE_BOOLEAN,
-				required=False,
-				default=False,
 			),
 		],
 		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
@@ -144,30 +114,13 @@ class GeneListView(APIView):
 		if not gene_form.is_valid():
 			raise CBBAPIException(gene_form.errors, 400)
 
-		str_fields = ["name", "unidecode_name"]
-		exact = gene_form.cleaned_data.get("exact", False)
+		taxon_id = gene_form.cleaned_data.get('taxonomy')
+		if not taxon_id:
+			raise CBBAPIException("Missing taxon id parameter", 400)
 
-		filters = {}
+		queryset = Gene.objects.filter(produces__sequence__occurrence__taxonomy=taxon_id, accepted=True).distinct()
 
-		for param in gene_form.cleaned_data:
-			if param != "exact":
-				if param in str_fields:
-					value = gene_form.cleaned_data.get(param)
-
-					if value:
-						param = f"{param}__iexact" if exact else f"{param}__icontains"
-						filters[param] = value
-				else:
-					value = gene_form.cleaned_data.get(param)
-					if value or isinstance(value, int):
-						filters[param] = value
-
-		if filters:
-			queryset = Gene.objects.filter(**filters)
-		else:
-			queryset = Gene.objects.none()
-
-		return Response((GeneSerializer(queryset, many=True)).data)
+		return Response(GeneSerializer(queryset, many=True).data)
 
 
 class ProductCRUDView(APIView):
@@ -516,7 +469,7 @@ class SequenceFilter(APIView):
 			taxon_ids.add(synonym.id)
 
 		if not filters:
-			return Occurrence.objects.none()
+			return Sequence.objects.none()
 
 		try:
 			genetic_features = Sequence.objects.filter(occurrence__taxonomy__in=taxon_ids)
@@ -532,7 +485,7 @@ class SequenceListView(SequenceFilter):
 		operation_description="Retrieve the sequences of a taxonomic level by its id",
 		manual_parameters=[
 			openapi.Parameter(
-				"id",
+				"taxonomy",
 				openapi.IN_QUERY,
 				description="ID of the taxon from which all its sequences will be retrieved",
 				type=openapi.TYPE_INTEGER,

@@ -75,8 +75,7 @@ def genetic_sources(line: dict, batch, occ):
 		gene = None
 		if production["gene"]:
 			gene, _ = Gene.objects.get_or_create(
-				name__iexact=production["gene"],
-				defaults={"name": production["gene"], "batch": batch, "accepted": True}
+				name__iexact=production["gene"], defaults={"name": production["gene"], "batch": batch, "accepted": True}
 			)
 			if not gene.sources.filter(id=os.id).exists():
 				gene.sources.add(os)

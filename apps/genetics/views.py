@@ -114,7 +114,7 @@ class GeneListView(APIView):
 		if not gene_form.is_valid():
 			raise CBBAPIException(gene_form.errors, 400)
 
-		taxon_id = gene_form.cleaned_data.get('taxonomy')
+		taxon_id = gene_form.cleaned_data.get("taxonomy")
 		if not taxon_id:
 			raise CBBAPIException("Missing taxon id parameter", 400)
 

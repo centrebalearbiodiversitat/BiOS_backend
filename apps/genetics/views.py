@@ -5,10 +5,10 @@ from rest_framework.response import Response
 from .forms import GeneForm, ProductForm, ProducesForm, SequenceForm
 from apps.occurrences.forms import OccurrenceForm
 from apps.taxonomy.models import TaxonomicLevel
-from apps.geography.models import GeographicLevel
 from .serializers import GeneSerializer, ProductSerializer, ProducesSerializer, SequenceSerializer
 from ..API.exceptions import CBBAPIException
 from .models import Gene, Product, Produces, Sequence, Occurrence
+from django.db.models import Q
 
 
 class GeneCRUDView(APIView):
@@ -495,35 +495,47 @@ class SequenceFilter(APIView):
 		if not occur_form.is_valid():
 			raise CBBAPIException(occur_form.errors, 400)
 
-		filters = {}
-		taxon_ids = set()
-		value = occur_form.cleaned_data.get("taxonomy")
+		taxonomy = occur_form.cleaned_data.get("taxonomy", None)
+		add_synonyms = occur_form.cleaned_data.get("add_synonyms")
 
-		if not value:
-			raise CBBAPIException("Missing id parameter", code=400)
+		if not taxonomy:
+			raise CBBAPIException("Missing taxonomy id parameter", 400)
 
-		try:
-			obj = TaxonomicLevel.objects.get(id=value.id)
-		except TaxonomicLevel.DoesNotExist:
+		taxon_query = Q(id=taxonomy)
+		if add_synonyms:
+			taxon_query |= Q(synonyms=taxonomy, accepted=False)
+
+		taxa = TaxonomicLevel.objects.filter(taxon_query).distinct()
+
+		if not taxa.exists():
 			raise CBBAPIException("Taxonomic level does not exist", 404)
 
-		filters["taxonomy__lft__gte"] = obj.lft
-		filters["taxonomy__rght__lte"] = obj.rght
-		taxon_ids.add(obj.id)
-		synonyms = obj.synonyms.filter(accepted=False)
+		occus_filters = Q()
+		gl = occur_form.cleaned_data.get("geographical_location", None)
+		if gl:
+			occus_filters = Q(geographical_location__id=gl.id) | Q(
+				geographical_location__lft__gte=gl.lft, geographical_location__rght__lte=gl.rght
+			)
 
-		for synonym in synonyms:
-			taxon_ids.add(synonym.id)
+		filters = Q()
+		for taxon in taxa:
+			filters |= (Q(taxonomy__id=taxon.id) & occus_filters) | (
+				Q(taxonomy__lft__gte=taxon.lft, taxonomy__rght__lte=taxon.rght) & occus_filters
+			)
 
-		if not filters:
-			return Occurrence.objects.none()
+		if filters:
+			occurrences = Occurrence.objects.filter(filters).distinct()
+		else:
+			occurrences = Occurrence.objects.none()
+
+		if not occurrences.exists():
+			raise CBBAPIException("No occurrences found", 404)
 
 		try:
-			genetic_features = Sequence.objects.filter(occurrence__taxonomy__in=taxon_ids)
-
+			genetic_features = Sequence.objects.filter(occurrence__in=occurrences).distinct()
 			return genetic_features
 		except Sequence.DoesNotExist:
-			raise CBBAPIException("Sequence do not exist.", code=404)
+			raise CBBAPIException("Sequence does not exist", 404)
 
 
 class SequenceListView(SequenceFilter):

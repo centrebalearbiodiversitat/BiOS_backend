@@ -65,7 +65,7 @@ class OccurrenceFilter(APIView):
 
 				if klass:
 					try:
-						obj = klass.objects.get(id=value.id)
+						obj = klass.objects.get(id=value)
 					except klass.DoesNotExist:
 						raise CBBAPIException(f"{param} does not exist", 404)
 
@@ -226,7 +226,7 @@ class OccurrenceTaxonView(APIView):
 
 			if klass:
 				try:
-					obj = klass.objects.get(id=value.id)
+					obj = klass.objects.get(id=value)
 				except klass.DoesNotExist:
 					raise CBBAPIException(f"Taxonomic level does not exist", 404)
 

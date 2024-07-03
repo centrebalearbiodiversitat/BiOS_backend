@@ -2,11 +2,11 @@ from django import forms
 from humps import decamelize
 
 
-class IdFieldForm(forms.ModelForm):
+class IdFieldForm(forms.Form):
 	id = forms.IntegerField(required=False)
 
 
-class CamelCaseForm(forms.ModelForm):
+class CamelCaseForm(forms.Form):
 	TRANSLATE_FIELDS = {}
 
 	def __init__(self, *args, **kwargs):

@@ -105,7 +105,6 @@ class TaxonListView(ListAPIView):
 			raise CBBAPIException(taxon_form.errors, code=400)
 
 		exact = taxon_form.cleaned_data.get("exact", False)
-		synonym = taxon_form.cleaned_data.get("synonym", False)
 		str_fields = ["name"]
 
 		filters = {}
@@ -121,9 +120,6 @@ class TaxonListView(ListAPIView):
 					value = taxon_form.cleaned_data.get(param)
 					if value or isinstance(value, int):
 						filters[param] = value
-
-		if synonym:
-			filters["accepted"] = False
 
 		if filters:
 			query = TaxonomicLevel.objects.filter(**filters)

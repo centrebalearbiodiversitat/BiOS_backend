@@ -64,7 +64,7 @@ class OccurrenceFilter(APIView):
 		if not taxonomy:
 			raise CBBAPIException("Missing taxonomy id parameter", 400)
 
-		taxon_query = Q(id=taxonomy.id)
+		taxon_query = Q(id=taxonomy)
 		if add_synonyms:
 			taxon_query |= Q(synonyms=taxonomy, accepted=False)
 

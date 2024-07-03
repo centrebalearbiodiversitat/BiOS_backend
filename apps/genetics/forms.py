@@ -8,6 +8,7 @@ class GeneForm(IdFieldForm, CamelCaseForm):
 	batch = forms.CharField(required=False)
 	name = forms.CharField(required=False)
 	unidecode_name = forms.CharField(required=False)
+	taxonomy = forms.IntegerField(required=False)
 
 	def __init__(self, *args, **kwargs):
 		super().__init__(*args, **kwargs)

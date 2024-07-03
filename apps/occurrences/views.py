@@ -1,3 +1,4 @@
+from django.db.models import Q
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.views import APIView
@@ -56,29 +57,43 @@ class OccurrenceFilter(APIView):
 		if not occur_form.is_valid():
 			raise CBBAPIException(occur_form.errors, 400)
 
-		filters = {}
-		for param in occur_form.cleaned_data:
-			value = occur_form.cleaned_data.get(param)
+		# Filter taxon and synonyms
+		taxonomy = occur_form.cleaned_data.get("taxonomy", None)
+		add_synonyms = occur_form.cleaned_data.get("add_synonyms")
 
-			if value:
-				klass = OccurrenceFilter.SPECIAL_FILTERS.get(param, None)
+		if not taxonomy:
+			raise CBBAPIException("Missing taxonomy id parameter", 400)
 
-				if klass:
-					try:
-						obj = klass.objects.get(id=value)
-					except klass.DoesNotExist:
-						raise CBBAPIException(f"{param} does not exist", 404)
+		taxon_query = Q(id=taxonomy.id)
+		if add_synonyms:
+			taxon_query |= Q(synonyms=taxonomy, accepted=False)
 
-					filters[f"{param}__lft__gte"] = obj.lft
-					filters[f"{param}__rght__lte"] = obj.rght
+		taxa = TaxonomicLevel.objects.filter(taxon_query).distinct()
 
-				else:
-					filters[param] = value
+		if not taxa:
+			raise CBBAPIException("Taxonomic level does not exist", 404)
 
-		if not filters:
-			return Occurrence.objects.none()
+		# Filter occurrences based on filtered taxa
+		occus_filters = Q()
+		gl = occur_form.cleaned_data.get("geographical_location", None)
+		if gl:
+			print(gl)
+			occus_filters = Q(geographical_location__id=gl.id) | Q(
+				geographical_location__lft__gte=gl.lft, geographical_location__rght__lte=gl.rght
+			)
 
-		return Occurrence.objects.filter(**filters)
+		filters = Q()
+		for taxon in taxa:
+			filters |= (
+				Q(taxonomy__id=taxon.id) & occus_filters | Q(taxonomy__lft__gte=taxon.lft, taxonomy__rght__lte=taxon.rght) & occus_filters
+			)
+
+		if filters:
+			query = Occurrence.objects.filter(filters).distinct()
+		else:
+			query = Occurrence.objects.none()
+
+		return query
 
 
 class OccurrenceListView(OccurrenceFilter):

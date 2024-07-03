@@ -1,3 +1,5 @@
+from django import forms
+
 from common.utils.forms import TranslateForm, IdFieldForm
 from .models import Occurrence
 from django import forms
@@ -10,7 +12,6 @@ class OccurrenceForm(IdFieldForm, TranslateForm):
 		"year": "collection_date_year",
 		"month": "collection_date_month",
 		"day": "collection_date_day",
-		"location": "geographical_location",
 	}
 
 	taxonomy = forms.IntegerField(required=False)
@@ -22,6 +23,8 @@ class OccurrenceForm(IdFieldForm, TranslateForm):
 	basis_of_record = forms.CharField(required=False)
 	batch = forms.CharField(required=False)
 	sources = forms.CharField(required=False)
+
+	add_synonyms = forms.BooleanField(required=False, initial=True)
 
 	def __init__(self, *args, **kwargs):
 		super().__init__(*args, **kwargs)

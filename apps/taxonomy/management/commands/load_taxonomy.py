@@ -16,7 +16,12 @@ ORDER, AUTH_ORDER, SOURCE_ORDER, SOURCE_ORIGIN_ORDER = "Order", "orderAuthor", "
 FAM, AUTH_FAM, SOURCE_FAM, SOURCE_ORIGIN_FAM = "Family", "familyAuthor", "familySource", "familyOrigin"
 GENUS, AUTH_GENUS, SOURCE_GENUS, SOURCE_ORIGIN_GENUS = "Genus", "genusAuthor", "genusSource", "genusOrigin"
 SPECIES, AUTH_SPECIES, SOURCE_SPECIES, SOURCE_ORIGIN_SPECIES = "Species", "speciesAuthor", "speciesSource", "speciesOrigin"
-SUBSPECIES, AUTH_SUBSPECIES, SOURCE_SUBSPECIES, SOURCE_ORIGIN_SUBSPECIES = "Subspecies", "subspeciesAuthor", "subspeciesSource", "subspeciesOrigin"
+SUBSPECIES, AUTH_SUBSPECIES, SOURCE_SUBSPECIES, SOURCE_ORIGIN_SUBSPECIES = (
+	"Subspecies",
+	"subspeciesAuthor",
+	"subspeciesSource",
+	"subspeciesOrigin",
+)
 VARIETY, AUTH_VARIETY, SOURCE_VARIETY, SOURCE_ORIGIN_VARIETY = "Variety", "varietyAuthor", "varietySource", "varietyOrigin"
 TAXON_RANK = "taxonRank"
 ORIGINAL_NAME = "originalName"

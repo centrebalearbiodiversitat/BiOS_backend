@@ -75,11 +75,15 @@ class OccurrenceFilter(APIView):
 		occus_filters = Q()
 		gl = occur_form.cleaned_data.get("geographical_location", None)
 		if gl:
-			occus_filters = Q(geographical_location__id=gl.id) | Q(geographical_location__lft__gte= gl.lft, geographical_location__rght__lte= gl.rght)
+			occus_filters = Q(geographical_location__id=gl.id) | Q(
+				geographical_location__lft__gte=gl.lft, geographical_location__rght__lte=gl.rght
+			)
 
 		filters = Q()
 		for taxon in taxa:
-			filters |= Q(taxonomy__id=taxon.id) & occus_filters | Q(taxonomy__lft__gte=taxon.lft, taxonomy__rght__lte=taxon.rght) & occus_filters
+			filters |= (
+				Q(taxonomy__id=taxon.id) & occus_filters | Q(taxonomy__lft__gte=taxon.lft, taxonomy__rght__lte=taxon.rght) & occus_filters
+			)
 
 		if filters:
 			query = Occurrence.objects.filter(filters).distinct()

@@ -6,6 +6,7 @@ from django import forms
 class GeneForm(IdFieldForm, CamelCaseForm):
 	sources = forms.IntegerField(required=False)
 	exact = forms.BooleanField(required=False)
+	taxonomy = forms.IntegerField(required=False)
 
 	def __init__(self, *args, **kwargs):
 		super().__init__(*args, **kwargs)

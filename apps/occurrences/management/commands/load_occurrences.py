@@ -27,9 +27,6 @@ GEOGRAPHIC_LEVELS = [
 	{"key": "WB_0", "rank": GeographicLevel.WATER_BODY},
 ]
 
-OCCURRENCE = 1
-SEQUENCE = 2
-
 
 def parse_line(line: dict):
 	for key, value in line.items():
@@ -37,10 +34,26 @@ def parse_line(line: dict):
 			line[key] = json.loads(value)
 		except:
 			pass  # is not json format
+
 	return line
 
 
-def genetic_sources(line: dict, batch, occ, os):
+def genetic_sources(line: dict, batch, occ):
+	source, _ = Source.objects.get_or_create(
+		name__icontains=line["occurrenceSource"],
+		data_type=Source.SEQUENCE,
+		defaults={
+			"name": line["occurrenceSource"],
+			"accepted": True,
+			"origin": Source.TRANSLATE_CHOICES[line["occurrenceOrigin"]],
+			"url": None,
+		},
+	)
+
+	os, new = OriginSource.objects.get_or_create(origin_id=line["sample_id"], source=source)
+	if not new:
+		raise Exception(f"OriginSource already exists\n{line}")
+
 	seq, _ = Sequence.objects.get_or_create(
 		occurrence=occ,
 		defaults={
@@ -60,26 +73,21 @@ def genetic_sources(line: dict, batch, occ, os):
 
 	for production in line["genetic_features"]:
 		gene = None
-		product = None
 		if production["gene"]:
 			gene, _ = Gene.objects.get_or_create(
-				name=production["gene"],
-				defaults={"name": production["gene"], "batch": batch, "accepted": True},
+				name__iexact=production["gene"], defaults={"name": production["gene"], "batch": batch, "accepted": True}
 			)
 			if not gene.sources.filter(id=os.id).exists():
 				gene.sources.add(os)
 
+		product = None
 		if production["product"]:
 			product, _ = Product.objects.get_or_create(
-				name=production["product"],
-				defaults={
-					"name": production["product"],
-					"batch": batch,
-					"accepted": True,
-				},
+				name__iexact=production["product"], defaults={"name": production["product"], "batch": batch, "accepted": True}
 			)
 			if not product.sources.filter(id=os.id).exists():
 				product.sources.add(os)
+
 		prod_rel, _ = Produces.objects.get_or_create(gene=gene, product=product, defaults={"batch": batch})
 		if not prod_rel.sources.filter(id=os.id).exists():
 			prod_rel.sources.add(os)
@@ -122,19 +130,14 @@ class Command(BaseCommand):
 			line: dict
 			for line in csv_file:
 				line = parse_line(line)
-				if "bp" in line and line["bp"] is not None:
-					data_type = SEQUENCE
-				else:
-					data_type = OCCURRENCE
 				source, _ = Source.objects.get_or_create(
 					name__icontains=line["occurrenceSource"],
-					data_type=data_type,
+					data_type=Source.OCCURRENCE,
 					defaults={
 						"name": line["occurrenceSource"],
 						"accepted": True,
 						"origin": Source.TRANSLATE_CHOICES[line["occurrenceOrigin"]],
 						"url": None,
-						"data_type": data_type,  # data_type depends on whether it is an OCCURRENCE or a SEQUENCE
 					},
 				)
 
@@ -182,4 +185,4 @@ class Command(BaseCommand):
 					occ = Occurrence.objects.get(sources=os)
 
 				if "bp" in line and line["bp"] is not None:
-					genetic_sources(line, batch, occ, os)
+					genetic_sources(line, batch, occ)

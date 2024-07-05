@@ -17,3 +17,17 @@ do
   echo "$file"
   python manage.py load_occurrences "$file"
 done
+
+# Images
+for file in data/NO_BORRAR/images/*.csv
+do
+  echo "$file"
+  python manage.py load_images "$file"
+done
+
+# genetics
+for file in data/NO_BORRAR/genetics/*/*.csv
+do
+  echo "$file"
+  python manage.py load_genetics "$file"
+done

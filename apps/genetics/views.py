@@ -125,9 +125,9 @@ class GeneListView(APIView):
 			raise CBBAPIException("Taxonomic level does not exist", 404)
 
 		queryset = Gene.objects.filter(
-			Q(produces__sequence__occurrence__taxonomy=taxon) |
-			Q(produces__sequence__occurrence__taxonomy__lft__gte=taxon.lft) |
-			Q(produces__sequence__occurrence__taxonomy__rght__lte=taxon.rght),
+			Q(produces__sequence__occurrence__taxonomy=taxon)
+			| Q(produces__sequence__occurrence__taxonomy__lft__gte=taxon.lft)
+			| Q(produces__sequence__occurrence__taxonomy__rght__lte=taxon.rght),
 		).distinct()
 
 		return Response(GeneSerializer(queryset, many=True).data)

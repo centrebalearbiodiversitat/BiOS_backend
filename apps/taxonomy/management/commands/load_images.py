@@ -16,7 +16,7 @@ def add_taxonomic_image(line, batch):
 
 	if line["image_id"]:
 		taxon = TaxonomicLevel.objects.find(line["taxon"]).first()
-		source = get_or_create_source('iNaturalist', 'database', batch)
+		source = get_or_create_source("iNaturalist", "database", batch)
 		# source = get_or_create_source(line["source"], line["origin"], batch)
 		os, new_os = OriginSource.objects.get_or_create(origin_id=line["image_id"], source=source, attribution=line["attribution"])
 

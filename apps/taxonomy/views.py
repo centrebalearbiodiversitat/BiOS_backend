@@ -1,4 +1,8 @@
+import csv
+
 from django.db.models import Q
+from django.http import StreamingHttpResponse
+
 from apps.taxonomy.models import TaxonomicLevel, Authorship
 from apps.taxonomy.serializers import BaseTaxonomicLevelSerializer, AuthorshipSerializer
 from apps.API.exceptions import CBBAPIException
@@ -9,6 +13,7 @@ from rest_framework.views import APIView
 from rest_framework.generics import ListAPIView
 from .forms import TaxonomicLevelForm, AuthorshipForm
 from ..versioning.serializers import OriginSourceSerializer
+from common.utils.utils import EchoWriter
 
 
 class TaxonSearchView(APIView):
@@ -295,6 +300,93 @@ class TaxonSourceView(ListAPIView):
 			raise CBBAPIException("Taxonomic level does not exist.", code=404)
 
 		return Response(OriginSourceSerializer(taxon.sources, many=True).data)
+
+
+def map_taxa_to_rank(ranks, taxa):
+	taxa_iter = iter(taxa)
+
+	mapped_taxa = []
+	current = next(taxa_iter, None)
+	current_name = ""
+	for rank in ranks:
+		if current is None:
+			break
+
+		if current.rank in [TaxonomicLevel.SPECIES, TaxonomicLevel.SUBSPECIES, TaxonomicLevel.VARIETY]:
+			current_name = f"{current_name} {current.name}"
+		else:
+			current_name = current.name
+
+		if rank == current.rank:
+			mapped_taxa.append(current_name)
+			mapped_taxa.append(current.verbatim_authorship)
+			current = next(taxa_iter, None)
+		else:
+			mapped_taxa.append(None)
+			mapped_taxa.append(None)
+
+	return mapped_taxa
+
+
+class TaxonChecklistView(APIView):
+	@swagger_auto_schema(
+		tags=["Taxonomy"],
+		operation_description="Get a checklist of a taxonomic level.",
+		manual_parameters=[
+			openapi.Parameter(
+				"id",
+				openapi.IN_QUERY,
+				description="ID of the taxon to retrieve all its childrens",
+				type=openapi.TYPE_INTEGER,
+			)
+		],
+		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
+	)
+	def get(self, request):
+		taxon_form = TaxonomicLevelForm(self.request.GET)
+
+		if not taxon_form.is_valid():
+			raise CBBAPIException(taxon_form.errors, code=400)
+
+		try:
+			head_taxon = TaxonomicLevel.objects.get(id=taxon_form.cleaned_data.get("id"))
+		except TaxonomicLevel.DoesNotExist:
+			raise CBBAPIException("Taxonomic level does not exist", code=404)
+
+		ranks = [rank[1] for rank in TaxonomicLevel.RANK_CHOICES]
+		ranks_map = [rank[0] for rank in TaxonomicLevel.RANK_CHOICES]
+		to_csv = [
+			[
+				"id",
+				"status",
+				"taxonRank",
+				*list(sum([(f"{rank.lower()}", f"authorship{rank}") for rank in ranks], ())),
+			]
+		]
+
+		upper_taxon = head_taxon.get_ancestors(include_self=False)  # .exclude(name__iexact='Biota')
+		upper_taxon = list(upper_taxon)
+		# upper_taxon = map_taxa_to_rank(ranks_map, upper_taxon)
+		# print(upper_taxon)
+		checklist = head_taxon.get_descendants(include_self=True)
+		current_taxon = []
+		last_level = -1
+		for taxon in checklist:
+			if last_level >= taxon.level:
+				current_taxon = current_taxon[: len(current_taxon) - (last_level - taxon.level + 1)]
+
+			current_taxon.append(taxon)
+			to_csv.append(
+				[taxon.id, taxon.readable_status(), taxon.readable_rank(), *map_taxa_to_rank(ranks_map, upper_taxon + current_taxon)]
+			)
+			last_level = taxon.level
+
+		csv_writer = csv.writer(EchoWriter())
+		return StreamingHttpResponse(
+			(csv_writer.writerow(row) for row in to_csv),
+			content_type="text/csv",
+			headers={"Content-Disposition": f'attachment; filename="{head_taxon}_checklist.csv"'},
+		)
 
 
 class AuthorshipCRUDView(APIView):

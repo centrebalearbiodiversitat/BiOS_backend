@@ -6,6 +6,8 @@ from django.db import transaction
 from apps.taxonomy.models import TaxonomicLevel
 from apps.versioning.models import OriginSource, Source, Batch
 
+IMAGE = 3
+
 
 @transaction.atomic
 def add_taxonomic_image(line, batch):
@@ -14,35 +16,35 @@ def add_taxonomic_image(line, batch):
 
 	if line["image_id"]:
 		taxon = TaxonomicLevel.objects.find(line["taxon"]).first()
-		taxon.attribution = line["attribution"]
-		source = get_or_create_source(line["source"], batch)
-		os, new_os = OriginSource.objects.get_or_create(origin_id=line["image_path"], source=source)
+		source = get_or_create_source("iNaturalist", "database", batch)
+		# source = get_or_create_source(line["source"], line["origin"], batch)
+		os, new_os = OriginSource.objects.get_or_create(origin_id=line["image_id"], source=source, attribution=line["attribution"])
 
 		if new_os:
-			if taxon.sources.filter(source=os.source, origin_id=os.origin_id).exists():
+			if taxon.images.filter(source=os.source, origin_id=os.origin_id).exists():
 				raise Exception(f"Origin source id already existing. {os}\n{line}")
-
-			taxon.sources.add(os)
+			taxon.images.add(os)
 
 		taxon.save()
 
 
-def get_or_create_source(source, batch):
+def get_or_create_source(source, origin, batch):
 	if not source:
 		raise Exception("All records must have a source")
 
 	source, _ = Source.objects.get_or_create(
 		name__iexact=source,
-		data_type=Source.IMAGE,  # Filter out 2 sources with the same name and data_type
+		data_type=IMAGE,  # Filter out 2 sources with the same name and data_type
 		defaults={
 			"name": source,
 			"accepted": True,
-			"origin": Source.DATABASE,
-			"data_type": Source.IMAGE,
-			"url": None,
+			"origin": Source.TRANSLATE_CHOICES[origin],
+			"data_type": IMAGE,  # data_type equal to 3 (IMAGE)
+			"url": "https://inaturalist-open-data.s3.amazonaws.com/photos/{id}/medium.jpg",
 			"batch": batch,
 		},
 	)
+
 	return source
 
 
@@ -66,7 +68,8 @@ class Command(BaseCommand):
 			for line in csv_file:
 				try:
 					add_taxonomic_image(line, batch)
-				except:
+				except Exception as e:
+					print(e)
 					exception = True
 
 			if exception:

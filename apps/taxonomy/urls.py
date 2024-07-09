@@ -8,6 +8,7 @@ from apps.taxonomy.views import (
 	TaxonChildrenView,
 	TaxonSynonymView,
 	TaxonSourceView,
+	TaxonChecklistView,
 	AuthorshipCRUDView,
 )
 
@@ -19,5 +20,6 @@ urlpatterns = [
 	path("/taxon/children", TaxonChildrenView.as_view()),
 	path("/taxon/synonyms", TaxonSynonymView.as_view()),
 	path("/taxon/sources", TaxonSourceView.as_view()),
+	path("/taxon/checklist", TaxonChecklistView.as_view()),
 	path("/authorship", AuthorshipCRUDView.as_view()),
 ]

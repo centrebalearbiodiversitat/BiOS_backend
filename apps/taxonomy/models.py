@@ -5,7 +5,7 @@ from django.db import models
 from mptt.fields import TreeForeignKey
 from mptt.models import MPTTModel
 
-from apps.versioning.models import Batch
+from apps.versioning.models import Batch, OriginSource
 from common.utils.models import ReferencedModel, SynonymModel, SynonymManager
 from common.utils.utils import str_clean_up
 
@@ -54,7 +54,9 @@ class TaxonomicLevel(SynonymModel, MPTTModel, ReferencedModel):
 	VARIETY = 8
 	LIFE = 9
 
+	# !Order matters!
 	RANK_CHOICES = (
+		(LIFE, "Life"),
 		(KINGDOM, "Kingdom"),
 		(PHYLUM, "Phylum"),
 		(CLASS, "Class"),
@@ -64,7 +66,6 @@ class TaxonomicLevel(SynonymModel, MPTTModel, ReferencedModel):
 		(SPECIES, "Species"),
 		(SUBSPECIES, "Subspecies"),
 		(VARIETY, "Variety"),
-		(LIFE, "Life"),
 	)
 	TRANSLATE_RANK = {
 		KINGDOM: "kingdom",
@@ -94,8 +95,7 @@ class TaxonomicLevel(SynonymModel, MPTTModel, ReferencedModel):
 	parsed_year = models.PositiveIntegerField(null=True, default=None, blank=True)
 	authorship = models.ManyToManyField(Authorship, blank=True, symmetrical=False)
 	parent = TreeForeignKey("self", on_delete=models.CASCADE, null=True, default=None, blank=True)
-	image_id = models.CharField(max_length=256, null=True, default=None, blank=True)
-	attribution = models.CharField(max_length=512, null=True, default=None, blank=True)
+	images = models.ManyToManyField(OriginSource, blank=True, symmetrical=False, related_name="images_os")
 
 	def clean(self):
 		if self.verbatim_authorship:

@@ -54,7 +54,9 @@ class TaxonomicLevel(SynonymModel, MPTTModel, ReferencedModel):
 	VARIETY = 8
 	LIFE = 9
 
+	# !Order matters!
 	RANK_CHOICES = (
+		(LIFE, "Life"),
 		(KINGDOM, "Kingdom"),
 		(PHYLUM, "Phylum"),
 		(CLASS, "Class"),
@@ -64,7 +66,6 @@ class TaxonomicLevel(SynonymModel, MPTTModel, ReferencedModel):
 		(SPECIES, "Species"),
 		(SUBSPECIES, "Subspecies"),
 		(VARIETY, "Variety"),
-		(LIFE, "Life"),
 	)
 	TRANSLATE_RANK = {
 		KINGDOM: "kingdom",

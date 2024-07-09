@@ -130,7 +130,15 @@ class SynonymModel(models.Model):
 	accepted_modifier = models.PositiveSmallIntegerField(choices=ACCEPTED_MODIFIERS_CHOICES, null=True, blank=True, default=None)
 
 	def readable_accepted_modifier(self):
-		return SynonymModel.ACCEPTED_MODIFIERS_TRANSLATE.get(self.accepted_modifier)
+		return SynonymModel.ACCEPTED_MODIFIERS_TRANSLATE.get(self.accepted_modifier, '')
+
+	def readable_status(self):
+		status = "accepted" if self.accepted else "synonym"
+
+		if self.accepted_modifier:
+			status = f'{self.readable_accepted_modifier()} {status}'
+
+		return status
 
 	@staticmethod
 	def clean_synonyms(**kwargs):

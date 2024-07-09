@@ -1,3 +1,4 @@
+from django.db.models import Q
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.views import APIView
@@ -114,11 +115,20 @@ class GeneListView(APIView):
 		if not gene_form.is_valid():
 			raise CBBAPIException(gene_form.errors, 400)
 
-		taxon_id = gene_form.cleaned_data.get("taxonomy")
-		if not taxon_id:
+		taxon = gene_form.cleaned_data.get("taxonomy")
+		if not taxon:
 			raise CBBAPIException("Missing taxon id parameter", 400)
 
-		queryset = Gene.objects.filter(produces__sequence__occurrence__taxonomy=taxon_id, accepted=True).distinct()
+		try:
+			taxon = TaxonomicLevel.objects.get(id=taxon)
+		except TaxonomicLevel.DoesNotExist:
+			raise CBBAPIException("Taxonomic level does not exist", 404)
+
+		queryset = Gene.objects.filter(
+			Q(produces__sequence__occurrence__taxonomy=taxon) |
+			Q(produces__sequence__occurrence__taxonomy__lft__gte=taxon.lft) |
+			Q(produces__sequence__occurrence__taxonomy__rght__lte=taxon.rght),
+		).distinct()
 
 		return Response(GeneSerializer(queryset, many=True).data)
 

@@ -1,5 +1,5 @@
 from common.utils.forms import CamelCaseForm, IdFieldForm
-from .models import Gene, Product, Produces, Sequence
+from .models import Gene, Sequence
 from django import forms
 
 
@@ -20,35 +20,35 @@ class GeneForm(IdFieldForm, CamelCaseForm):
 		fields = "__all__"
 
 
-class ProductForm(IdFieldForm, CamelCaseForm):
-	sources = forms.IntegerField(required=False)
-	exact = forms.BooleanField(required=False)
+# class ProductForm(IdFieldForm, CamelCaseForm):
+# 	sources = forms.IntegerField(required=False)
+# 	exact = forms.BooleanField(required=False)
+#
+# 	def __init__(self, *args, **kwargs):
+# 		super().__init__(*args, **kwargs)
+# 		self.fields["batch"].required = False
+# 		self.fields["name"].required = False
+# 		self.fields["unidecode_name"].required = False
+# 		self.fields["sources"].required = False
+#
+# 	class Meta:
+# 		model = Product
+# 		fields = "__all__"
 
-	def __init__(self, *args, **kwargs):
-		super().__init__(*args, **kwargs)
-		self.fields["batch"].required = False
-		self.fields["name"].required = False
-		self.fields["unidecode_name"].required = False
-		self.fields["sources"].required = False
 
-	class Meta:
-		model = Product
-		fields = "__all__"
-
-
-class ProducesForm(IdFieldForm, CamelCaseForm):
-	sources = forms.IntegerField(required=False)
-
-	class Meta:
-		model = Produces
-		fields = "__all__"
-
-	def __init__(self, *args, **kwargs):
-		super().__init__(*args, **kwargs)
-		self.fields["batch"].required = False
-		self.fields["sources"].required = False
-		self.fields["gene"].required = False
-		self.fields["product"].required = False
+# class ProducesForm(IdFieldForm, CamelCaseForm):
+# 	sources = forms.IntegerField(required=False)
+#
+# 	class Meta:
+# 		model = Produces
+# 		fields = "__all__"
+#
+# 	def __init__(self, *args, **kwargs):
+# 		super().__init__(*args, **kwargs)
+# 		self.fields["batch"].required = False
+# 		self.fields["sources"].required = False
+# 		self.fields["gene"].required = False
+# 		self.fields["product"].required = False
 
 
 class SequenceForm(IdFieldForm, CamelCaseForm):
@@ -73,3 +73,11 @@ class SequenceForm(IdFieldForm, CamelCaseForm):
 		self.fields["molecule_type"].required = False
 		self.fields["sequence_version"].required = False
 		self.fields["products"].required = False
+
+
+class SequenceListForm(CamelCaseForm):
+	taxon_id = forms.IntegerField()
+
+	class Meta:
+		model = Sequence
+		fields = ["taxon_id"]

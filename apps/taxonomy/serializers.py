@@ -25,6 +25,14 @@ class BaseTaxonomicLevelSerializer(CaseModelSerializer):
 		fields = ["id", "name", "taxon_rank", "scientific_name_authorship", "accepted", "accepted_modifier", "images"]
 
 
+class TaxonCompositionSerializer(BaseTaxonomicLevelSerializer):
+	total_species = serializers.IntegerField()
+
+	class Meta:
+		model = TaxonomicLevel
+		fields = ["id", "name", "rank", "total_species"]
+
+
 class AuthorshipSerializer(serializers.ModelSerializer):
 	class Meta:
 		model = Authorship

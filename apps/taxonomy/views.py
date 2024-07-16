@@ -1,17 +1,17 @@
 import csv
 
-from django.db.models import Q
+from django.db.models import Q, Count
 from django.http import StreamingHttpResponse
 
 from apps.taxonomy.models import TaxonomicLevel, Authorship
-from apps.taxonomy.serializers import BaseTaxonomicLevelSerializer, AuthorshipSerializer
+from apps.taxonomy.serializers import BaseTaxonomicLevelSerializer, AuthorshipSerializer, TaxonCompositionSerializer
 from apps.API.exceptions import CBBAPIException
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.generics import ListAPIView
-from .forms import TaxonomicLevelForm, AuthorshipForm
+from .forms import TaxonomicLevelForm, AuthorshipForm, TaxonomicLevelChildrenForm
 from ..versioning.serializers import OriginSourceSerializer
 from common.utils.utils import EchoWriter
 
@@ -202,23 +202,9 @@ class TaxonParentView(APIView):
 		return Response(BaseTaxonomicLevelSerializer(ancestors, many=True).data)
 
 
-class TaxonChildrenView(APIView):
-	@swagger_auto_schema(
-		tags=["Taxonomy"],
-		operation_description="Get the direct children of the taxon given its ID",
-		manual_parameters=[
-			openapi.Parameter(
-				name="id",
-				in_=openapi.IN_QUERY,
-				type=openapi.TYPE_INTEGER,
-				description="ID of the taxonomic level",
-				required=True,
-			)
-		],
-		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
-	)
+class TaxonChildrenBaseView(APIView):
 	def get(self, request):
-		taxon_form = TaxonomicLevelForm(self.request.GET)
+		taxon_form = TaxonomicLevelChildrenForm(data=self.request.GET)
 
 		if not taxon_form.is_valid():
 			raise CBBAPIException(taxon_form.errors, code=400)
@@ -233,7 +219,64 @@ class TaxonChildrenView(APIView):
 		except TaxonomicLevel.DoesNotExist:
 			raise CBBAPIException("Taxonomic level does not exist.", code=404)
 
-		return Response(BaseTaxonomicLevelSerializer(taxon.get_children(), many=True).data)
+		children_rank = TaxonomicLevel.TRANSLATE_RANK.get(taxon_form.cleaned_data.get("children_rank", None), None)
+
+		if children_rank:
+			return taxon.get_descendants().filter(rank=children_rank)
+		else:
+			return taxon.get_children()
+
+
+class TaxonChildrenView(TaxonChildrenBaseView):
+	@swagger_auto_schema(
+		tags=["Taxonomy"],
+		operation_description="Get the children of the given taxon id",
+		manual_parameters=[
+			openapi.Parameter(
+				name="id",
+				in_=openapi.IN_QUERY,
+				type=openapi.TYPE_INTEGER,
+				description="ID of the taxonomic level",
+				required=True,
+			),
+			openapi.Parameter(
+				name="childrenRank",
+				in_=openapi.IN_QUERY,
+				type=openapi.TYPE_INTEGER,
+				description="The level of children to look up for",
+				required=False,
+			)
+		],
+		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
+	)
+	def get(self, request):
+		return Response(BaseTaxonomicLevelSerializer(super().get(request), many=True).data)
+
+
+class TaxonChildrenCountView(TaxonChildrenBaseView):
+	@swagger_auto_schema(
+		tags=["Taxonomy"],
+		operation_description="Get the total children of the given taxon id",
+		manual_parameters=[
+			openapi.Parameter(
+				name="id",
+				in_=openapi.IN_QUERY,
+				type=openapi.TYPE_INTEGER,
+				description="ID of the taxonomic level",
+				required=True,
+			),
+			openapi.Parameter(
+				name="childrenRank",
+				in_=openapi.IN_QUERY,
+				type=openapi.TYPE_INTEGER,
+				description="The level of children to look up for",
+				required=False,
+			)
+		],
+		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
+	)
+	def get(self, request):
+		return Response(super().get(request).count())
 
 
 class TaxonSynonymView(ListAPIView):
@@ -267,6 +310,42 @@ class TaxonSynonymView(ListAPIView):
 			raise CBBAPIException("Taxonomic level does not exist.", code=404)
 
 		return Response(BaseTaxonomicLevelSerializer(taxon.synonyms, many=True).data)
+
+
+class TaxonCompositionView(ListAPIView):
+	@swagger_auto_schema(
+		tags=["Taxonomy"],
+		operation_description="Get the children and the quantity of species for each.",
+		manual_parameters=[
+			openapi.Parameter(
+				"id",
+				openapi.IN_QUERY,
+				description="ID of the taxon",
+				type=openapi.TYPE_STRING,
+			)
+		],
+		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
+	)
+	def get(self, request):
+		taxon_form = TaxonomicLevelForm(self.request.GET)
+
+		if not taxon_form.is_valid():
+			raise CBBAPIException(taxon_form.errors, code=400)
+
+		taxon_id = taxon_form.cleaned_data.get("id")
+
+		if not taxon_id:
+			raise CBBAPIException("Missing id parameter", code=400)
+
+		try:
+			children = TaxonomicLevel.objects.get(id=taxon_id).get_children().filter(accepted=True)
+		except TaxonomicLevel.DoesNotExist:
+			raise CBBAPIException("Taxonomic level does not exist.", code=404)
+
+		for child in children:
+			child.total_species = child.get_descendants(include_self=True).filter(rank=TaxonomicLevel.SPECIES, accepted=True).count()
+
+		return Response(TaxonCompositionSerializer(children, many=True).data)
 
 
 class TaxonSourceView(ListAPIView):
@@ -312,12 +391,12 @@ def map_taxa_to_rank(ranks, taxa):
 		if current is None:
 			break
 
-		if current.rank in [TaxonomicLevel.SPECIES, TaxonomicLevel.SUBSPECIES, TaxonomicLevel.VARIETY]:
-			current_name = f"{current_name} {current.name}"
-		else:
-			current_name = current.name
-
 		if rank == current.rank:
+			if current.rank in [TaxonomicLevel.SPECIES, TaxonomicLevel.SUBSPECIES, TaxonomicLevel.VARIETY]:
+				current_name = f"{current_name} {current.name}"
+			else:
+				current_name = current.name
+
 			mapped_taxa.append(current_name)
 			mapped_taxa.append(current.verbatim_authorship)
 			current = next(taxa_iter, None)
@@ -376,6 +455,8 @@ class TaxonChecklistView(APIView):
 				current_taxon = current_taxon[: len(current_taxon) - (last_level - taxon.level + 1)]
 
 			current_taxon.append(taxon)
+			if taxon.rank == TaxonomicLevel.VARIETY:
+				print(map_taxa_to_rank(ranks_map, upper_taxon + current_taxon))
 			to_csv.append(
 				[taxon.id, taxon.readable_status(), taxon.readable_rank(), *map_taxa_to_rank(ranks_map, upper_taxon + current_taxon)]
 			)

@@ -16,14 +16,14 @@ def add_taxonomic_image(line, batch):
 
 	if line["image_id"]:
 		taxon = TaxonomicLevel.objects.find(line["taxon"]).first()
+
 		source = get_or_create_source("iNaturalist", "database", batch)
 		# source = get_or_create_source(line["source"], line["origin"], batch)
 		os, new_os = OriginSource.objects.get_or_create(origin_id=line["image_id"], source=source, attribution=line["attribution"])
 
-		if new_os:
-			if taxon.images.filter(source=os.source, origin_id=os.origin_id).exists():
-				raise Exception(f"Origin source id already existing. {os}\n{line}")
-			taxon.images.add(os)
+		if taxon.images.filter(source=os.source, origin_id=os.origin_id).exists():
+			raise Exception(f"Origin source id already existing. {os}\n{line}")
+		taxon.images.add(os)
 
 		taxon.save()
 
@@ -40,7 +40,7 @@ def get_or_create_source(source, origin, batch):
 			"accepted": True,
 			"origin": Source.TRANSLATE_CHOICES[origin],
 			"data_type": IMAGE,  # data_type equal to 3 (IMAGE)
-			"url": "https://inaturalist-open-data.s3.amazonaws.com/photos/{id}/medium.jpg",
+			"url": "https://inaturalist-open-data.s3.amazonaws.com/photos/{id}",
 			"batch": batch,
 		},
 	)

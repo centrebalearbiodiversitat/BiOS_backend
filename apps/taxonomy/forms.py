@@ -27,6 +27,14 @@ class TaxonomicLevelForm(IdFieldForm, TranslateForm):
 		self.fields["unidecode_name"].required = False
 
 
+class TaxonomicLevelChildrenForm(IdFieldForm, CamelCaseForm):
+	children_rank = forms.CharField(max_length=100, required=False)
+
+	class Meta:
+		model = TaxonomicLevel
+		fields = ['id', 'children_rank']
+
+
 class AuthorshipForm(IdFieldForm):
 	class Meta:
 		model = Authorship

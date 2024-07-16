@@ -126,7 +126,7 @@ def create_taxonomic_level(line, parent, batch, idx_name, rank, idx_author, idx_
 
 		child = child.first()
 
-		if not child.accepted and "synonym" not in line[COL_NAME_ACCEPTED]:
+		if not child.accepted and "synonym" not in line[ORIGINAL_STATUS]:
 			raise Exception(f"Higher taxonomy must be accepted {child.readable_rank()}:{child.name}\n{line}")
 		if child.verbatim_authorship != verb_auth or set(auths) != set(child.authorship.all() if child.authorship else []):
 			raise Exception(
@@ -143,10 +143,11 @@ def parse_verbatim_authorship(input_string):
 
 	years = re.findall(r"[^0-9]*(\d+)[^0-9]*", input_string)
 
-	if len(years) > 1:
-		raise Exception(f"Authorship must have only one year. Original: {input_string}, year: {years}")
+	# if len(years) > 1:
+	# 	raise Exception(f"Authorship must have only one year. Original: {input_string}, year: {years}")
 
 	years = [int(year) for year in years]
+	years.sort()
 
 	if years:
 		authors = re.findall(r"(.+),[^0-9]*\d+[^0-9]*", input_string)
@@ -156,7 +157,7 @@ def parse_verbatim_authorship(input_string):
 	if len(authors) != 1:
 		raise Exception(f"Authorship must have only one author string. Original: {input_string}, authors: {authors}")
 
-	return authors[0] if authors else None, years[0] if years else None
+	return authors[0] if authors else None, years[-1] if years else None
 
 
 def get_or_create_authorship(line, idx_author, batch, source):

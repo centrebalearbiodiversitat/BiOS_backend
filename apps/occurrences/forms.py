@@ -1,6 +1,6 @@
 from django import forms
 
-from common.utils.forms import TranslateForm, IdFieldForm
+from common.utils.forms import TranslateForm, IdFieldForm, CamelCaseForm
 from .models import Occurrence
 
 

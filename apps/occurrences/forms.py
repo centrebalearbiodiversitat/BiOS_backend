@@ -1,13 +1,17 @@
-from common.utils.forms import CamelCaseForm, IdFieldForm
+from django import forms
+
+from common.utils.forms import TranslateForm, IdFieldForm, CamelCaseForm
 from .models import Occurrence
 
 
-class OccurrenceForm(IdFieldForm, CamelCaseForm):
+class OccurrenceForm(IdFieldForm, TranslateForm):
 	TRANSLATE_FIELDS = {
 		"year": "collection_date_year",
 		"month": "collection_date_month",
 		"day": "collection_date_day",
 	}
+
+	add_synonyms = forms.BooleanField(required=False, initial=True)
 
 	def __init__(self, *args, **kwargs):
 		super().__init__(*args, **kwargs)

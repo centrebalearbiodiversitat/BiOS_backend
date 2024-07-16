@@ -3,7 +3,7 @@ import json
 from django.core.management.base import BaseCommand
 from django.db import transaction
 from django.utils.dateparse import parse_datetime
-from apps.genetics.models import Sequence, Produces, Gene, Product
+from apps.genetics.models import Sequence, Gene
 from apps.geography.models import GeographicLevel
 from apps.occurrences.models import Occurrence
 from apps.taxonomy.models import TaxonomicLevel
@@ -34,10 +34,26 @@ def parse_line(line: dict):
 			line[key] = json.loads(value)
 		except:
 			pass  # is not json format
+
 	return line
 
 
-def genetic_sources(line: dict, batch, occ, os):
+def genetic_sources(line: dict, batch, occ):
+	source, _ = Source.objects.get_or_create(
+		name__icontains=line["occurrenceSource"],
+		data_type=Source.SEQUENCE,
+		defaults={
+			"name": line["occurrenceSource"],
+			"accepted": True,
+			"origin": Source.TRANSLATE_CHOICES[line["occurrenceOrigin"]],
+			"url": None,
+		},
+	)
+
+	os, new = OriginSource.objects.get_or_create(origin_id=line["sample_id"], source=source)
+	if not new:
+		raise Exception(f"OriginSource already exists\n{line}")
+
 	seq, _ = Sequence.objects.get_or_create(
 		occurrence=occ,
 		defaults={
@@ -56,26 +72,43 @@ def genetic_sources(line: dict, batch, occ, os):
 		seq.sources.add(os)
 
 	for production in line["genetic_features"]:
-		gene = None
-		product = None
-		if production["gene"]:
-			gene, _ = Gene.objects.get_or_create(
-				name=production["gene"], defaults={"name": production["gene"], "batch": batch, "accepted": True}
+		if production["gene"] and not production["gene"].startswith("LOC"):
+			gene, is_new = Gene.objects.get_or_create(
+				name__iexact=production["gene"],
+				defaults={
+					"name": production["gene"],
+					"batch": batch,
+					"product": production["product"] if production["product"] else None,
+					"accepted": True,
+				},
 			)
+
 			if not gene.sources.filter(id=os.id).exists():
 				gene.sources.add(os)
 
-		if production["product"]:
-			product, _ = Product.objects.get_or_create(
-				name=production["product"], defaults={"name": production["product"], "batch": batch, "accepted": True}
-			)
-			if not product.sources.filter(id=os.id).exists():
-				product.sources.add(os)
-		prod_rel, _ = Produces.objects.get_or_create(gene=gene, product=product, defaults={"batch": batch})
-		if not prod_rel.sources.filter(id=os.id).exists():
-			prod_rel.sources.add(os)
-		if not seq.products.filter(id=prod_rel.id).exists():
-			seq.products.add(prod_rel)
+			if not is_new and production["product"]:
+				if gene.product:
+					if len(production["product"]) > len(gene.product):
+						gene.product = production["product"]
+						gene.save()
+				else:
+					gene.product = production["product"]
+					gene.save()
+			seq.genes.add(gene)
+
+		# product = None
+		# if production["product"]:
+		# 	product, _ = Product.objects.get_or_create(
+		# 		name__iexact=production["product"], defaults={"name": production["product"], "batch": batch, "accepted": True}
+		# 	)
+		# 	if not product.sources.filter(id=os.id).exists():
+		# 		product.sources.add(os)
+
+		# prod_rel, _ = Produces.objects.get_or_create(gene=gene, product=product, defaults={"batch": batch})
+		# if not prod_rel.sources.filter(id=os.id).exists():
+		# 	prod_rel.sources.add(os)
+		# if not seq.products.filter(id=prod_rel.id).exists():
+		# 	seq.products.add(prod_rel)
 
 
 def find_gadm(line):
@@ -115,10 +148,12 @@ class Command(BaseCommand):
 				line = parse_line(line)
 				source, _ = Source.objects.get_or_create(
 					name__icontains=line["occurrenceSource"],
+					data_type=Source.OCCURRENCE,
 					defaults={
 						"name": line["occurrenceSource"],
 						"accepted": True,
 						"origin": Source.TRANSLATE_CHOICES[line["occurrenceOrigin"]],
+						"url": None,
 					},
 				)
 
@@ -149,15 +184,15 @@ class Command(BaseCommand):
 						batch=batch,
 						voucher=line["voucher"],
 						basis_of_record=Occurrence.TRANSLATE_BASIS_OF_RECORD.get(line["basisOfRecord"], Occurrence.UNKNOWN),
-						collection_date_year=int(line["year"]) if line["year"] else None,
-						collection_date_month=int(line["month"]) if line["month"] else None,
+						collection_date_year=(int(line["year"]) if line["year"] else None),
+						collection_date_month=(int(line["month"]) if line["month"] else None),
 						collection_date_day=int(line["day"]) if line["day"] else None,
 						geographical_location=find_gadm(line),
-						decimal_latitude=float(line["lat_lon"][0]) if line["lat_lon"] else None,
-						decimal_longitude=float(line["lat_lon"][1]) if line["lat_lon"] else None,
-						coordinate_uncertainty_in_meters=int(line["coordinateUncertaintyInMeters"])
-						if line["coordinateUncertaintyInMeters"]
-						else None,
+						decimal_latitude=(float(line["lat_lon"][0]) if line["lat_lon"] else None),
+						decimal_longitude=(float(line["lat_lon"][1]) if line["lat_lon"] else None),
+						coordinate_uncertainty_in_meters=(
+							int(line["coordinateUncertaintyInMeters"]) if line["coordinateUncertaintyInMeters"] else None
+						),
 						elevation=int(line["elevation"]) if line["elevation"] else None,
 						depth=int(line["depth"]) if line["depth"] else None,
 					)
@@ -166,4 +201,4 @@ class Command(BaseCommand):
 					occ = Occurrence.objects.get(sources=os)
 
 				if "bp" in line and line["bp"] is not None:
-					genetic_sources(line, batch, occ, os)
+					genetic_sources(line, batch, occ)

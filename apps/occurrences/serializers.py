@@ -5,31 +5,31 @@ from ..geography.models import GeographicLevel
 
 
 class OccurrenceSerializer(CaseModelSerializer):
-	basis_of_record = serializers.SerializerMethodField()
+	# basis_of_record = serializers.SerializerMethodField()
 	location = serializers.PrimaryKeyRelatedField(queryset=GeographicLevel.objects.all(), source="geographical_location")
 
-	event_date = serializers.SerializerMethodField()
-	day = serializers.IntegerField(source="collection_date_day")
-	month = serializers.IntegerField(source="collection_date_month")
-	year = serializers.IntegerField(source="collection_date_year")
+	# event_date = serializers.SerializerMethodField()
+	# day = serializers.IntegerField(source="collection_date_day")
+	# month = serializers.IntegerField(source="collection_date_month")
+	# year = serializers.IntegerField(source="collection_date_year")
 
 	class Meta:
 		model = Occurrence
 		fields = (
 			"id",
-			"basis_of_record",
-			"coordinate_uncertainty_in_meters",
+			# "basis_of_record",
+			# "coordinate_uncertainty_in_meters",
 			"decimal_latitude",
 			"decimal_longitude",
-			"day",
-			"depth",
-			"elevation",
-			"event_date",
+			# "day",
+			# "depth",
+			# "elevation",
+			# "event_date",
 			"location",
-			"month",
-			"taxonomy",
-			"voucher",
-			"year",
+			# "month",
+			# "taxonomy",
+			# "voucher",
+			# "year",
 		)
 
 	def get_basis_of_record(self, obj):

@@ -1,7 +1,27 @@
 from django.core.exceptions import ValidationError
 from django.db import models
 
-from common.utils.models import SynonymModel, ReferencedModel
+from common.utils.models import SynonymModel
+
+
+class Batch(models.Model):
+	PENDING = 0
+	ACCEPTED = 1
+	REJECTED = 2
+	STATUS_CHOICES = (
+		(PENDING, "Pending"),
+		(ACCEPTED, "Accepted"),
+		(REJECTED, "Rejected"),
+	)
+
+	created_at = models.DateTimeField(auto_now_add=True, editable=False)
+	status = models.PositiveSmallIntegerField(choices=STATUS_CHOICES, default=PENDING)
+
+	def __str__(self):
+		return f"{self.created_at.year}-{self.created_at.month}-{self.created_at.day}__{self.id}"
+
+	class Meta:
+		verbose_name_plural = "batches"
 
 
 class Source(SynonymModel):
@@ -39,35 +59,30 @@ class Source(SynonymModel):
 		"expert": EXPERT,
 	}
 
+	TAXON = 0
+	OCCURRENCE = 1
+	SEQUENCE = 2
+	IMAGE = 3
+	DATA_TYPE_CHOICES = (
+		(TAXON, "taxon"),
+		(OCCURRENCE, "occurrence"),
+		(SEQUENCE, "sequence"),
+		(IMAGE, "image"),
+	)
+
 	origin = models.PositiveSmallIntegerField(choices=ORIGIN_CHOICES)
+	url = models.URLField(null=True, blank=True, default=None)
+	data_type = models.PositiveSmallIntegerField(choices=DATA_TYPE_CHOICES)
+	batch = models.ForeignKey(Batch, on_delete=models.CASCADE, null=True, blank=True, default=None)
 
 	def __str__(self):
 		return self.name
 
 
-class Batch(models.Model):
-	PENDING = 0
-	ACCEPTED = 1
-	REJECTED = 2
-	STATUS_CHOICES = (
-		(PENDING, "Pending"),
-		(ACCEPTED, "Accepted"),
-		(REJECTED, "Rejected"),
-	)
-
-	created_at = models.DateTimeField(auto_now_add=True, editable=False)
-	status = models.PositiveSmallIntegerField(choices=STATUS_CHOICES, default=PENDING)
-
-	def __str__(self):
-		return f"{self.created_at.year}-{self.created_at.month}-{self.created_at.day}__{self.id}"
-
-	class Meta:
-		verbose_name_plural = "batches"
-
-
 class OriginSource(models.Model):
 	origin_id = models.CharField(max_length=255, blank=False, null=False)
 	source = models.ForeignKey(Source, on_delete=models.CASCADE)
+	attribution = models.CharField(max_length=512, null=True, default=None, blank=True)
 
 	def save(self, force_insert=False, force_update=False, using=None, update_fields=None):
 		super().save(force_insert, force_update, using, update_fields)

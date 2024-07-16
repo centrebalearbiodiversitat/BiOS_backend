@@ -245,7 +245,7 @@ class TaxonChildrenView(TaxonChildrenBaseView):
 				type=openapi.TYPE_INTEGER,
 				description="The level of children to look up for",
 				required=False,
-			)
+			),
 		],
 		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
 	)
@@ -271,7 +271,7 @@ class TaxonChildrenCountView(TaxonChildrenBaseView):
 				type=openapi.TYPE_INTEGER,
 				description="The level of children to look up for",
 				required=False,
-			)
+			),
 		],
 		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
 	)

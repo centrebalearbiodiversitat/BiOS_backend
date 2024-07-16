@@ -5,7 +5,8 @@ from .views import (
 	SequenceCRUDView,
 	SequenceSearchView,
 	SequenceListView,
-	SequenceListCountView, MarkersListView,
+	SequenceListCountView,
+	MarkersListView,
 )
 
 urlpatterns = [

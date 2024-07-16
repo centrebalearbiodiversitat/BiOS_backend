@@ -79,8 +79,8 @@ def genetic_sources(line: dict, batch, occ):
 					"name": production["gene"],
 					"batch": batch,
 					"product": production["product"] if production["product"] else None,
-					"accepted": True
-				}
+					"accepted": True,
+				},
 			)
 
 			if not gene.sources.filter(id=os.id).exists():

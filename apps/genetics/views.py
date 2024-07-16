@@ -162,11 +162,15 @@ class MarkersListView(APIView):
 		except TaxonomicLevel.DoesNotExist:
 			raise CBBAPIException("Taxonomic level does not exist", 404)
 
-		queryset = Gene.objects.filter(
-			Q(sequence__occurrence__taxonomy=taxon)
-			| Q(sequence__occurrence__taxonomy__lft__gte=taxon.lft,
-				sequence__occurrence__taxonomy__rght__lte=taxon.rght),
-		).annotate(total=Count('id')).filter(total__gte=10).order_by("-total")
+		queryset = (
+			Gene.objects.filter(
+				Q(sequence__occurrence__taxonomy=taxon)
+				| Q(sequence__occurrence__taxonomy__lft__gte=taxon.lft, sequence__occurrence__taxonomy__rght__lte=taxon.rght),
+			)
+			.annotate(total=Count("id"))
+			.filter(total__gte=10)
+			.order_by("-total")
+		)
 
 		return Response(MarkerSerializer(queryset, many=True).data)
 
@@ -251,11 +255,7 @@ class SequenceFilter(APIView):
 			raise CBBAPIException("Taxonomic level does not exist", 404)
 
 		return Sequence.objects.filter(
-			Q(occurrence__taxonomy=taxon) |
-			Q(
-				occurrence__taxonomy__lft__gte=taxon.lft,
-				occurrence__taxonomy__rght__lte=taxon.rght
-			)
+			Q(occurrence__taxonomy=taxon) | Q(occurrence__taxonomy__lft__gte=taxon.lft, occurrence__taxonomy__rght__lte=taxon.rght)
 		)
 
 

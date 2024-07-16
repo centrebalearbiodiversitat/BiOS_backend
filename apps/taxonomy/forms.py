@@ -32,7 +32,7 @@ class TaxonomicLevelChildrenForm(IdFieldForm, CamelCaseForm):
 
 	class Meta:
 		model = TaxonomicLevel
-		fields = ['id', 'children_rank']
+		fields = ["id", "children_rank"]
 
 
 class AuthorshipForm(IdFieldForm):

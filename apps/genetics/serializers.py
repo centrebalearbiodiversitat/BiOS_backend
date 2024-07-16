@@ -9,7 +9,7 @@ class MarkerSerializer(CaseModelSerializer):
 
 	class Meta:
 		model = Gene
-		fields = ['id', 'name', 'product', 'total']
+		fields = ["id", "name", "product", "total"]
 
 
 class GeneSerializer(CaseModelSerializer):

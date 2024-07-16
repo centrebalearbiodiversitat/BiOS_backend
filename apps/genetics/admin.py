@@ -20,7 +20,7 @@ class GeneAdmin(admin.ModelAdmin):
 
 class SequenceAdmin(admin.ModelAdmin):
 	readonly_fields = ["occurrence"]
-	autocomplete_fields = ["sources", 'genes']
+	autocomplete_fields = ["sources", "genes"]
 
 
 admin.site.register(Gene, GeneAdmin)

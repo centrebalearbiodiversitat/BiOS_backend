@@ -12,18 +12,23 @@ IMAGE = 3
 @transaction.atomic
 def add_taxonomic_image(line, batch):
 	if not line["taxon"]:
-		raise Exception("No taxon name")
+		print(f"Taxon does not exist\n{line}")
+		return
 
 	if line["image_id"]:
-		taxon = TaxonomicLevel.objects.find(line["taxon"]).first()
+		taxon = TaxonomicLevel.objects.find(line["taxon"])
+
+		if not taxon.exists():
+			raise Exception("Taxon not found")
+
+		taxon = taxon.first()
 
 		source = get_or_create_source("iNaturalist", "database", batch)
 		# source = get_or_create_source(line["source"], line["origin"], batch)
 		os, new_os = OriginSource.objects.get_or_create(origin_id=line["image_id"], source=source, attribution=line["attribution"])
 
-		if taxon.images.filter(source=os.source, origin_id=os.origin_id).exists():
-			raise Exception(f"Origin source id already existing. {os}\n{line}")
-		taxon.images.add(os)
+		if not taxon.images.filter(source=os.source, origin_id=os.origin_id).exists():
+			taxon.images.add(os)
 
 		taxon.save()
 

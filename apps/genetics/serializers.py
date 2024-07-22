@@ -1,5 +1,15 @@
+from rest_framework import serializers
+
 from common.utils.serializers import CaseModelSerializer
-from .models import Gene, Product, Produces, Sequence
+from .models import Gene, Sequence
+
+
+class MarkerSerializer(CaseModelSerializer):
+	total = serializers.IntegerField()
+
+	class Meta:
+		model = Gene
+		fields = ["id", "name", "product", "total"]
 
 
 class GeneSerializer(CaseModelSerializer):
@@ -8,16 +18,16 @@ class GeneSerializer(CaseModelSerializer):
 		fields = "__all__"
 
 
-class ProductSerializer(CaseModelSerializer):
-	class Meta:
-		model = Product
-		fields = "__all__"
+# class ProductSerializer(CaseModelSerializer):
+# 	class Meta:
+# 		model = Product
+# 		fields = "__all__"
 
 
-class ProducesSerializer(CaseModelSerializer):
-	class Meta:
-		model = Produces
-		fields = "__all__"
+# class ProducesSerializer(CaseModelSerializer):
+# 	class Meta:
+# 		model = Produces
+# 		fields = "__all__"
 
 
 class SequenceSerializer(CaseModelSerializer):

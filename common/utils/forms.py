@@ -9,16 +9,15 @@ class IdFieldForm(forms.Form):
 class CamelCaseForm(forms.Form):
 	TRANSLATE_FIELDS = {}
 
-	def __init__(self, *args, **kwargs):
-		if "data" in kwargs:
-			pre_parsed_data = {}
+	def __init__(self, data, *args, **kwargs):
+		pre_parsed_data = {}
 
-			for key, value in kwargs["data"].items():
-				snake_key = decamelize(key)
-				translated_key = self.TRANSLATE_FIELDS.get(snake_key, snake_key)
-				pre_parsed_data[translated_key] = value
+		for key, value in data.items():
+			snake_key = decamelize(key)
+			translated_key = self.TRANSLATE_FIELDS.get(snake_key, snake_key)
+			pre_parsed_data[translated_key] = value
 
-			kwargs["data"] = pre_parsed_data
+		kwargs["data"] = pre_parsed_data
 
 		super().__init__(*args, **kwargs)
 

@@ -32,35 +32,15 @@ COL_ID = "colID"
 LEVELS = [KINGDOM, PHYLUM, CLASS, ORDER, FAM, GENUS, SPECIES, SUBSPECIES, VARIETY]
 
 LEVELS_PARAMS = {
-	KINGDOM: [
-		TaxonomicLevel.KINGDOM,
-		AUTH_KINGDOM,
-		SOURCE_KINGDOM,
-		SOURCE_ORIGIN_KINGDOM,
-	],
+	KINGDOM: [TaxonomicLevel.KINGDOM, AUTH_KINGDOM, SOURCE_KINGDOM, SOURCE_ORIGIN_KINGDOM],
 	PHYLUM: [TaxonomicLevel.PHYLUM, AUTH_PHYLUM, SOURCE_PHYLUM, SOURCE_ORIGIN_PHYLUM],
 	CLASS: [TaxonomicLevel.CLASS, AUTH_CLASS, SOURCE_CLASS, SOURCE_ORIGIN_CLASS],
 	ORDER: [TaxonomicLevel.ORDER, AUTH_ORDER, SOURCE_ORDER, SOURCE_ORIGIN_ORDER],
 	FAM: [TaxonomicLevel.FAMILY, AUTH_FAM, SOURCE_FAM, SOURCE_ORIGIN_FAM],
 	GENUS: [TaxonomicLevel.GENUS, AUTH_GENUS, SOURCE_GENUS, SOURCE_ORIGIN_GENUS],
-	SPECIES: [
-		TaxonomicLevel.SPECIES,
-		AUTH_SPECIES,
-		SOURCE_SPECIES,
-		SOURCE_ORIGIN_SPECIES,
-	],
-	SUBSPECIES: [
-		TaxonomicLevel.SUBSPECIES,
-		AUTH_SUBSPECIES,
-		SOURCE_SUBSPECIES,
-		SOURCE_ORIGIN_SUBSPECIES,
-	],
-	VARIETY: [
-		TaxonomicLevel.VARIETY,
-		AUTH_VARIETY,
-		SOURCE_VARIETY,
-		SOURCE_ORIGIN_VARIETY,
-	],
+	SPECIES: [TaxonomicLevel.SPECIES, AUTH_SPECIES, SOURCE_SPECIES, SOURCE_ORIGIN_SPECIES],
+	SUBSPECIES: [TaxonomicLevel.SUBSPECIES, AUTH_SUBSPECIES, SOURCE_SUBSPECIES, SOURCE_ORIGIN_SUBSPECIES],
+	VARIETY: [TaxonomicLevel.VARIETY, AUTH_VARIETY, SOURCE_VARIETY, SOURCE_ORIGIN_VARIETY],
 }
 
 
@@ -70,6 +50,7 @@ def create_taxonomic_level(line, parent, batch, idx_name, rank, idx_author, idx_
 		return parent
 	if not line[idx_name]:
 		return parent
+
 	source = get_or_create_source(line, idx_source, idx_source_origin)
 	verb_auth, auths, parsed_year = get_or_create_authorship(line, idx_author, batch, source)
 
@@ -106,14 +87,11 @@ def create_taxonomic_level(line, parent, batch, idx_name, rank, idx_author, idx_
 		)
 
 		os, new_source = OriginSource.objects.get_or_create(origin_id=line[COL_ID], source=source)
-
 		if new_source:
 			if child.sources.filter(source=os.source, origin_id=os.origin_id).exists():
 				raise Exception(f"Origin source id already existing. {os}\n{line}")
-
 			child.sources.add(os)
 			child.save()
-
 		elif not child.sources.filter(id=os.id).exists():
 			raise Exception(f"Origin source id already existing. {os}\n{line}")
 
@@ -148,9 +126,9 @@ def create_taxonomic_level(line, parent, batch, idx_name, rank, idx_author, idx_
 
 		child = child.first()
 
-		if not child.accepted:
+		if not child.accepted and "synonym" not in line[ORIGINAL_STATUS]:
 			raise Exception(f"Higher taxonomy must be accepted {child.readable_rank()}:{child.name}\n{line}")
-		elif child.verbatim_authorship != verb_auth or set(auths) != set(child.authorship.all() if child.authorship else []):
+		if child.verbatim_authorship != verb_auth or set(auths) != set(child.authorship.all() if child.authorship else []):
 			raise Exception(
 				f'Trying to update higher taxonomy author for {child.readable_rank()}:{child.name}. Verbatim: {child.verbatim_authorship} Original: {verb_auth}. Inferred: {child.authorship or "None"} New inferred: {auths or "None"}\n{line}'
 			)
@@ -165,10 +143,11 @@ def parse_verbatim_authorship(input_string):
 
 	years = re.findall(r"[^0-9]*(\d+)[^0-9]*", input_string)
 
-	if len(years) > 1:
-		raise Exception(f"Authorship must have only one year. Original: {input_string}, year: {years}")
+	# if len(years) > 1:
+	# 	raise Exception(f"Authorship must have only one year. Original: {input_string}, year: {years}")
 
 	years = [int(year) for year in years]
+	years.sort()
 
 	if years:
 		authors = re.findall(r"(.+),[^0-9]*\d+[^0-9]*", input_string)
@@ -178,7 +157,7 @@ def parse_verbatim_authorship(input_string):
 	if len(authors) != 1:
 		raise Exception(f"Authorship must have only one author string. Original: {input_string}, authors: {authors}")
 
-	return authors[0] if authors else None, years[0] if years else None
+	return authors[0] if authors else None, years[-1] if years else None
 
 
 def get_or_create_authorship(line, idx_author, batch, source):

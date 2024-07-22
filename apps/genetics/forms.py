@@ -1,4 +1,5 @@
 from common.utils.forms import CamelCaseForm, IdFieldForm
+from .models import Gene, Sequence
 from django import forms
 
 
@@ -9,27 +10,6 @@ class GeneForm(IdFieldForm, CamelCaseForm):
 	name = forms.CharField(required=False)
 	unidecode_name = forms.CharField(required=False)
 	taxonomy = forms.IntegerField(required=False)
-
-	def __init__(self, *args, **kwargs):
-		super().__init__(*args, **kwargs)
-
-
-class ProductForm(IdFieldForm, CamelCaseForm):
-	sources = forms.IntegerField(required=False)
-	exact = forms.BooleanField(required=False)
-	batch = forms.CharField(required=False)
-	name = forms.CharField(required=False)
-	unidecode_name = forms.CharField(required=False)
-
-	def __init__(self, *args, **kwargs):
-		super().__init__(*args, **kwargs)
-
-
-class ProducesForm(IdFieldForm, CamelCaseForm):
-	sources = forms.IntegerField(required=False)
-	batch = forms.CharField(required=False)
-	gene = forms.CharField(required=False)
-	product = forms.CharField(required=False)
 
 	def __init__(self, *args, **kwargs):
 		super().__init__(*args, **kwargs)
@@ -49,5 +29,6 @@ class SequenceForm(IdFieldForm, CamelCaseForm):
 	sequence_version = forms.CharField(required=False)
 	products = forms.CharField(required=False)
 
-	def __init__(self, *args, **kwargs):
-		super().__init__(*args, **kwargs)
+
+class SequenceListForm(CamelCaseForm):
+	taxon_id = forms.IntegerField()

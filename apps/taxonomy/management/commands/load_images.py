@@ -10,24 +10,28 @@ from apps.versioning.models import OriginSource, Source, Batch
 @transaction.atomic
 def add_taxonomic_image(line, batch):
 	if not line["taxon"]:
-		raise Exception("No taxon name")
+		print(f"Taxon does not exist\n{line}")
+		return
 
 	if line["image_id"]:
-		taxon = TaxonomicLevel.objects.find(line["taxon"]).first()
-		taxon.attribution = line["attribution"]
-		source = get_or_create_source(line["source"], batch)
-		os, new_os = OriginSource.objects.get_or_create(origin_id=line["image_path"], source=source)
+		taxon = TaxonomicLevel.objects.find(line["taxon"])
 
-		if new_os:
-			if taxon.sources.filter(source=os.source, origin_id=os.origin_id).exists():
-				raise Exception(f"Origin source id already existing. {os}\n{line}")
+		if not taxon.exists():
+			raise Exception("Taxon not found")
 
-			taxon.sources.add(os)
+		taxon = taxon.first()
+
+		source = get_or_create_source("iNaturalist", "database", batch)
+		# source = get_or_create_source(line["source"], line["origin"], batch)
+		os, new_os = OriginSource.objects.get_or_create(origin_id=line["image_id"], source=source, attribution=line["attribution"])
+
+		if not taxon.images.filter(source=os.source, origin_id=os.origin_id).exists():
+			taxon.images.add(os)
 
 		taxon.save()
 
 
-def get_or_create_source(source, batch):
+def get_or_create_source(source, origin, batch):
 	if not source:
 		raise Exception("All records must have a source")
 
@@ -37,12 +41,13 @@ def get_or_create_source(source, batch):
 		defaults={
 			"name": source,
 			"accepted": True,
-			"origin": Source.DATABASE,
-			"data_type": Source.IMAGE,
-			"url": None,
+			"origin": Source.TRANSLATE_CHOICES[origin],
+			"data_type": Source.IMAGE,  # data_type equal to 3 (IMAGE)
+			"url": "https://inaturalist-open-data.s3.amazonaws.com/photos/{id}",
 			"batch": batch,
 		},
 	)
+
 	return source
 
 
@@ -66,7 +71,8 @@ class Command(BaseCommand):
 			for line in csv_file:
 				try:
 					add_taxonomic_image(line, batch)
-				except:
+				except Exception as e:
+					print(e)
 					exception = True
 
 			if exception:

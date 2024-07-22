@@ -49,8 +49,6 @@ class OccurrenceCRUDView(APIView):
 
 
 class OccurrenceFilter(APIView):
-	SPECIAL_FILTERS = {"geographical_location": GeographicLevel, "taxonomy": TaxonomicLevel}
-
 	def get(self, request):
 		occur_form = OccurrenceForm(data=request.GET)
 
@@ -77,7 +75,6 @@ class OccurrenceFilter(APIView):
 		occus_filters = Q()
 		gl = occur_form.cleaned_data.get("geographical_location", None)
 		if gl:
-			print(gl)
 			occus_filters = Q(geographical_location__id=gl.id) | Q(
 				geographical_location__lft__gte=gl.lft, geographical_location__rght__lte=gl.rght
 			)

@@ -46,6 +46,8 @@ class GeographicLevelManager(SynonymManager):
 class GeographicLevel(SynonymModel, MPTTModel, LatLonModel):
 	objects = GeographicLevelManager()
 
+	DEFAULT_BALEARIC_ISLANDS_ID = 1
+
 	# Order matters!
 	AC = 2
 	ISLAND = 3

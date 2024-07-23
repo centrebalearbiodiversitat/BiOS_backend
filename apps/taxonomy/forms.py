@@ -1,4 +1,4 @@
-from common.utils.forms import TranslateForm
+from common.utils.forms import TranslateForm, CamelCaseForm
 from django import forms
 
 from common.utils.forms import IdFieldForm
@@ -7,9 +7,8 @@ from .models import TaxonomicLevel, Authorship
 
 class TaxonomicLevelForm(IdFieldForm, TranslateForm):
 	exact = forms.BooleanField(required=False)
-	synonyms = forms.IntegerField(required=False)
 	taxon_rank = forms.CharField(max_length=100, required=False)
-	accepted = forms.BooleanField(required=False)
+	accepted = forms.NullBooleanField(required=False)
 	authorship = forms.CharField(max_length=256, required=False)
 	name = forms.CharField(required=False)
 	rank = forms.IntegerField(required=False)  # assuming rank is stored as an integer
@@ -20,19 +19,14 @@ class TaxonomicLevelForm(IdFieldForm, TranslateForm):
 
 	CHOICES_FIELD = {"rank": TaxonomicLevel.TRANSLATE_RANK}
 
-	def __init__(self, *args, **kwargs):
-		super().__init__(*args, **kwargs)
-
 
 class TaxonomicLevelChildrenForm(IdFieldForm, CamelCaseForm):
 	children_rank = forms.CharField(max_length=100, required=False)
 
 	class Meta:
-		model = TaxonomicLevel
 		fields = ["id", "children_rank"]
 
 
 class AuthorshipForm(IdFieldForm):
 	class Meta:
-		model = Authorship
 		fields = ["id"]

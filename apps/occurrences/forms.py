@@ -1,10 +1,6 @@
+from apps.geography.models import GeographicLevel
+from common.utils.forms import TranslateForm, IdFieldForm
 from django import forms
-
-from common.utils.forms import TranslateForm, IdFieldForm, CamelCaseForm
-from .models import Occurrence
-from django import forms
-
-BALEARIC_ISLANDS = 1
 
 
 class OccurrenceForm(IdFieldForm, TranslateForm):
@@ -16,7 +12,7 @@ class OccurrenceForm(IdFieldForm, TranslateForm):
 
 	taxonomy = forms.IntegerField(required=False)
 	voucher = forms.CharField(required=False)
-	geographical_location = forms.CharField(required=False, initial=BALEARIC_ISLANDS)
+	geographical_location = forms.CharField(required=False, initial=GeographicLevel.DEFAULT_BALEARIC_ISLANDS_ID)
 	collection_date_year = forms.IntegerField(required=False)
 	collection_date_month = forms.IntegerField(required=False)
 	collection_date_day = forms.IntegerField(required=False)
@@ -25,6 +21,3 @@ class OccurrenceForm(IdFieldForm, TranslateForm):
 	sources = forms.CharField(required=False)
 
 	add_synonyms = forms.BooleanField(required=False, initial=True)
-
-	def __init__(self, *args, **kwargs):
-		super().__init__(*args, **kwargs)

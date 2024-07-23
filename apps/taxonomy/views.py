@@ -75,7 +75,12 @@ class TaxonListView(ListAPIView):
 		tags=["Taxonomy"],
 		operation_description="Get a list of taxa, with optional filtering.",
 		manual_parameters=[
-			openapi.Parameter("name", openapi.IN_QUERY, description="Name of the taxon to search for.", type=openapi.TYPE_STRING),
+			openapi.Parameter(
+				"name",
+				openapi.IN_QUERY,
+				description="Name of the taxon to search for.",
+				type=openapi.TYPE_STRING
+			),
 			openapi.Parameter(
 				"taxonRank",
 				openapi.IN_QUERY,
@@ -123,7 +128,7 @@ class TaxonListView(ListAPIView):
 						filters[param] = value
 				else:
 					value = taxon_form.cleaned_data.get(param)
-					if value or isinstance(value, int):
+					if value or isinstance(value, int) or isinstance(value, bool):
 						filters[param] = value
 
 		if filters:

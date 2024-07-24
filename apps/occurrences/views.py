@@ -4,10 +4,9 @@ from drf_yasg.utils import swagger_auto_schema
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from .models import Occurrence
-from .serializers import OccurrenceSerializer
+from .serializers import OccurrenceSerializer, BaseOccurrenceSerializer
 from .forms import OccurrenceForm
 from ..API.exceptions import CBBAPIException
-from ..geography.models import GeographicLevel
 from ..taxonomy.models import TaxonomicLevel
 
 
@@ -150,7 +149,7 @@ class OccurrenceListView(OccurrenceFilter):
 		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
 	)
 	def get(self, request):
-		return Response(OccurrenceSerializer(super().get(request), many=True).data)
+		return Response(BaseOccurrenceSerializer(super().get(request), many=True).data)
 
 
 class OccurrenceCountView(OccurrenceFilter):

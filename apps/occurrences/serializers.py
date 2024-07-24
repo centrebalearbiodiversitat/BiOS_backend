@@ -100,4 +100,3 @@ class OccurrenceSerializer(BaseOccurrenceSerializer):
 			return f"{year}"
 		else:
 			return None
-

@@ -1,6 +1,5 @@
 import re
 
-from django.contrib.postgres.indexes import GinIndex
 from django.core.exceptions import ValidationError
 from django.db import models
 from mptt.fields import TreeForeignKey
@@ -131,4 +130,3 @@ class TaxonomicLevel(SynonymModel, MPTTModel, ReferencedModel):
 
 	class Meta:
 		unique_together = ("parent", "name", "rank")
-		indexes = [GinIndex(fields=["unidecode_name"], name="unidecode_name_gin_index", opclasses=["gin_trgm_ops"])]

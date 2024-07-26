@@ -1,4 +1,3 @@
-from django.contrib.postgres.indexes import GinIndex
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models.signals import m2m_changed, pre_delete
@@ -187,7 +186,6 @@ class SynonymModel(models.Model):
 
 	class Meta:
 		abstract = True
-		indexes = [GinIndex(fields=["unidecode_name"])]
 
 
 m2m_changed.connect(SynonymModel.clean_synonyms, sender=SynonymModel.synonyms.through)

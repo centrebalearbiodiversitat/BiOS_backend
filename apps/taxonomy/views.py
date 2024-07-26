@@ -4,7 +4,12 @@ from django.db.models import Q, Count
 from django.http import StreamingHttpResponse
 
 from apps.taxonomy.models import TaxonomicLevel, Authorship
-from apps.taxonomy.serializers import BaseTaxonomicLevelSerializer, AuthorshipSerializer, TaxonCompositionSerializer
+from apps.taxonomy.serializers import (
+	BaseTaxonomicLevelSerializer,
+	AuthorshipSerializer,
+	TaxonCompositionSerializer,
+	SearchTaxonomicLevelSerializer,
+)
 from apps.API.exceptions import CBBAPIException
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
@@ -46,28 +51,25 @@ class TaxonSearchView(APIView):
 		filters = {}
 		query = taxon_form.cleaned_data.get("name", None)
 		exact = taxon_form.cleaned_data.get("exact", False)
+		limit = 10
 
 		if not query:
 			return Response(BaseTaxonomicLevelSerializer(TaxonomicLevel.objects.none(), many=True).data)
 
 		queryset = TaxonomicLevel.objects
 		for query in query.split(" "):
-			filters["name__iexact" if exact else "name__icontains"] = query
+			filters["name__istartswith"] = query
 
-			queryset = queryset.filter(**filters)
-
+			queryset = queryset.filter(**filters).prefetch_related("images", "sources")
 			if len(query) > 3:
-				sub_genus = None
-				for instance in queryset.filter(rank=TaxonomicLevel.GENUS):
-					if sub_genus:
-						sub_genus |= Q(tree_id=instance.tree_id, lft__gte=instance.lft, rght__lte=instance.rght)
-					else:
-						sub_genus = Q(tree_id=instance.tree_id, lft__gte=instance.lft, rght__lte=instance.rght)
+				sub_genus = Q()
+				for instance in queryset.filter(rank=TaxonomicLevel.GENUS)[:limit]:
+					sub_genus |= Q(tree_id=instance.tree_id, lft__gte=instance.lft, rght__lte=instance.rght)
 
 				if sub_genus:
-					queryset |= TaxonomicLevel.objects.filter(sub_genus)
+					queryset |= TaxonomicLevel.objects.filter(sub_genus)[:limit]
 
-		return Response(BaseTaxonomicLevelSerializer(queryset[:10], many=True).data)
+		return Response(SearchTaxonomicLevelSerializer(queryset[:limit], many=True).data)
 
 
 class TaxonListView(ListAPIView):
@@ -110,7 +112,6 @@ class TaxonListView(ListAPIView):
 			raise CBBAPIException(taxon_form.errors, code=400)
 
 		exact = taxon_form.cleaned_data.get("exact", False)
-		synonym = taxon_form.cleaned_data.get("synonym", False)
 		str_fields = ["name"]
 
 		filters = {}
@@ -124,11 +125,8 @@ class TaxonListView(ListAPIView):
 						filters[param] = value
 				else:
 					value = taxon_form.cleaned_data.get(param)
-					if value or isinstance(value, int):
+					if value or isinstance(value, int) or isinstance(value, bool):
 						filters[param] = value
-
-		if synonym:
-			filters["accepted"] = False
 
 		if filters:
 			query = TaxonomicLevel.objects.filter(**filters)

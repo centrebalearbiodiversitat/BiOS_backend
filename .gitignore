@@ -105,3 +105,4 @@ docker-compose.*.yml
 
 cbb/settings/developer/*
 /data/
+/public/

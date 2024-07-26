@@ -7,7 +7,8 @@ admin.site.register(Batch)
 
 class SourceAdmin(admin.ModelAdmin):
 	search_fields = ["name"]
-	list_display = ["name"]
+	list_display = ["name", "data_type"]
+	list_filter = ["data_type"]
 
 
 admin.site.register(Source, SourceAdmin)

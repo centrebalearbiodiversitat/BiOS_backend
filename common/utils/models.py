@@ -187,7 +187,7 @@ class SynonymModel(models.Model):
 
 	class Meta:
 		abstract = True
-		indexes = [GinIndex(fields=['unidecode_name'])]
+		indexes = [GinIndex(fields=["unidecode_name"])]
 
 
 m2m_changed.connect(SynonymModel.clean_synonyms, sender=SynonymModel.synonyms.through)

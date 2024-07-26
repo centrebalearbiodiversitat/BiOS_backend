@@ -4,8 +4,12 @@ from django.db.models import Q, Count
 from django.http import StreamingHttpResponse
 
 from apps.taxonomy.models import TaxonomicLevel, Authorship
-from apps.taxonomy.serializers import BaseTaxonomicLevelSerializer, AuthorshipSerializer, TaxonCompositionSerializer, \
-	SearchTaxonomicLevelSerializer
+from apps.taxonomy.serializers import (
+	BaseTaxonomicLevelSerializer,
+	AuthorshipSerializer,
+	TaxonCompositionSerializer,
+	SearchTaxonomicLevelSerializer,
+)
 from apps.API.exceptions import CBBAPIException
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
@@ -56,7 +60,7 @@ class TaxonSearchView(APIView):
 		for query in query.split(" "):
 			filters["name__istartswith"] = query
 
-			queryset = queryset.filter(**filters).prefetch_related('images', 'sources')
+			queryset = queryset.filter(**filters).prefetch_related("images", "sources")
 			if len(query) > 3:
 				sub_genus = Q()
 				for instance in queryset.filter(rank=TaxonomicLevel.GENUS)[:limit]:

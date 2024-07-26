@@ -130,7 +130,7 @@ class TaxonomicLevel(SynonymModel, MPTTModel, ReferencedModel):
 
 	class Meta:
 		unique_together = ("parent", "name", "rank")
-		ordering = ['unidecode_name']
+		ordering = ["unidecode_name"]
 		# indexes = [
 		#     models.Index(fields=['rank'], name='rank_idx'),
 		# ]

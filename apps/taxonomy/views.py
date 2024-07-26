@@ -58,17 +58,17 @@ class TaxonSearchView(APIView):
 
 		queryset = TaxonomicLevel.objects
 		for query in query.split(" "):
-			filters["name__istartswith"] = query
+			filters["name__icontains"] = query
 
-			queryset = queryset.filter(**filters).prefetch_related("images", "sources")
-			if len(query) > 3:
+			queryset = queryset.filter(**filters)
+			if queryset.count() < limit:
 				sub_genus = Q()
 				for instance in queryset.filter(rank=TaxonomicLevel.GENUS)[:limit]:
 					sub_genus |= Q(tree_id=instance.tree_id, lft__gte=instance.lft, rght__lte=instance.rght)
 
 				if sub_genus:
 					queryset |= TaxonomicLevel.objects.filter(sub_genus)[:limit]
-		print(queryset.explain())
+
 		return Response(SearchTaxonomicLevelSerializer(queryset[:limit], many=True).data)
 
 

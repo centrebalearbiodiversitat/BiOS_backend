@@ -131,5 +131,4 @@ class TaxonomicLevel(SynonymModel, MPTTModel, ReferencedModel):
 
 	class Meta:
 		unique_together = ("parent", "name", "rank")
-		indexes = [GinIndex(fields=['unidecode_name'], name='unidecode_name_gin_index', opclasses=['gin_trgm_ops'])]
-
+		indexes = [GinIndex(fields=["unidecode_name"], name="unidecode_name_gin_index", opclasses=["gin_trgm_ops"])]

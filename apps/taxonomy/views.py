@@ -68,7 +68,7 @@ class TaxonSearchView(APIView):
 
 				if sub_genus:
 					queryset |= TaxonomicLevel.objects.filter(sub_genus)[:limit]
-
+		print(queryset.explain())
 		return Response(SearchTaxonomicLevelSerializer(queryset[:limit], many=True).data)
 
 

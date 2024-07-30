@@ -6,7 +6,7 @@ from mptt.fields import TreeForeignKey
 from mptt.models import MPTTModel
 
 from apps.versioning.models import Batch, OriginSource
-from common.utils.models import ReferencedModel, SynonymModel, SynonymManager
+from common.utils.models import ReferencedModel, SynonymManager, SynonymModel
 from common.utils.utils import str_clean_up
 
 
@@ -133,3 +133,66 @@ class TaxonomicLevel(SynonymModel, MPTTModel, ReferencedModel):
 		# indexes = [
 		#     models.Index(fields=['rank'], name='rank_idx'),
 		# ]
+
+
+class Habitat(models.Model):
+	name = models.CharField(max_length=50, unique=True)
+
+	def __str__(self):
+		return self.name
+
+
+class TaxonData(models.Model):
+	NE = 0
+	DD = 1
+	LC = 2
+	NT = 3
+	VU = 4
+	EN = 5
+	CR = 6
+	EW = 7
+	EX = 8
+
+	CS_CHOICES = (
+		(NE, "ne"),
+		(DD, "dd"),
+		(LC, "lc"),
+		(NT, "nt"),
+		(VU, "vu"),
+		(EN, "en"),
+		(CR, "cr"),
+		(EW, "ew"),
+		(EX, "ex"),
+	)
+
+	TRANSLATE_CS = {
+		NE: "ne",
+		"ne": NE,
+		DD: "dd",
+		"dd": DD,
+		LC: "lc",
+		"lc": LC,
+		NT: "nt",
+		"nt": NT,
+		VU: "vu",
+		"vu": VU,
+		EN: "en",
+		"en": EN,
+		CR: "cr",
+		"cr": CR,
+		EW: "ew",
+		"ew": EW,
+		EX: "ex",
+		"ex": EX,
+	}
+
+	taxonomy = models.ForeignKey(TaxonomicLevel, on_delete=models.CASCADE, db_index=True)
+	iucn_global = models.PositiveSmallIntegerField(choices=CS_CHOICES, default=NE)
+	iucn_europe = models.PositiveSmallIntegerField(choices=CS_CHOICES, default=NE)
+	iucn_mediterranean = models.PositiveSmallIntegerField(choices=CS_CHOICES, default=NE)
+	habitat = models.ManyToManyField(Habitat, blank=True)  # global scale
+	invasive = models.BooleanField(default=False)  # degreeOfEstablishment:
+	domesticated = models.BooleanField(default=False)
+	freshwater = models.BooleanField(default=False)
+	marine = models.BooleanField(default=False)
+	terrestrial = models.BooleanField(default=False)

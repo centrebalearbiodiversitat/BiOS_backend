@@ -1,6 +1,7 @@
 from django.contrib import admin
 from mptt.admin import MPTTModelAdmin
-from apps.taxonomy.models import Authorship, TaxonomicLevel
+
+from apps.taxonomy.models import Authorship, TaxonData, TaxonomicLevel
 
 
 class BaseTaxonLevelAdmin(MPTTModelAdmin):
@@ -52,6 +53,21 @@ class BaseTaxonLevelAdmin(MPTTModelAdmin):
 
 
 admin.site.register(TaxonomicLevel, BaseTaxonLevelAdmin)
+
+
+class TaxonDataAdmin(admin.ModelAdmin):
+	list_display = ("taxonomy", "iucn_global", "iucn_europe", "iucn_mediterranean", "invasive")
+	list_filter = ("iucn_global", "iucn_europe", "iucn_mediterranean", "invasive", "domesticated")
+	search_fields = ("taxonomy__name",)  # Asumiendo que TaxonomicLevel tiene un campo 'name'
+	filter_horizontal = ("habitat",)  # Muestra la relación ManyToMany con Habitat en forma horizontal
+	fieldsets = (
+		("System", {"fields": ("freshwater", "marine", "terrestrial")}),
+		("IUCN Status", {"fields": ("iucn_global", "iucn_europe", "iucn_mediterranean")}),
+		("Other Information", {"fields": ("invasive", "domesticated", "habitat")}),
+	)
+
+
+admin.site.register(TaxonData, TaxonDataAdmin)
 
 
 class AuthorshipAdmin(admin.ModelAdmin):

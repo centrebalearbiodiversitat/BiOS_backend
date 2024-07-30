@@ -1,7 +1,8 @@
-from apps.taxonomy.models import TaxonomicLevel, Authorship
+from rest_framework import serializers
+
+from apps.taxonomy.models import Authorship, TaxonData, TaxonomicLevel
 from apps.versioning.serializers import OriginSourceSerializer
 from common.utils.serializers import CaseModelSerializer
-from rest_framework import serializers
 
 
 class BaseTaxonomicLevelSerializer(CaseModelSerializer):
@@ -37,3 +38,23 @@ class AuthorshipSerializer(serializers.ModelSerializer):
 	class Meta:
 		model = Authorship
 		fields = ["id", "name", "accepted"]
+
+
+class TaxonDataSerializer(CaseModelSerializer):
+	# taxonomy = BaseTaxonomicLevelSerializer()  # Usa el serializer de TaxonomicLevel
+	iucn_global = serializers.SerializerMethodField()
+	iucn_europe = serializers.SerializerMethodField()
+	iucn_mediterranean = serializers.SerializerMethodField()
+
+	def get_iucn_global(self, obj):
+		return obj.get_iucn_global_display()
+
+	def get_iucn_europe(self, obj):
+		return obj.get_iucn_europe_display()
+
+	def get_iucn_mediterranean(self, obj):
+		return obj.get_iucn_mediterranean_display()
+
+	class Meta:
+		model = TaxonData
+		fields = "__all__"

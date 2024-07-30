@@ -1,12 +1,14 @@
 from django import forms
 from humps import decamelize
 
+from apps.API.exceptions import CBBAPIException
 
-class IdFieldForm(forms.ModelForm):
+
+class IdFieldForm(forms.Form):
 	id = forms.IntegerField(required=False)
 
 
-class CamelCaseForm(forms.ModelForm):
+class CamelCaseForm(forms.Form):
 	TRANSLATE_FIELDS = {}
 
 	def __init__(self, data, *args, **kwargs):
@@ -34,6 +36,6 @@ class TranslateForm(CamelCaseForm):
 					self.data[field] = self.data[field].lower()
 
 					if self.data[field] not in translate:
-						raise forms.ValidationError(f"Invalid {field}")
+						raise CBBAPIException(f"Invalid {field}", 400)
 
 					self.data[field] = translate[self.data[field]]

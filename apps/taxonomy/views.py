@@ -64,18 +64,14 @@ class TaxonSearchView(APIView):
 			filters["name__istartswith"] = query
 			if queryset:
 				queryset = TaxonomicLevel.objects.filter(
-					**filters,
-					rank__in=[TaxonomicLevel.SPECIES, TaxonomicLevel.SUBSPECIES, TaxonomicLevel.VARIETY], 
-					parent__in=queryset
+					**filters, rank__in=[TaxonomicLevel.SPECIES, TaxonomicLevel.SUBSPECIES, TaxonomicLevel.VARIETY], parent__in=queryset
 				)
 			else:
 				queryset = TaxonomicLevel.objects.filter(**filters)
 			filters["name__istartswith"] = query
 			if queryset:
 				queryset = TaxonomicLevel.objects.filter(
-					**filters,
-					rank__in=[TaxonomicLevel.SPECIES, TaxonomicLevel.SUBSPECIES, TaxonomicLevel.VARIETY],
-					parent__in=queryset
+					**filters, rank__in=[TaxonomicLevel.SPECIES, TaxonomicLevel.SUBSPECIES, TaxonomicLevel.VARIETY], parent__in=queryset
 				)
 			else:
 				queryset = TaxonomicLevel.objects.filter(**filters)

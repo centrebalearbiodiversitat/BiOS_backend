@@ -64,9 +64,7 @@ class TaxonSearchView(APIView):
 			filters["name__istartswith"] = query
 			if queryset:
 				queryset = TaxonomicLevel.objects.filter(
-					**filters,
-					rank__in=[TaxonomicLevel.SPECIES, TaxonomicLevel.SUBSPECIES, TaxonomicLevel.VARIETY],
-					parent__in=queryset
+					**filters, rank__in=[TaxonomicLevel.SPECIES, TaxonomicLevel.SUBSPECIES, TaxonomicLevel.VARIETY], parent__in=queryset
 				)
 			else:
 				queryset = TaxonomicLevel.objects.filter(**filters)
@@ -468,9 +466,7 @@ class TaxonChecklistView(APIView):
 
 			current_taxon.append(taxon)
 			taxa_map = map_taxa_to_rank(ranks_map, upper_taxon + current_taxon)
-			to_csv.append(
-				[taxon.id, taxa_map[-2], taxon.readable_status(), taxon.readable_rank(), *taxa_map]
-			)
+			to_csv.append([taxon.id, taxa_map[-2], taxon.readable_status(), taxon.readable_rank(), *taxa_map])
 			last_level = taxon.level
 
 		csv_writer = csv.writer(EchoWriter())

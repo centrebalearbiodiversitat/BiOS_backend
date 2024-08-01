@@ -1,4 +1,8 @@
 import re
+import string
+
+
+PUNCTUATION_TRANSLATE = str.maketrans(string.punctuation, "\n" * len(string.punctuation))
 
 
 def str_clean_up(input_string):

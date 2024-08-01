@@ -1,4 +1,3 @@
-import re
 import string
 
 from django.db import models
@@ -6,10 +5,8 @@ from mptt.fields import TreeForeignKey
 from mptt.models import MPTTModel
 from unidecode import unidecode
 
-from common.utils.models import ReferencedModel, SynonymModel, LatLonModel, SynonymManager
-from common.utils.utils import str_clean_up
-
-PUNCTUATION_TRANSLATE = str.maketrans(string.punctuation, "\n" * len(string.punctuation))
+from common.utils.models import SynonymModel, LatLonModel, SynonymManager
+from common.utils.utils import str_clean_up, PUNCTUATION_TRANSLATE
 
 
 class GeographicLevelManager(SynonymManager):
@@ -21,7 +18,6 @@ class GeographicLevelManager(SynonymManager):
 
 		## Second try by higher taxonomy
 		# Clean up location string for optimal search
-		global PUNCTUATION_TRANSLATE
 		location = location.translate(PUNCTUATION_TRANSLATE)
 		loc_nodes = unidecode(location).split("\n")
 		clean_loc_nodes = []

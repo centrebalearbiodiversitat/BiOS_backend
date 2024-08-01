@@ -7,6 +7,7 @@ from .models import Occurrence
 from .serializers import OccurrenceSerializer, BaseOccurrenceSerializer
 from .forms import OccurrenceForm
 from ..API.exceptions import CBBAPIException
+from ..geography.models import GeographicLevel
 from ..taxonomy.models import TaxonomicLevel
 
 
@@ -74,6 +75,11 @@ class OccurrenceFilter(APIView):
 		occus_filters = Q()
 		gl = occur_form.cleaned_data.get("geographical_location", None)
 		if gl:
+			try:
+				gl = GeographicLevel.objects.get(id=gl)
+			except GeographicLevel.DoesNotExist:
+				raise CBBAPIException("Geographic level does not exist", 404)
+
 			occus_filters = Q(geographical_location__id=gl.id) | Q(
 				geographical_location__lft__gte=gl.lft, geographical_location__rght__lte=gl.rght
 			)

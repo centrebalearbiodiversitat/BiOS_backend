@@ -20,8 +20,6 @@ class TaxonomicLevelManager(SynonymManager):
 
 		return qs.prefetch_related(
 			models.Prefetch("parent__parent", to_attr="parent__parent"),
-			# models.Prefetch('parent__parent', queryset=self.all(), to_attr='parent__parent'),
-			# models.Prefetch('parent', queryset=self.all(), to_attr='parent')
 		)
 
 	def find(self, taxon):

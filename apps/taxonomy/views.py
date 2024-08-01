@@ -68,21 +68,7 @@ class TaxonSearchView(APIView):
 				)
 			else:
 				queryset = TaxonomicLevel.objects.filter(**filters)
-			filters["name__istartswith"] = query
-			if queryset:
-				queryset = TaxonomicLevel.objects.filter(
-					**filters, rank__in=[TaxonomicLevel.SPECIES, TaxonomicLevel.SUBSPECIES, TaxonomicLevel.VARIETY], parent__in=queryset
-				)
-			else:
-				queryset = TaxonomicLevel.objects.filter(**filters)
 
-			print(queryset[:limit])
-
-		if not exact and queryset.count() < limit:
-			sub_genus = Q()
-
-			for instance in queryset.filter(rank__in=[TaxonomicLevel.GENUS, TaxonomicLevel.SPECIES]):
-				sub_genus |= Q(tree_id=instance.tree_id, lft__gte=instance.lft, rght__lte=instance.rght)
 		if not exact and queryset.count() < limit:
 			sub_genus = Q()
 

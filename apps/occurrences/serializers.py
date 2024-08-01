@@ -20,7 +20,7 @@ class BaseOccurrenceSerializer(CaseModelSerializer):
 		fields = (
 			"id",
 			# "basis_of_record",
-			# "coordinate_uncertainty_in_meters",
+			"coordinate_uncertainty_in_meters",
 			"decimal_latitude",
 			"decimal_longitude",
 			# "day",

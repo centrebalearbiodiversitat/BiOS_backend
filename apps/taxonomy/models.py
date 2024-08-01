@@ -16,7 +16,13 @@ class Authorship(SynonymModel):
 
 class TaxonomicLevelManager(SynonymManager):
 	def get_queryset(self):
-		return super().get_queryset()
+		qs = super().get_queryset()
+
+		return qs.prefetch_related(
+			models.Prefetch('parent__parent', to_attr='parent__parent'),
+			# models.Prefetch('parent__parent', queryset=self.all(), to_attr='parent__parent'),
+			# models.Prefetch('parent', queryset=self.all(), to_attr='parent')
+		)
 
 	def find(self, taxon):
 		levels: list = taxon.split()
@@ -115,16 +121,12 @@ class TaxonomicLevel(SynonymModel, MPTTModel, ReferencedModel):
 		return TaxonomicLevel.TRANSLATE_RANK[self.rank]
 
 	def scientific_name(self):
-		ancestors = TaxonomicLevel.objects.none()
-		if self.rank in [TaxonomicLevel.SPECIES, TaxonomicLevel.SUBSPECIES, TaxonomicLevel.VARIETY]:
-			ancestors = self.get_ancestors(include_self=False, ascending=True).filter(
-				rank__in=[TaxonomicLevel.GENUS, TaxonomicLevel.SPECIES, TaxonomicLevel.SUBSPECIES, TaxonomicLevel.VARIETY]
-			)
-
 		full_name = self.name
-
-		for an in ancestors:
-			full_name = f"{an.name} {full_name}"
+		if self.rank in [TaxonomicLevel.SPECIES, TaxonomicLevel.SUBSPECIES, TaxonomicLevel.VARIETY]:
+			current = self
+			while current.rank != TaxonomicLevel.GENUS:
+				full_name = f"{current.parent.name} {full_name}"
+				current = current.parent
 
 		return full_name
 

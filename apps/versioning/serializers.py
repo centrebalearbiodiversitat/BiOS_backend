@@ -1,5 +1,3 @@
-from rest_framework import serializers
-from common.utils.models import SynonymModel
 from apps.versioning.models import Source, Batch, OriginSource
 from common.utils.serializers import CaseModelSerializer
 

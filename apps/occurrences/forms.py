@@ -1,7 +1,6 @@
+from apps.geography.models import GeographicLevel
+from common.utils.forms import TranslateForm, IdFieldForm
 from django import forms
-
-from common.utils.forms import TranslateForm, IdFieldForm, CamelCaseForm
-from .models import Occurrence
 
 
 class OccurrenceForm(IdFieldForm, TranslateForm):
@@ -11,20 +10,14 @@ class OccurrenceForm(IdFieldForm, TranslateForm):
 		"day": "collection_date_day",
 	}
 
+	taxonomy = forms.IntegerField(required=False)
+	voucher = forms.CharField(required=False)
+	geographical_location = forms.CharField(required=False, initial=GeographicLevel.DEFAULT_BALEARIC_ISLANDS_ID)
+	collection_date_year = forms.IntegerField(required=False)
+	collection_date_month = forms.IntegerField(required=False)
+	collection_date_day = forms.IntegerField(required=False)
+	basis_of_record = forms.CharField(required=False)
+	batch = forms.CharField(required=False)
+	sources = forms.CharField(required=False)
+
 	add_synonyms = forms.BooleanField(required=False, initial=True)
-
-	def __init__(self, *args, **kwargs):
-		super().__init__(*args, **kwargs)
-		self.fields["taxonomy"].required = False
-		self.fields["voucher"].required = False
-		self.fields["geographical_location"].required = False
-		self.fields["collection_date_year"].required = False
-		self.fields["collection_date_month"].required = False
-		self.fields["collection_date_day"].required = False
-		self.fields["basis_of_record"].required = False
-		self.fields["batch"].required = False
-		self.fields["sources"].required = False
-
-	class Meta:
-		model = Occurrence
-		fields = "__all__"

@@ -2,6 +2,16 @@ import csv
 
 from django.db.models import Q
 from django.http import StreamingHttpResponse
+from unidecode import unidecode
+
+from apps.taxonomy.models import TaxonomicLevel, Authorship
+from apps.taxonomy.serializers import (
+	BaseTaxonomicLevelSerializer,
+	AuthorshipSerializer,
+	TaxonCompositionSerializer,
+	SearchTaxonomicLevelSerializer,
+)
+from apps.API.exceptions import CBBAPIException
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.generics import ListAPIView
@@ -11,10 +21,10 @@ from rest_framework.views import APIView
 from apps.API.exceptions import CBBAPIException
 from apps.taxonomy.models import Authorship, TaxonData, TaxonomicLevel
 from apps.taxonomy.serializers import AuthorshipSerializer, BaseTaxonomicLevelSerializer, TaxonCompositionSerializer, TaxonDataSerializer
-from common.utils.utils import EchoWriter
 
 from ..versioning.serializers import OriginSourceSerializer
 from .forms import IdFieldForm, TaxonDataForm, TaxonomicLevelChildrenForm, TaxonomicLevelForm
+from common.utils.utils import EchoWriter, PUNCTUATION_TRANSLATE, str_clean_up
 
 
 class TaxonSearchView(APIView):
@@ -47,28 +57,33 @@ class TaxonSearchView(APIView):
 		filters = {}
 		query = taxon_form.cleaned_data.get("name", None)
 		exact = taxon_form.cleaned_data.get("exact", False)
+		limit = 10
 
 		if not query:
 			return Response(BaseTaxonomicLevelSerializer(TaxonomicLevel.objects.none(), many=True).data)
 
-		queryset = TaxonomicLevel.objects
+		queryset = None
+		query = unidecode(str_clean_up(query).translate(PUNCTUATION_TRANSLATE))
+
 		for query in query.split(" "):
-			filters["name__iexact" if exact else "name__icontains"] = query
+			filters["name__istartswith"] = query
+			if queryset:
+				queryset = TaxonomicLevel.objects.filter(
+					**filters, rank__in=[TaxonomicLevel.SPECIES, TaxonomicLevel.SUBSPECIES, TaxonomicLevel.VARIETY], parent__in=queryset
+				)
+			else:
+				queryset = TaxonomicLevel.objects.filter(**filters)
 
-			queryset = queryset.filter(**filters)
+		if not exact and queryset.count() < limit:
+			sub_genus = Q()
 
-			if len(query) > 3:
-				sub_genus = None
-				for instance in queryset.filter(rank=TaxonomicLevel.GENUS):
-					if sub_genus:
-						sub_genus |= Q(tree_id=instance.tree_id, lft__gte=instance.lft, rght__lte=instance.rght)
-					else:
-						sub_genus = Q(tree_id=instance.tree_id, lft__gte=instance.lft, rght__lte=instance.rght)
+			for instance in queryset.filter(rank__in=[TaxonomicLevel.GENUS, TaxonomicLevel.SPECIES]):
+				sub_genus |= Q(tree_id=instance.tree_id, lft__gte=instance.lft, rght__lte=instance.rght)
 
-				if sub_genus:
-					queryset |= TaxonomicLevel.objects.filter(sub_genus)
+			if sub_genus:
+				queryset |= TaxonomicLevel.objects.filter(sub_genus)[:limit]
 
-		return Response(BaseTaxonomicLevelSerializer(queryset[:10], many=True).data)
+		return Response(SearchTaxonomicLevelSerializer(queryset.distinct()[:limit], many=True).data)
 
 
 class TaxonListView(ListAPIView):
@@ -110,7 +125,6 @@ class TaxonListView(ListAPIView):
 		if not taxon_form.is_valid():
 			raise CBBAPIException(taxon_form.errors, code=400)
 		exact = taxon_form.cleaned_data.get("exact", False)
-		synonym = taxon_form.cleaned_data.get("synonym", False)
 		str_fields = ["name"]
 
 		filters = {}
@@ -124,11 +138,8 @@ class TaxonListView(ListAPIView):
 						filters[param] = value
 				else:
 					value = taxon_form.cleaned_data.get(param)
-					if value or isinstance(value, int):
+					if value or isinstance(value, int) or isinstance(value, bool):
 						filters[param] = value
-
-		if synonym:
-			filters["accepted"] = False
 
 		if filters:
 			query = TaxonomicLevel.objects.filter(**filters)
@@ -437,6 +448,7 @@ class TaxonChecklistView(APIView):
 		to_csv = [
 			[
 				"id",
+				"taxon",
 				"status",
 				"taxonRank",
 				*list(sum([(f"{rank.lower()}", f"authorship{rank}") for rank in ranks], ())),
@@ -455,11 +467,8 @@ class TaxonChecklistView(APIView):
 				current_taxon = current_taxon[: len(current_taxon) - (last_level - taxon.level + 1)]
 
 			current_taxon.append(taxon)
-			if taxon.rank == TaxonomicLevel.VARIETY:
-				print(map_taxa_to_rank(ranks_map, upper_taxon + current_taxon))
-			to_csv.append(
-				[taxon.id, taxon.readable_status(), taxon.readable_rank(), *map_taxa_to_rank(ranks_map, upper_taxon + current_taxon)]
-			)
+			taxa_map = map_taxa_to_rank(ranks_map, upper_taxon + current_taxon)
+			to_csv.append([taxon.id, taxa_map[-2], taxon.readable_status(), taxon.readable_rank(), *taxa_map])
 			last_level = taxon.level
 
 		csv_writer = csv.writer(EchoWriter())
@@ -564,6 +573,7 @@ class TaxonDataListView(ListAPIView):
 			query = TaxonData.objects.filter(**filters)
 		else:
 			query = TaxonData.objects.none()
+
 		return Response(TaxonDataSerializer(query, many=True).data)
 
 

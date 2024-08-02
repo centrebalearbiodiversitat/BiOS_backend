@@ -8,7 +8,7 @@ from .forms import SourceForm, OriginSourceForm
 from ..API.exceptions import CBBAPIException
 
 
-class SourceView(APIView):
+class SourceSearchView(APIView):
 	@swagger_auto_schema(
 		tags=["Versioning"],
 		operation_description="Retrieve a Source by name",
@@ -87,7 +87,7 @@ class SourceCRUDView(APIView):
 		return Response(SourceSerializer(occurrence).data)
 
 
-class SourceList(APIView):
+class SourceListView(APIView):
 	@swagger_auto_schema(
 		tags=["Versioning"],
 		operation_description="List Sources with optional filters",
@@ -128,7 +128,6 @@ class SourceList(APIView):
 			value = source_form.cleaned_data.get(param)
 			if value or isinstance(value, int):
 				filters[param] = value
-
 		if filters:
 			queryset = Source.objects.filter(**filters)
 		else:
@@ -167,7 +166,7 @@ class OriginSourceCRUDView(APIView):
 			raise CBBAPIException("Missing id parameter", 400)
 
 		try:
-			os = OriginSource.objects.get(origin_id=os_id)
+			os = OriginSource.objects.get(id=os_id)
 		except Source.DoesNotExist:
 			raise CBBAPIException("Source does not exist", 404)
 

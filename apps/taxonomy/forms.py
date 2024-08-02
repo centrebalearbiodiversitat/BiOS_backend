@@ -12,10 +12,8 @@ class TaxonomicLevelForm(IdFieldForm, TranslateForm):
 	name = forms.CharField(required=False)
 
 	TRANSLATE_FIELDS = {"taxon_rank": "rank", "scientific_name_authorship": "authorship"}
-	CHOICES_FIELD = {"rank": TaxonomicLevel.TRANSLATE_RANK}
 
-	def __init__(self, *args, **kwargs):
-		super().__init__(*args, **kwargs)
+	CHOICES_FIELD = {"rank": TaxonomicLevel.TRANSLATE_RANK}
 
 
 class TaxonomicLevelChildrenForm(IdFieldForm, CamelCaseForm):
@@ -39,5 +37,6 @@ class TaxonDataForm(IdFieldForm, TranslateForm):
 		"iucn_mediterranean": TaxonData.TRANSLATE_CS,
 	}
 
-	def __init__(self, *args, **kwargs):
-		super().__init__(*args, **kwargs)
+
+class AuthorshipForm(IdFieldForm):
+	pass

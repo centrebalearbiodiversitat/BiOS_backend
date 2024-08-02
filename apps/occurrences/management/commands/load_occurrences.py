@@ -147,8 +147,8 @@ class Command(BaseCommand):
 			for line in csv_file:
 				line = parse_line(line)
 				source, _ = Source.objects.get_or_create(
-					name__icontains=line["occurrenceSource"],
-					data_type=Source.OCCURRENCE,
+					name__iexact=line["occurrenceSource"],
+					data_type=Source.TAXON,
 					defaults={
 						"name": line["occurrenceSource"],
 						"accepted": True,
@@ -176,6 +176,17 @@ class Command(BaseCommand):
 
 				if line["lat_lon"] and len(line["lat_lon"]) != 2:
 					raise Exception(f"Bad formatting for lat_lon field\n{line}")
+
+				source, _ = Source.objects.get_or_create(
+					name__iexact=line["occurrenceSource"],
+					data_type=Source.OCCURRENCE,
+					defaults={
+						"name": line["occurrenceSource"],
+						"accepted": True,
+						"origin": Source.TRANSLATE_CHOICES[line["occurrenceOrigin"]],
+						"url": None,
+					},
+				)
 
 				os, new = OriginSource.objects.get_or_create(origin_id=line["sample_id"], source=source)
 				if new:

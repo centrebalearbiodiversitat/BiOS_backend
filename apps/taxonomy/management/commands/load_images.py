@@ -6,8 +6,6 @@ from django.db import transaction
 from apps.taxonomy.models import TaxonomicLevel
 from apps.versioning.models import OriginSource, Source, Batch
 
-IMAGE = 3
-
 
 @transaction.atomic
 def add_taxonomic_image(line, batch):
@@ -39,12 +37,12 @@ def get_or_create_source(source, origin, batch):
 
 	source, _ = Source.objects.get_or_create(
 		name__iexact=source,
-		data_type=IMAGE,  # Filter out 2 sources with the same name and data_type
+		data_type=Source.IMAGE,  # Filter out 2 sources with the same name and data_type
 		defaults={
 			"name": source,
 			"accepted": True,
 			"origin": Source.TRANSLATE_CHOICES[origin],
-			"data_type": IMAGE,  # data_type equal to 3 (IMAGE)
+			"data_type": Source.IMAGE,  # data_type equal to 3 (IMAGE)
 			"url": "https://inaturalist-open-data.s3.amazonaws.com/photos/{id}",
 			"batch": batch,
 		},

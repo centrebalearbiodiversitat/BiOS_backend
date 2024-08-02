@@ -13,7 +13,7 @@ do
 done
 
 # Occurrences
-for file in data/NO_BORRAR/occurrences/*/*.csv
+for file in data/NO_BORRAR/occurrences/*/*/*.csv
 do
   echo "$file"
   python manage.py load_occurrences "$file"

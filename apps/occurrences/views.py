@@ -4,7 +4,7 @@ from drf_yasg.utils import swagger_auto_schema
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from .models import Occurrence
-from .serializers import OccurrenceSerializer
+from .serializers import OccurrenceSerializer, BaseOccurrenceSerializer
 from .forms import OccurrenceForm
 from ..API.exceptions import CBBAPIException
 from ..geography.models import GeographicLevel
@@ -62,7 +62,7 @@ class OccurrenceFilter(APIView):
 		if not taxonomy:
 			raise CBBAPIException("Missing taxonomy id parameter", 400)
 
-		taxon_query = Q(id=taxonomy.id)
+		taxon_query = Q(id=taxonomy)
 		if add_synonyms:
 			taxon_query |= Q(synonyms=taxonomy, accepted=False)
 
@@ -75,6 +75,11 @@ class OccurrenceFilter(APIView):
 		occus_filters = Q()
 		gl = occur_form.cleaned_data.get("geographical_location", None)
 		if gl:
+			try:
+				gl = GeographicLevel.objects.get(id=gl)
+			except GeographicLevel.DoesNotExist:
+				raise CBBAPIException("Geographic level does not exist", 404)
+
 			occus_filters = Q(geographical_location__id=gl.id) | Q(
 				geographical_location__lft__gte=gl.lft, geographical_location__rght__lte=gl.rght
 			)
@@ -150,7 +155,7 @@ class OccurrenceListView(OccurrenceFilter):
 		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
 	)
 	def get(self, request):
-		return Response(OccurrenceSerializer(super().get(request), many=True).data)
+		return Response(BaseOccurrenceSerializer(super().get(request), many=True).data)
 
 
 class OccurrenceCountView(OccurrenceFilter):

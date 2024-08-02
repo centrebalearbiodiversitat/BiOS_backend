@@ -596,6 +596,6 @@ class TaxonDataCRUDView(APIView):
 		try:
 			taxon = TaxonData.objects.get(id=taxon_id)
 		except TaxonData.DoesNotExist:
-			raise CBBAPIException("Taxonomic level does not exist", code=404)
+			raise CBBAPIException("Taxonomic data does not exist", code=404)
 
 		return Response(TaxonDataSerializer(taxon).data)

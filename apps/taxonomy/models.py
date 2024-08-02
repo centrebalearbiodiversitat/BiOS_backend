@@ -135,7 +135,7 @@ class TaxonomicLevel(SynonymModel, MPTTModel, ReferencedModel):
 		# ]
 
 
-class Habitat(models.Model):
+class Habitat(ReferencedModel):
 	name = models.CharField(max_length=50, unique=True)
 
 	def __str__(self):

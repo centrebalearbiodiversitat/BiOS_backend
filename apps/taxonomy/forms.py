@@ -24,7 +24,6 @@ class TaxonomicLevelChildrenForm(IdFieldForm, CamelCaseForm):
 
 class TaxonDataForm(IdFieldForm, TranslateForm):
 	taxonomy_id = forms.IntegerField(required=False)
-	# iucnStatus by region
 	iucn_global = forms.CharField(max_length=100, required=False)
 	iucn_europe = forms.CharField(max_length=100, required=False)
 	iucn_mediterranean = forms.CharField(max_length=100, required=False)

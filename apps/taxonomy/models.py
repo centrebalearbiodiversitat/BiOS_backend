@@ -108,7 +108,7 @@ class TaxonomicLevel(SynonymModel, MPTTModel, ReferencedModel):
 
 	def save(self, force_insert=False, force_update=False, using=None, update_fields=None):
 		if self.rank == TaxonomicLevel.SPECIES and len(re.sub("^x ", "", self.name).split()) != 1:
-			raise ValidationError("Species level must be epithet separated of genus.")
+			raise ValidationError(f"Species level must be epithet separated of genus.\n{self.name}")
 
 		super().save(force_insert, force_update, using, update_fields)
 

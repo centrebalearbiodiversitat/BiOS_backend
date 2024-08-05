@@ -1,11 +1,13 @@
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
+from drf_yasg.utils import swagger_auto_schema
+from rest_framework.response import Response
+from rest_framework.views import APIView
+
+from apps.API.exceptions import CBBAPIException
+
+from .forms import GeographicLevelForm
 from .models import GeographicLevel
 from .serializers import GeographicLevelSerializer
-from .forms import GeographicLevelForm
-from apps.API.exceptions import CBBAPIException
 
 
 class GeographicLevelDetailView(APIView):

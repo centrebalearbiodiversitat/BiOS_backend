@@ -1,14 +1,14 @@
 from django.db.models import Q
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
-from rest_framework.views import APIView
 from rest_framework.response import Response
+from rest_framework.views import APIView
+
+from ..API.exceptions import CBBAPIException
+from ..taxonomy.models import TaxonomicLevel
+from .forms import OccurrenceForm
 from .models import Occurrence
 from .serializers import OccurrenceSerializer
-from .forms import OccurrenceForm
-from ..API.exceptions import CBBAPIException
-from ..geography.models import GeographicLevel
-from ..taxonomy.models import TaxonomicLevel
 
 
 class OccurrenceCRUDView(APIView):
@@ -49,6 +49,13 @@ class OccurrenceCRUDView(APIView):
 
 
 class OccurrenceFilter(APIView):
+	def filter_by_range(self, filters, field_name, min_value, max_value):
+		if min_value:
+			filters &= Q(**{f"{field_name}__gte": min_value})
+		if max_value:
+			filters &= Q(**{f"{field_name}__lte": max_value})
+		return filters
+
 	def get(self, request):
 		occur_form = OccurrenceForm(data=request.GET)
 
@@ -62,7 +69,7 @@ class OccurrenceFilter(APIView):
 		if not taxonomy:
 			raise CBBAPIException("Missing taxonomy id parameter", 400)
 
-		taxon_query = Q(id=taxonomy.id)
+		taxon_query = Q(id=taxonomy)
 		if add_synonyms:
 			taxon_query |= Q(synonyms=taxonomy, accepted=False)
 
@@ -71,24 +78,31 @@ class OccurrenceFilter(APIView):
 		if not taxa:
 			raise CBBAPIException("Taxonomic level does not exist", 404)
 
-		# Filter occurrences based on filtered taxa
-		occus_filters = Q()
+		filters = Q()
+		for taxon in taxa:
+			filters |= Q(taxonomy__id=taxon.id) | Q(taxonomy__lft__gte=taxon.lft, taxonomy__rght__lte=taxon.rght)
+
 		gl = occur_form.cleaned_data.get("geographical_location", None)
 		if gl:
-			occus_filters = Q(geographical_location__id=gl.id) | Q(
+			filters &= Q(geographical_location__id=gl.id) | Q(
 				geographical_location__lft__gte=gl.lft, geographical_location__rght__lte=gl.rght
 			)
 
-		filters = Q()
-		for taxon in taxa:
-			filters |= (
-				Q(taxonomy__id=taxon.id) & occus_filters | Q(taxonomy__lft__gte=taxon.lft, taxonomy__rght__lte=taxon.rght) & occus_filters
+		voucher = occur_form.cleaned_data.get("voucher", None)
+		if voucher:
+			filters &= Q(voucher__icontains=voucher)
+
+		range_parameters = ["decimal_latitude", "decimal_longitude", "coordinate_uncertainty_in_meters", "elevation", "depth"]
+
+		for param in range_parameters:
+			filters = self.filter_by_range(
+				filters,
+				param,
+				occur_form.cleaned_data.get(f"{param}_min"),
+				occur_form.cleaned_data.get(f"{param}_max"),
 			)
 
-		if filters:
-			query = Occurrence.objects.filter(filters).distinct()
-		else:
-			query = Occurrence.objects.none()
+		query = Occurrence.objects.filter(filters).distinct()
 
 		return query
 
@@ -141,11 +155,49 @@ class OccurrenceListView(OccurrenceFilter):
 				type=openapi.TYPE_STRING,  # Ajusta el tipo de dato según el campo del modelo
 			),
 			openapi.Parameter(
-				"coordinateUncertaintyInMeters",
+				"decimal_latitude_min",
 				openapi.IN_QUERY,
-				description="Filter occurrences by the coordinate uncertainty in meters.",
-				type=openapi.TYPE_STRING,  # Ajusta el tipo de dato según el campo del modelo
+				description="Minimum latitude",
+				type=openapi.TYPE_NUMBER,
+				format=openapi.FORMAT_DECIMAL,
 			),
+			openapi.Parameter(
+				"decimal_latitude_max",
+				openapi.IN_QUERY,
+				description="Maximum latitude",
+				type=openapi.TYPE_NUMBER,
+				format=openapi.FORMAT_DECIMAL,
+			),
+			openapi.Parameter(
+				"decimal_longitude_min",
+				openapi.IN_QUERY,
+				description="Minimum longitude",
+				type=openapi.TYPE_NUMBER,
+				format=openapi.FORMAT_DECIMAL,
+			),
+			openapi.Parameter(
+				"decimal_longitude_max",
+				openapi.IN_QUERY,
+				description="Maximum longitude",
+				type=openapi.TYPE_NUMBER,
+				format=openapi.FORMAT_DECIMAL,
+			),
+			openapi.Parameter(
+				"coordinate_uncertainty_in_meters_min",
+				openapi.IN_QUERY,
+				description="Minimum coordinate uncertainty in meters",
+				type=openapi.TYPE_INTEGER,
+			),
+			openapi.Parameter(
+				"coordinate_uncertainty_in_meters_max",
+				openapi.IN_QUERY,
+				description="Maximum coordinate uncertainty in meters",
+				type=openapi.TYPE_INTEGER,
+			),
+			openapi.Parameter("elevation_min", openapi.IN_QUERY, description="Minimum elevation", type=openapi.TYPE_INTEGER),
+			openapi.Parameter("elevation_max", openapi.IN_QUERY, description="Maximum elevation", type=openapi.TYPE_INTEGER),
+			openapi.Parameter("depth_min", openapi.IN_QUERY, description="Minimum depth", type=openapi.TYPE_INTEGER),
+			openapi.Parameter("depth_max", openapi.IN_QUERY, description="Maximum depth", type=openapi.TYPE_INTEGER),
 		],
 		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
 	)

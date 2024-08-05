@@ -9,7 +9,8 @@ from apps.taxonomy.serializers import (
 	BaseTaxonomicLevelSerializer,
 	AuthorshipSerializer,
 	TaxonCompositionSerializer,
-	SearchTaxonomicLevelSerializer, BaseTaxonDataSerializer,
+	SearchTaxonomicLevelSerializer,
+	BaseTaxonDataSerializer,
 )
 from apps.API.exceptions import CBBAPIException
 from drf_yasg import openapi

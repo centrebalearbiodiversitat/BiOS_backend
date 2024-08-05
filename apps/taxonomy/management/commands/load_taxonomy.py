@@ -5,7 +5,7 @@ import traceback
 from django.core.management.base import BaseCommand
 from django.db import transaction
 
-from apps.taxonomy.models import Authorship, TaxonomicLevel
+from apps.taxonomy.models import Authorship, TaxonomicLevel, TaxonData, Habitat
 from apps.versioning.models import Batch, Source, OriginSource
 from common.utils.utils import str_clean_up
 
@@ -50,7 +50,6 @@ def create_taxonomic_level(line, parent, batch, idx_name, rank, idx_author, idx_
 		return parent
 	if not line[idx_name]:
 		return parent
-
 	source = get_or_create_source(line, idx_source, idx_source_origin)
 	verb_auth, auths, parsed_year = get_or_create_authorship(line, idx_author, batch, source)
 
@@ -103,6 +102,9 @@ def create_taxonomic_level(line, parent, batch, idx_name, rank, idx_author, idx_
 
 		if not accepted:
 			accepted_candidates = TaxonomicLevel.objects.find(taxon=line[COL_NAME_ACCEPTED])
+			candidates_count = accepted_candidates.count()
+			if candidates_count == 0:
+				raise Exception(f"No candidates found for synonyms linking\n{line}")
 			if accepted_candidates.count() != 1:
 				raise Exception(f"More than one potential candidates found for synonyms linking\n{line}")
 			accepted_tl = accepted_candidates.first()

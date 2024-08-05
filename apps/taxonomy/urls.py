@@ -27,7 +27,7 @@ urlpatterns = [
 	path("/taxon/synonyms", TaxonSynonymView.as_view()),
 	path("/taxon/sources", TaxonSourceView.as_view()),
 	path("/taxon/checklist", TaxonChecklistView.as_view()),
+	path("/taxon/data", TaxonDataCRUDView.as_view()),
 	path("/authorship", AuthorshipCRUDView.as_view()),
-	path("/data", TaxonDataCRUDView.as_view()),
 	path("/data/list", TaxonDataListView.as_view()),
 ]

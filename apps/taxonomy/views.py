@@ -9,7 +9,7 @@ from apps.taxonomy.serializers import (
 	BaseTaxonomicLevelSerializer,
 	AuthorshipSerializer,
 	TaxonCompositionSerializer,
-	SearchTaxonomicLevelSerializer,
+	SearchTaxonomicLevelSerializer, BaseTaxonDataSerializer,
 )
 from apps.API.exceptions import CBBAPIException
 from drf_yasg import openapi
@@ -515,7 +515,7 @@ class AuthorshipCRUDView(APIView):
 
 class TaxonDataListView(ListAPIView):
 	@swagger_auto_schema(
-		tags=["TaxonData"],
+		tags=["Taxonomy"],
 		operation_description="Get a list of taxon data with filtering.",
 		manual_parameters=[
 			openapi.Parameter("taxonomy_id", openapi.IN_QUERY, description="ID of the taxon", type=openapi.TYPE_INTEGER),
@@ -550,8 +550,10 @@ class TaxonDataListView(ListAPIView):
 	)
 	def get(self, request):
 		taxon_data_form = TaxonDataForm(data=request.GET)
+
 		if not taxon_data_form.is_valid():
 			raise CBBAPIException(taxon_data_form.errors, code=400)
+
 		exact = taxon_data_form.cleaned_data.get("exact", False)
 		str_fields = ["habitat"]
 
@@ -574,7 +576,7 @@ class TaxonDataListView(ListAPIView):
 		else:
 			query = TaxonData.objects.none()
 
-		return Response(TaxonDataSerializer(query, many=True).data)
+		return Response(BaseTaxonDataSerializer(query, many=True).data)
 
 
 class TaxonDataCRUDView(APIView):
@@ -604,7 +606,7 @@ class TaxonDataCRUDView(APIView):
 			raise CBBAPIException("Missing id parameter", code=400)
 
 		try:
-			taxon = TaxonData.objects.get(id=taxon_id)
+			taxon = TaxonData.objects.get(taxonomy=taxon_id)
 		except TaxonData.DoesNotExist:
 			raise CBBAPIException("Taxonomic data does not exist", code=404)
 

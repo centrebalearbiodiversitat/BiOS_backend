@@ -102,6 +102,9 @@ def create_taxonomic_level(line, parent, batch, idx_name, rank, idx_author, idx_
 
 		if not accepted:
 			accepted_candidates = TaxonomicLevel.objects.find(taxon=line[COL_NAME_ACCEPTED])
+			candidates_count = accepted_candidates.count()
+			if candidates_count == 0:
+				raise Exception(f"No candidates found for synonyms linking\n{line}")
 			if accepted_candidates.count() != 1:
 				raise Exception(f"More than one potential candidates found for synonyms linking\n{line}")
 			accepted_tl = accepted_candidates.first()

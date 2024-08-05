@@ -193,3 +193,6 @@ class TaxonData(models.Model):
 	freshwater = models.BooleanField(default=False)
 	marine = models.BooleanField(default=False)
 	terrestrial = models.BooleanField(default=False)
+
+	class Meta:
+		verbose_name_plural = "Taxon data"

@@ -72,7 +72,7 @@ def create_taxonomic_level(line, parent, batch, idx_name, rank, idx_author, idx_
 			)
 
 		if line[idx_name][0].isupper() and rank in [TaxonomicLevel.SPECIES, TaxonomicLevel.SUBSPECIES, TaxonomicLevel.VARIETY]:
-			raise Exception(f'Epithet cant be upper cased.\n{line}')
+			raise Exception(f"Epithet cant be upper cased.\n{line}")
 
 		child, new_taxon = TaxonomicLevel.objects.get_or_create(
 			parent=parent,

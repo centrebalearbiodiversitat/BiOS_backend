@@ -62,7 +62,14 @@ class TaxonDataAdmin(admin.ModelAdmin):
 	filter_horizontal = ("habitat",)
 	readonly_fields = ["taxonomy"]
 	fieldsets = (
-		(None, {"fields": ["taxonomy", ]}),
+		(
+			None,
+			{
+				"fields": [
+					"taxonomy",
+				]
+			},
+		),
 		("System", {"fields": ("freshwater", "marine", "terrestrial")}),
 		("IUCN Status", {"fields": ("iucn_global", "iucn_europe", "iucn_mediterranean")}),
 		("Other Information", {"fields": ("invasive", "domesticated", "habitat")}),

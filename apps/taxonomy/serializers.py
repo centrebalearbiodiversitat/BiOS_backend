@@ -62,9 +62,11 @@ class AuthorshipSerializer(serializers.ModelSerializer):
 
 
 class HabitatSerializer(serializers.ModelSerializer):
+	sources = OriginSourceSerializer(many=True)
+
 	class Meta:
 		model = Habitat
-		fields = ["id", "name"]
+		fields = ["sources", "name"]
 
 
 class BaseTaxonDataSerializer(CaseModelSerializer):
@@ -89,4 +91,5 @@ class BaseTaxonDataSerializer(CaseModelSerializer):
 
 class TaxonDataSerializer(BaseTaxonDataSerializer):
 	class Meta:
+		model = TaxonData
 		exclude = ["taxonomy"]

@@ -19,7 +19,7 @@ def check_taxon(line):
 
 
 def create_taxon_data(line, taxonomy):
-	habitat_ids = set(line.get("habitat", []))
+	habitat_ids = set(line["habitat"] or [])
 
 	valid_habitats = Habitat.objects.filter(sources__origin_id__in=habitat_ids)
 	if len(valid_habitats) != len(habitat_ids):
@@ -34,11 +34,11 @@ def create_taxon_data(line, taxonomy):
 			"iucn_mediterranean": TaxonData.TRANSLATE_CS[line["iucn_mediterranean"].lower()]
 			if line["iucn_mediterranean"]
 			else TaxonData.NE,
-			"invasive": line.get("invasive", False),
-			"domesticated": line.get("domesticated", False),
-			"freshwater": line.get("freshwater", False),
-			"marine": line.get("marine", False),
-			"terrestrial": line.get("terrestrial", False),
+			"invasive": None,
+			"domesticated": None,
+			"freshwater": line["freshwater"],
+			"marine": line["marine"],
+			"terrestrial": line["terrestrial"],
 		},
 	)
 

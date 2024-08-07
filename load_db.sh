@@ -12,6 +12,14 @@ do
   python manage.py load_taxonomy "$file"
 done
 
+# Taxon data
+python manage.py populate_habitats
+for file in data/NO_BORRAR/iucn/*/*.json
+do
+  echo "$file"
+  python manage.py load_taxon_data "$file"
+done
+
 # Occurrences
 for file in data/NO_BORRAR/occurrences/*/*/*.csv
 do

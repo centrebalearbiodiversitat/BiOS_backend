@@ -71,6 +71,9 @@ def create_taxonomic_level(line, parent, batch, idx_name, rank, idx_author, idx_
 				f'{ORIGINAL_STATUS} must be either "accepted", "misapplied" or "synonym" but was "{line[ORIGINAL_STATUS]}"\n{line}'
 			)
 
+		if line[idx_name][0].isupper() and rank in [TaxonomicLevel.SPECIES, TaxonomicLevel.SUBSPECIES, TaxonomicLevel.VARIETY]:
+			raise Exception(f"Epithet cant be upper cased.\n{line}")
+
 		child, new_taxon = TaxonomicLevel.objects.get_or_create(
 			parent=parent,
 			rank=rank,
@@ -102,6 +105,9 @@ def create_taxonomic_level(line, parent, batch, idx_name, rank, idx_author, idx_
 
 		if not accepted:
 			accepted_candidates = TaxonomicLevel.objects.find(taxon=line[COL_NAME_ACCEPTED])
+			candidates_count = accepted_candidates.count()
+			if candidates_count == 0:
+				raise Exception(f"No candidates found for synonyms linking\n{line}")
 			if accepted_candidates.count() != 1:
 				raise Exception(f"More than one potential candidates found for synonyms linking\n{line}")
 			accepted_tl = accepted_candidates.first()
@@ -184,7 +190,7 @@ def get_or_create_authorship(line, idx_author, batch, source):
 
 def get_or_create_source(line, idx_source, idx_source_origin):
 	if not line[idx_source]:
-		raise Exception("All records must have a source")
+		raise Exception(f"All records must have a source\n{line}")
 
 	source, _ = Source.objects.get_or_create(
 		name__iexact=line[idx_source],

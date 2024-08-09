@@ -1,7 +1,7 @@
+from apps.geography.models import GeographicLevel
+from common.utils.forms import TranslateForm, IdFieldForm
 from django import forms
-
 from common.utils.forms import IdFieldForm, TranslateForm
-
 
 class LatLonModelForm(IdFieldForm, TranslateForm):
 	decimal_latitude_min = forms.DecimalField(max_digits=8, decimal_places=5, required=False, label="Minimum Latitude")

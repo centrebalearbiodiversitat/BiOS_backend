@@ -60,7 +60,16 @@ class TaxonDataAdmin(admin.ModelAdmin):
 	list_filter = ("iucn_global", "iucn_europe", "iucn_mediterranean", "invasive", "domesticated")
 	search_fields = ("taxonomy__name",)
 	filter_horizontal = ("habitat",)
+	readonly_fields = ["taxonomy"]
 	fieldsets = (
+		(
+			None,
+			{
+				"fields": [
+					"taxonomy",
+				]
+			},
+		),
 		("System", {"fields": ("freshwater", "marine", "terrestrial")}),
 		("IUCN Status", {"fields": ("iucn_global", "iucn_europe", "iucn_mediterranean")}),
 		("Other Information", {"fields": ("invasive", "domesticated", "habitat")}),
@@ -73,6 +82,9 @@ admin.site.register(TaxonData, TaxonDataAdmin)
 class HabitatAdmin(admin.ModelAdmin):
 	search_fields = ["name"]
 	list_display = ["name"]
+	fields = ["name", "sources"]
+	readonly_fields = ["name"]
+	autocomplete_fields = ["sources"]
 
 
 admin.site.register(Habitat, HabitatAdmin)

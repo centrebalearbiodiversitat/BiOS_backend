@@ -3,7 +3,6 @@ from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.response import Response
 from rest_framework.views import APIView
-
 from ..API.exceptions import CBBAPIException
 from ..taxonomy.models import TaxonomicLevel
 from .forms import OccurrenceForm
@@ -85,6 +84,7 @@ class OccurrenceFilter(APIView):
 		gl = occur_form.cleaned_data.get("geographical_location", None)
 		if gl:
 			filters &= Q(geographical_location__id=gl.id) | Q(
+
 				geographical_location__lft__gte=gl.lft, geographical_location__rght__lte=gl.rght
 			)
 
@@ -202,7 +202,7 @@ class OccurrenceListView(OccurrenceFilter):
 		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
 	)
 	def get(self, request):
-		return Response(OccurrenceSerializer(super().get(request), many=True).data)
+		return Response(BaseOccurrenceSerializer(super().get(request), many=True).data)
 
 
 class OccurrenceCountView(OccurrenceFilter):

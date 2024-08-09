@@ -9,22 +9,24 @@ from apps.taxonomy.models import Habitat, TaxonData, TaxonomicLevel
 
 def check_taxon(line):
 	taxonomy = TaxonomicLevel.objects.find(taxon=line["taxonomy"])
+
 	if taxonomy.count() == 0:
 		raise Exception(f"Taxonomy not found.\n{line}")
 	elif taxonomy.count() > 1:
 		raise Exception(f"Multiple taxonomy found.\n{line}")
+
 	return taxonomy
 
 
 def create_taxon_data(line, taxonomy):
-	habitat_ids = set(line.get("habitat", []))
+	habitat_ids = set(line["habitat"] or [])
 
 	valid_habitats = Habitat.objects.filter(sources__origin_id__in=habitat_ids)
 	if len(valid_habitats) != len(habitat_ids):
-		invalid_ids = set(habitat_ids) - set(valid_habitats.values_list("sources__origin_id", flat=True))
+		invalid_ids = habitat_ids - set(valid_habitats.values_list("sources__origin_id", flat=True))
 		raise Exception(f"Invalid habitat IDs: {invalid_ids}")
 
-	taxon_data, new = TaxonData.objects.get_or_create(
+	taxon_data, _ = TaxonData.objects.get_or_create(
 		taxonomy=taxonomy.first(),
 		defaults={
 			"iucn_global": TaxonData.TRANSLATE_CS[line["iucn_global"].lower()] if line["iucn_global"] else TaxonData.NE,
@@ -32,11 +34,11 @@ def create_taxon_data(line, taxonomy):
 			"iucn_mediterranean": TaxonData.TRANSLATE_CS[line["iucn_mediterranean"].lower()]
 			if line["iucn_mediterranean"]
 			else TaxonData.NE,
-			"invasive": line.get("invasive", False),
-			"domesticated": line.get("domesticated", False),
-			"freshwater": line.get("freshwater", False),
-			"marine": line.get("marine", False),
-			"terrestrial": line.get("terrestrial", False),
+			"invasive": None,
+			"domesticated": None,
+			"freshwater": line["freshwater"],
+			"marine": line["marine"],
+			"terrestrial": line["terrestrial"],
 		},
 	)
 
@@ -45,11 +47,8 @@ def create_taxon_data(line, taxonomy):
 
 
 def add_taxon_data(line):
-	try:
-		taxonomy = check_taxon(line)
-		create_taxon_data(line, taxonomy)
-	except Exception:
-		raise Exception(f"Error: processing {line}")
+	taxonomy = check_taxon(line)
+	create_taxon_data(line, taxonomy)
 
 
 class Command(BaseCommand):
@@ -64,12 +63,12 @@ class Command(BaseCommand):
 		with open(file_name, "r") as file:
 			json_data = json.load(file)
 
-		for line in json_data:
-			try:
-				add_taxon_data(line)
-			except:
-				exception = True
-				print(traceback.format_exc())
+			for line in json_data:
+				try:
+					add_taxon_data(line)
+				except:
+					exception = True
+					print(traceback.format_exc(), line)
 
 		if exception:
 			raise Exception("Errors found: Rollback control")

@@ -16,7 +16,11 @@ class Authorship(SynonymModel):
 
 class TaxonomicLevelManager(SynonymManager):
 	def get_queryset(self):
-		return super().get_queryset()
+		qs = super().get_queryset()
+
+		return qs.prefetch_related(
+			models.Prefetch("parent__parent", to_attr="parent__parent"),
+		)
 
 	def find(self, taxon):
 		levels: list = taxon.split()
@@ -104,7 +108,7 @@ class TaxonomicLevel(SynonymModel, MPTTModel, ReferencedModel):
 
 	def save(self, force_insert=False, force_update=False, using=None, update_fields=None):
 		if self.rank == TaxonomicLevel.SPECIES and len(re.sub("^x ", "", self.name).split()) != 1:
-			raise ValidationError("Species level must be epithet separated of genus.")
+			raise ValidationError(f"Species level must be epithet separated of genus.\n{self.name}")
 
 		super().save(force_insert, force_update, using, update_fields)
 
@@ -115,24 +119,17 @@ class TaxonomicLevel(SynonymModel, MPTTModel, ReferencedModel):
 		return TaxonomicLevel.TRANSLATE_RANK[self.rank]
 
 	def scientific_name(self):
-		ancestors = TaxonomicLevel.objects.none()
-		if self.rank in [TaxonomicLevel.SPECIES, TaxonomicLevel.SUBSPECIES, TaxonomicLevel.VARIETY]:
-			ancestors = self.get_ancestors(include_self=False, ascending=True).filter(
-				rank__in=[TaxonomicLevel.GENUS, TaxonomicLevel.SPECIES, TaxonomicLevel.SUBSPECIES, TaxonomicLevel.VARIETY]
-			)
-
 		full_name = self.name
-
-		for an in ancestors:
-			full_name = f"{an.name} {full_name}"
+		if self.rank in [TaxonomicLevel.SPECIES, TaxonomicLevel.SUBSPECIES, TaxonomicLevel.VARIETY]:
+			current = self
+			while current.rank != TaxonomicLevel.GENUS:
+				full_name = f"{current.parent.name} {full_name}"
+				current = current.parent
 
 		return full_name
 
 	class Meta:
 		unique_together = ("parent", "name", "rank")
-		# indexes = [
-		#     models.Index(fields=['rank'], name='rank_idx'),
-		# ]
 
 
 class Habitat(ReferencedModel):
@@ -196,3 +193,6 @@ class TaxonData(models.Model):
 	freshwater = models.BooleanField(default=False)
 	marine = models.BooleanField(default=False)
 	terrestrial = models.BooleanField(default=False)
+
+	class Meta:
+		verbose_name_plural = "Taxon data"

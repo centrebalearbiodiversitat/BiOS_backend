@@ -458,8 +458,6 @@ class TaxonChecklistView(APIView):
 
 		upper_taxon = head_taxon.get_ancestors(include_self=False)  # .exclude(name__iexact='Biota')
 		upper_taxon = list(upper_taxon)
-		# upper_taxon = map_taxa_to_rank(ranks_map, upper_taxon)
-		# print(upper_taxon)
 		checklist = head_taxon.get_descendants(include_self=True)
 		current_taxon = []
 		last_level = -1

@@ -84,7 +84,6 @@ class OccurrenceFilter(APIView):
 		gl = occur_form.cleaned_data.get("geographical_location", None)
 		if gl:
 			filters &= Q(geographical_location__id=gl.id) | Q(
-
 				geographical_location__lft__gte=gl.lft, geographical_location__rght__lte=gl.rght
 			)
 

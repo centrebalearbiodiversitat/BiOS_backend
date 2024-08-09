@@ -7,7 +7,6 @@ from .models import Occurrence
 class OccurrenceSerializer(CaseModelSerializer):
 	location = serializers.PrimaryKeyRelatedField(queryset=GeographicLevel.objects.all(), source="geographical_location")
 
-
 	class Meta:
 		model = Occurrence
 		fields = (

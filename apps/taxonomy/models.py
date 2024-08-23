@@ -134,16 +134,16 @@ class TaxonomicLevel(SynonymModel, MPTTModel, ReferencedModel):
 		unique_together = ("parent", "name", "rank")
 		indexes = [
 			models.Index(
-				Lower(Substr('unidecode_name', 1, 1)),
-				name='unidecode_name_l1_substr_idx',
+				Lower(Substr("unidecode_name", 1, 1)),
+				name="unidecode_name_l1_substr_idx",
 			),
 			models.Index(
-				Lower(Substr('unidecode_name', 1, 2)),
-				name='unidecode_name_l2_substr_idx',
+				Lower(Substr("unidecode_name", 1, 2)),
+				name="unidecode_name_l2_substr_idx",
 			),
 			models.Index(
-				Lower(Substr('unidecode_name', 1, 3)),
-				name='unidecode_name_l3_substr_idx',
+				Lower(Substr("unidecode_name", 1, 3)),
+				name="unidecode_name_l3_substr_idx",
 			),
 		]
 		index_together = [

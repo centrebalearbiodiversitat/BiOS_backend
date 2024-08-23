@@ -64,15 +64,19 @@ class TaxonSearchView(APIView):
 		for query in query.split(" "):
 			filters["name__istartswith"] = query
 			if queryset:
-				queryset = TaxonomicLevel.objects \
-					.annotate(prefix=Lower(Substr('unidecode_name', 1, min(3, len(query))))) \
-					.filter(prefix=query[:3].lower()) \
-					.filter(**filters, rank__in=[TaxonomicLevel.SPECIES, TaxonomicLevel.SUBSPECIES, TaxonomicLevel.VARIETY], parent__in=queryset)
+				queryset = (
+					TaxonomicLevel.objects.annotate(prefix=Lower(Substr("unidecode_name", 1, min(3, len(query)))))
+					.filter(prefix=query[:3].lower())
+					.filter(
+						**filters, rank__in=[TaxonomicLevel.SPECIES, TaxonomicLevel.SUBSPECIES, TaxonomicLevel.VARIETY], parent__in=queryset
+					)
+				)
 			else:
-				queryset = TaxonomicLevel.objects\
-								.annotate(prefix=Lower(Substr('unidecode_name', 1, min(3, len(query)))))\
-								.filter(prefix=query[:3].lower())\
-								.filter(**filters)
+				queryset = (
+					TaxonomicLevel.objects.annotate(prefix=Lower(Substr("unidecode_name", 1, min(3, len(query)))))
+					.filter(prefix=query[:3].lower())
+					.filter(**filters)
+				)
 
 		if not exact and queryset.count() < limit:
 			for instance in queryset.filter(rank__in=[TaxonomicLevel.GENUS, TaxonomicLevel.SPECIES])[:limit]:

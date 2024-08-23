@@ -1,18 +1,13 @@
 import csv
 
-from django.db.models import Q
+from django.db.models.functions import Substr, Lower
 from django.http import StreamingHttpResponse
 from unidecode import unidecode
 
-from apps.taxonomy.models import TaxonomicLevel, Authorship
 from apps.taxonomy.serializers import (
-	BaseTaxonomicLevelSerializer,
-	AuthorshipSerializer,
-	TaxonCompositionSerializer,
 	SearchTaxonomicLevelSerializer,
 	BaseTaxonDataSerializer,
 )
-from apps.API.exceptions import CBBAPIException
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.generics import ListAPIView
@@ -69,20 +64,19 @@ class TaxonSearchView(APIView):
 		for query in query.split(" "):
 			filters["name__istartswith"] = query
 			if queryset:
-				queryset = TaxonomicLevel.objects.filter(
-					**filters, rank__in=[TaxonomicLevel.SPECIES, TaxonomicLevel.SUBSPECIES, TaxonomicLevel.VARIETY], parent__in=queryset
-				)
+				queryset = TaxonomicLevel.objects \
+					.annotate(prefix=Lower(Substr('unidecode_name', 1, min(3, len(query))))) \
+					.filter(prefix=query[:3].lower()) \
+					.filter(**filters, rank__in=[TaxonomicLevel.SPECIES, TaxonomicLevel.SUBSPECIES, TaxonomicLevel.VARIETY], parent__in=queryset)
 			else:
-				queryset = TaxonomicLevel.objects.filter(**filters)
+				queryset = TaxonomicLevel.objects\
+								.annotate(prefix=Lower(Substr('unidecode_name', 1, min(3, len(query)))))\
+								.filter(prefix=query[:3].lower())\
+								.filter(**filters)
 
 		if not exact and queryset.count() < limit:
-			sub_genus = Q()
-
-			for instance in queryset.filter(rank__in=[TaxonomicLevel.GENUS, TaxonomicLevel.SPECIES]):
-				sub_genus |= Q(tree_id=instance.tree_id, lft__gte=instance.lft, rght__lte=instance.rght)
-
-			if sub_genus:
-				queryset |= TaxonomicLevel.objects.filter(sub_genus)[:limit]
+			for instance in queryset.filter(rank__in=[TaxonomicLevel.GENUS, TaxonomicLevel.SPECIES])[:limit]:
+				queryset |= instance.get_descendants()
 
 		return Response(SearchTaxonomicLevelSerializer(queryset.distinct()[:limit], many=True).data)
 

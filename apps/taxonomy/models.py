@@ -11,10 +11,11 @@ from common.utils.utils import str_clean_up
 
 
 class Authorship(SynonymModel):
-    batch = models.ForeignKey(Batch, on_delete=models.CASCADE, null=True, blank=True, default=None)
+	batch = models.ForeignKey(Batch, on_delete=models.CASCADE, null=True, blank=True, default=None)
 
-    class Meta:
-        app_label = 'taxonomy'
+	class Meta:
+		app_label = "taxonomy"
+
 
 class TaxonomicLevelManager(SynonymManager, TreeManager):
 	def get_queryset(self):
@@ -133,9 +134,9 @@ class TaxonomicLevel(SynonymModel, MPTTModel, ReferencedModel):
 	class Meta:
 		unique_together = ("parent", "name", "rank")
 		app_label = "taxonomy"
-	
+
 	class MPTTMeta:
-		order_insertion_by = ['id']
+		order_insertion_by = ["id"]
 
 
 class Habitat(ReferencedModel):

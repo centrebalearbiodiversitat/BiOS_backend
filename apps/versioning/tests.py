@@ -3,8 +3,8 @@ from rest_framework import status
 
 from common.utils.tests import TestResultHandler
 
-class SourceSearchTest(TestResultHandler):
 
+class SourceSearchTest(TestResultHandler):
 	def test_source_search_200(self):
 		source_name = "gb"
 		url = reverse("versioning:source_search") + f"?name={source_name}"
@@ -20,7 +20,7 @@ class SourceSearchTest(TestResultHandler):
 				"url": None,
 				"dataType": 0,
 				"batch": None,
-				"synonyms": []
+				"synonyms": [],
 			},
 			{
 				"id": 3,
@@ -32,8 +32,8 @@ class SourceSearchTest(TestResultHandler):
 				"url": None,
 				"dataType": 1,
 				"batch": None,
-				"synonyms": []
-			}
+				"synonyms": [],
+			},
 		]
 		self.assertEqual(response.status_code, status.HTTP_200_OK)
 		self.assert_and_log(self.assertJSONEqual, response.content, expected_data)
@@ -45,7 +45,6 @@ class SourceSearchTest(TestResultHandler):
 
 
 class SourceCRUDTest(TestResultHandler):
-
 	def test_source_crud_200(self):
 		source_id = 3
 		url = reverse("versioning:source_crud") + f"?id={source_id}"
@@ -78,7 +77,6 @@ class SourceCRUDTest(TestResultHandler):
 
 
 class SourceListTest(TestResultHandler):
-
 	def test_source_list_200(self):
 		name = "NCBI"
 		origin = "database"
@@ -139,7 +137,6 @@ class SourceListTest(TestResultHandler):
 
 
 class OriginSourceCRUDTest(TestResultHandler):
-
 	def test_origin_source_crud_200(self):
 		os_id = 2
 		url = reverse("versioning:os_crud") + f"?id={os_id}"

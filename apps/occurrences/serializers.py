@@ -2,26 +2,27 @@ from rest_framework import serializers
 from common.utils.serializers import CaseModelSerializer
 from ..geography.models import GeographicLevel
 from .models import Occurrence
+from ..geography.serializers import GeographicLevelSerializer
+from ..taxonomy.serializers import BaseTaxonomicLevelSerializer
+from ..versioning.serializers import OriginSourceSerializer
 
 
-class OccurrenceSerializer(CaseModelSerializer):
-	location = serializers.PrimaryKeyRelatedField(queryset=GeographicLevel.objects.all(), source="geographical_location")
-
+class BaseOccurrenceSerializer(CaseModelSerializer):
 	class Meta:
 		model = Occurrence
 		fields = (
 			"id",
-			"basis_of_record",
+			# "basis_of_record",
 			"coordinate_uncertainty_in_meters",
 			"decimal_latitude",
 			"decimal_longitude",
 			# "day",
-			"depth",
-			"elevation",
+			# "depth",
+			# "elevation",
 			# "event_date",
 			# "location",
 			# "month",
-			"taxonomy",
+			# "taxonomy",
 			# "voucher",
 			# "year",
 		)
@@ -52,7 +53,7 @@ class OccurrenceSerializer(BaseOccurrenceSerializer):
 	month = serializers.IntegerField(source="collection_date_month")
 	year = serializers.IntegerField(source="collection_date_year")
 
-	location = GeographicLevelSerializer(source="geographical_location")
+	location = serializers.PrimaryKeyRelatedField(queryset=GeographicLevel.objects.all(), source="geographical_location")
 	taxonomy = BaseTaxonomicLevelSerializer()
 	sources = OriginSourceSerializer(many=True)
 

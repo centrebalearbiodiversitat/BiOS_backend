@@ -7,7 +7,7 @@ from ..API.exceptions import CBBAPIException
 from ..taxonomy.models import TaxonomicLevel
 from .forms import OccurrenceForm
 from .models import Occurrence
-from .serializers import OccurrenceSerializer
+from .serializers import OccurrenceSerializer, BaseOccurrenceSerializer
 
 
 class OccurrenceCRUDView(APIView):

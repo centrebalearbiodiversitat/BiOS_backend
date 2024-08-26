@@ -1,11 +1,12 @@
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
-from rest_framework.views import APIView
 from rest_framework.response import Response
-from .models import Source, OriginSource
-from .serializers import SourceSerializer, OriginSourceSerializer
-from .forms import SourceForm, OriginSourceForm
+from rest_framework.views import APIView
+
 from ..API.exceptions import CBBAPIException
+from .forms import OriginSourceForm, SourceForm
+from .models import OriginSource, Source
+from .serializers import OriginSourceSerializer, SourceSerializer
 
 
 class SourceSearchView(APIView):
@@ -38,6 +39,9 @@ class SourceSearchView(APIView):
 
 		query = source_form.cleaned_data.get("name")
 		exact = source_form.cleaned_data.get("exact", False)
+
+		if not query:
+			raise CBBAPIException("Missing name parameter", code=400)
 
 		filters = {}
 		filters["name__iexact" if exact else "name__icontains"] = query
@@ -121,7 +125,7 @@ class SourceListView(APIView):
 		source_form = SourceForm(data=self.request.GET)
 
 		if not source_form.is_valid():
-			return Response(source_form.errors, status=400)
+			raise CBBAPIException(source_form.errors, code=400)
 
 		filters = {}
 		for param in source_form.cleaned_data:
@@ -132,6 +136,9 @@ class SourceListView(APIView):
 			queryset = Source.objects.filter(**filters)
 		else:
 			queryset = Source.objects.none()
+
+		if not queryset.exists():
+			raise CBBAPIException("No taxonomic levels found for the given filters.", 404)
 
 		return Response(SourceSerializer(queryset, many=True).data)
 
@@ -167,7 +174,7 @@ class OriginSourceCRUDView(APIView):
 
 		try:
 			os = OriginSource.objects.get(id=os_id)
-		except Source.DoesNotExist:
+		except OriginSource.DoesNotExist:
 			raise CBBAPIException("Source does not exist", 404)
 
 		return Response(OriginSourceSerializer(os).data)

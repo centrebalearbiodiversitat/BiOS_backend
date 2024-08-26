@@ -4,17 +4,19 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from mptt.fields import TreeForeignKey
 from mptt.models import MPTTModel
-
+from mptt.managers import TreeManager
 from apps.versioning.models import Batch, OriginSource
 from common.utils.models import ReferencedModel, SynonymManager, SynonymModel
 from common.utils.utils import str_clean_up
 
 
 class Authorship(SynonymModel):
-	batch = models.ForeignKey(Batch, on_delete=models.CASCADE, null=True, blank=True, default=None)
+    batch = models.ForeignKey(Batch, on_delete=models.CASCADE, null=True, blank=True, default=None)
 
+    class Meta:
+        app_label = 'taxonomy'
 
-class TaxonomicLevelManager(SynonymManager):
+class TaxonomicLevelManager(SynonymManager, TreeManager):
 	def get_queryset(self):
 		qs = super().get_queryset()
 
@@ -130,6 +132,10 @@ class TaxonomicLevel(SynonymModel, MPTTModel, ReferencedModel):
 
 	class Meta:
 		unique_together = ("parent", "name", "rank")
+		app_label = "taxonomy"
+	
+	class MPTTMeta:
+		order_insertion_by = ['id']
 
 
 class Habitat(ReferencedModel):

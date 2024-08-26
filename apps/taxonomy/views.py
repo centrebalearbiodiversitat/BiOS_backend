@@ -2,30 +2,27 @@ import csv
 
 from django.db.models import Q
 from django.http import StreamingHttpResponse
-from unidecode import unidecode
-
-from apps.taxonomy.models import TaxonomicLevel, Authorship
-from apps.taxonomy.serializers import (
-	BaseTaxonomicLevelSerializer,
-	AuthorshipSerializer,
-	TaxonCompositionSerializer,
-	SearchTaxonomicLevelSerializer,
-	BaseTaxonDataSerializer,
-)
-from apps.API.exceptions import CBBAPIException
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.generics import ListAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from unidecode import unidecode
 
 from apps.API.exceptions import CBBAPIException
 from apps.taxonomy.models import Authorship, TaxonData, TaxonomicLevel
-from apps.taxonomy.serializers import AuthorshipSerializer, BaseTaxonomicLevelSerializer, TaxonCompositionSerializer, TaxonDataSerializer
+from apps.taxonomy.serializers import (
+	AuthorshipSerializer,
+	BaseTaxonDataSerializer,
+	BaseTaxonomicLevelSerializer,
+	SearchTaxonomicLevelSerializer,
+	TaxonCompositionSerializer,
+	TaxonDataSerializer,
+)
+from common.utils.utils import PUNCTUATION_TRANSLATE, EchoWriter, str_clean_up
 
 from ..versioning.serializers import OriginSourceSerializer
 from .forms import IdFieldForm, TaxonDataForm, TaxonomicLevelChildrenForm, TaxonomicLevelForm
-from common.utils.utils import EchoWriter, PUNCTUATION_TRANSLATE, str_clean_up
 
 
 class TaxonSearchView(APIView):
@@ -61,7 +58,7 @@ class TaxonSearchView(APIView):
 		limit = 10
 
 		if not query:
-			return Response(BaseTaxonomicLevelSerializer(TaxonomicLevel.objects.none(), many=True).data)
+			raise CBBAPIException("Missing name parameter", code=400)
 
 		queryset = None
 		query = unidecode(str_clean_up(query).translate(PUNCTUATION_TRANSLATE))
@@ -146,6 +143,9 @@ class TaxonListView(ListAPIView):
 			query = TaxonomicLevel.objects.filter(**filters)
 		else:
 			query = TaxonomicLevel.objects.none()
+
+		if not query.exists():
+			raise CBBAPIException("No taxonomic levels found for the given filters.", 404)
 
 		return Response(BaseTaxonomicLevelSerializer(query, many=True).data)
 
@@ -380,9 +380,6 @@ class TaxonSourceView(ListAPIView):
 		taxon_id = taxon_form.get("id")
 
 		if not taxon_id:
-			raise CBBAPIException(taxon_form.errors, code=400)
-
-		if not taxon_id:
 			raise CBBAPIException("Missing id parameter", code=400)
 
 		try:
@@ -439,8 +436,13 @@ class TaxonChecklistView(APIView):
 		if not taxon_form.is_valid():
 			raise CBBAPIException(taxon_form.errors, code=400)
 
+		taxon_id = taxon_form.cleaned_data.get("id")
+
+		if not taxon_id:
+			raise CBBAPIException("Missing id parameter", code=400)
+
 		try:
-			head_taxon = TaxonomicLevel.objects.get(id=taxon_form.cleaned_data.get("id"))
+			head_taxon = TaxonomicLevel.objects.get(id=taxon_id)
 		except TaxonomicLevel.DoesNotExist:
 			raise CBBAPIException("Taxonomic level does not exist", code=404)
 

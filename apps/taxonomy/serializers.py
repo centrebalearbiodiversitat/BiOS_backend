@@ -21,7 +21,7 @@ class BaseTaxonomicLevelSerializer(CaseModelSerializer):
 
 	def get_taxon_rank(self, obj):
 		return obj.readable_rank()
-	
+
 	def get_parent(self, obj):
 		try:
 			return obj.parent.id

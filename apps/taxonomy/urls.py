@@ -9,9 +9,9 @@ from apps.taxonomy.views import (
 	TaxonCRUDView,
 	TaxonDataCRUDView,
 	TaxonDataListView,
-    TaxonDataCountView,
+	TaxonDataCountView,
 	TaxonListView,
-    TaxonCountView,
+	TaxonCountView,
 	TaxonParentView,
 	TaxonSearchView,
 	TaxonSourceView,
@@ -22,7 +22,7 @@ app_name = "taxonomy"
 urlpatterns = [
 	path("/search", TaxonSearchView.as_view(), name="search"),
 	path("/list", TaxonListView.as_view(), name="list"),
-    path("/list/count", TaxonCountView.as_view(), name="count"),
+	path("/list/count", TaxonCountView.as_view(), name="count"),
 	path("/taxon", TaxonCRUDView.as_view(), name="taxon_crud"),
 	path("/taxon/parent", TaxonParentView.as_view(), name="taxon_parent"),
 	path("/taxon/children", TaxonChildrenView.as_view(), name="taxon_children"),
@@ -33,7 +33,6 @@ urlpatterns = [
 	path("/taxon/checklist", TaxonChecklistView.as_view(), name="taxon_checklist"),
 	path("/taxon/data", TaxonDataCRUDView.as_view(), name="data_crud"),
 	path("/taxon/data/list", TaxonDataListView.as_view(), name="data_list"),
-    path("/taxon/data/list/count", TaxonDataCountView.as_view(), name="data_count"),
+	path("/taxon/data/list/count", TaxonDataCountView.as_view(), name="data_count"),
 	path("/authorship", AuthorshipCRUDView.as_view(), name="authorship_crud"),
-
 ]

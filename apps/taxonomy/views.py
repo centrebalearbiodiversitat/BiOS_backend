@@ -85,7 +85,6 @@ class TaxonSearchView(APIView):
 
 
 class TaxonFilter(ListAPIView):
-	
 	def get(self, request):
 		taxon_form = TaxonomicLevelForm(data=request.GET)
 
@@ -117,7 +116,7 @@ class TaxonFilter(ListAPIView):
 			raise CBBAPIException("No taxonomic levels found for the given filters.", 404)
 
 		return query
-	
+
 
 class TaxonListView(TaxonFilter):
 	@swagger_auto_schema(
@@ -589,10 +588,9 @@ class TaxonDataCRUDView(APIView):
 			raise CBBAPIException("Taxonomic data does not exist", code=404)
 
 		return Response(TaxonDataSerializer(taxon).data)
-	
+
 
 class TaxonDataFilter(ListAPIView):
-	
 	def get(self, request):
 		taxon_data_form = TaxonDataForm(data=request.GET)
 
@@ -622,7 +620,7 @@ class TaxonDataFilter(ListAPIView):
 			query = TaxonData.objects.none()
 
 		return query
-	
+
 
 class TaxonDataListView(TaxonDataFilter):
 	@swagger_auto_schema(

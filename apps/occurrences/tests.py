@@ -15,6 +15,7 @@ EXPECTED_OCURRENCE = {
 	"taxonomy": 14,
 }
 
+
 class OccurrenceCRUDTest(TestResultHandler):
 	def test_occurrence_crud_200(self):
 		occurrence_id = 1
@@ -47,7 +48,10 @@ class OccurrenceListTest(TestResultHandler):
 		decimal_latitude_min = 39.99
 		decimal_latitude_max = 40
 		coordinate_uncertainty_in_meters_min = 28000
-		url = reverse("occurrences:occurrence_list")+ f"?taxonomy={taxonomy_id}&decimalLatitudeMin={decimal_latitude_min}&decimalLatitudeMax={decimal_latitude_max}&coordinateUncertaintyInMetersMin={coordinate_uncertainty_in_meters_min}"
+		url = (
+			reverse("occurrences:occurrence_list")
+			+ f"?taxonomy={taxonomy_id}&decimalLatitudeMin={decimal_latitude_min}&decimalLatitudeMax={decimal_latitude_max}&coordinateUncertaintyInMetersMin={coordinate_uncertainty_in_meters_min}"
+		)
 		response = self.client.get(url)
 		self.assertEqual(response.status_code, status.HTTP_200_OK)
 		self.assert_and_log(self.assertJSONEqual, response.content, [EXPECTED_OCURRENCE])

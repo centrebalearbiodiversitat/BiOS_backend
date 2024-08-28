@@ -91,7 +91,31 @@ class SourceCRUDView(APIView):
 		return Response(SourceSerializer(occurrence).data)
 
 
-class SourceListView(APIView):
+class SourceFilter(APIView):
+	
+	def get(self, request):
+		source_form = SourceForm(data=self.request.GET)
+
+		if not source_form.is_valid():
+			raise CBBAPIException(source_form.errors, code=400)
+
+		filters = {}
+		for param in source_form.cleaned_data:
+			value = source_form.cleaned_data.get(param)
+			if value or isinstance(value, int):
+				filters[param] = value
+		if filters:
+			queryset = Source.objects.filter(**filters)
+		else:
+			queryset = Source.objects.none()
+
+		if not queryset.exists():
+			raise CBBAPIException("No taxonomic levels found for the given filters.", 404)
+
+		return queryset
+	
+
+class SourceListView(SourceFilter):
 	@swagger_auto_schema(
 		tags=["Versioning"],
 		operation_description="List Sources with optional filters",
@@ -122,25 +146,41 @@ class SourceListView(APIView):
 		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
 	)
 	def get(self, request):
-		source_form = SourceForm(data=self.request.GET)
+		return Response(SourceSerializer(super().get(request), many=True).data)
 
-		if not source_form.is_valid():
-			raise CBBAPIException(source_form.errors, code=400)
 
-		filters = {}
-		for param in source_form.cleaned_data:
-			value = source_form.cleaned_data.get(param)
-			if value or isinstance(value, int):
-				filters[param] = value
-		if filters:
-			queryset = Source.objects.filter(**filters)
-		else:
-			queryset = Source.objects.none()
-
-		if not queryset.exists():
-			raise CBBAPIException("No taxonomic levels found for the given filters.", 404)
-
-		return Response(SourceSerializer(queryset, many=True).data)
+class SourceCountView(SourceFilter):
+	@swagger_auto_schema(
+		tags=["Versioning"],
+		operation_description="List Sources with optional filters",
+		manual_parameters=[
+			openapi.Parameter(
+				"name",
+				openapi.IN_QUERY,
+				description="Name of the source to search for.",
+				type=openapi.TYPE_STRING,
+				required=False,
+			),
+			openapi.Parameter(
+				"accepted",
+				openapi.IN_QUERY,
+				description="Whether to search for accepted or not.",
+				type=openapi.TYPE_BOOLEAN,
+				required=False,
+				default=False,
+			),
+			openapi.Parameter(
+				"origin",
+				openapi.IN_QUERY,
+				description="Origin of the source to search for.",
+				type=openapi.TYPE_STRING,
+				required=False,
+			),
+		],
+		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
+	)
+	def get(self, request):
+		return Response(super().get(request).count())
 
 
 class OriginSourceCRUDView(APIView):

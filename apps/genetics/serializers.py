@@ -18,18 +18,6 @@ class MarkerSerializer(CaseModelSerializer):
 		fields = "__all__"
 
 
-# class ProductSerializer(CaseModelSerializer):
-# 	class Meta:
-# 		model = Product
-# 		fields = "__all__"
-
-
-# class ProducesSerializer(CaseModelSerializer):
-# 	class Meta:
-# 		model = Produces
-# 		fields = "__all__"
-
-
 class SequenceSerializer(CaseModelSerializer):
 	class Meta:
 		model = Sequence

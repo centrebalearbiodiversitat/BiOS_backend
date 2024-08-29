@@ -128,7 +128,7 @@ class MarkerListView(MarkerFilter):
 			SuperMarkerSerializer(
 				super().get(request)
 				.annotate(total=Count("id"))
-				.filter(total__gte=1)
+				.filter(total__gte=10)
 				.order_by("-total"), 
 				many=True
 			).data

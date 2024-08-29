@@ -71,6 +71,25 @@ class GeographicLevelListTest(TestResultHandler):
 
 		self.assert_and_log(self.assertEqual, response.status_code, status.HTTP_400_BAD_REQUEST)
 
+class GeographicLevelCountTest(TestResultHandler):
+
+	def test_geographic_level_list_count_200(self):
+		parent_id = 1
+		rank = "island"
+		name = "ma"
+		url = reverse("geography:geo_list_count") + f"?parent={parent_id}&rank={rank}&name={name}"
+		response = self.client.get(url)
+		expected_data = 1
+		self.assertEqual(response.status_code, status.HTTP_200_OK)
+		self.assert_and_log(self.assertJSONEqual, response.content, expected_data)
+
+	def test_geographic_level_list_count_400(self):
+		rank = "invalid_rank"
+		url = reverse("geography:geo_list_count") + f"?rank={rank}"
+		response = self.client.get(url)
+		self.assert_and_log(self.assertEqual, response.status_code, status.HTTP_400_BAD_REQUEST)
+
+
 
 class GeographicLevelParentTest(TestResultHandler):
 

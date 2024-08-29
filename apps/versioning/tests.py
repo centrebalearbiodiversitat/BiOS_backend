@@ -138,6 +138,30 @@ class SourceListTest(TestResultHandler):
 		self.assert_and_log(self.assertEqual, response.status_code, status.HTTP_404_NOT_FOUND)
 
 
+class SourceCountTest(TestResultHandler):
+
+	def test_source_list_count_200(self):
+		name = "NCBI"
+		origin = "database"
+		accepted = "True"
+		url = reverse("versioning:source_list_count") + f"?name={name}&origin={origin}&accepted={accepted}"
+		response = self.client.get(url)
+		self.assertEqual(response.status_code, status.HTTP_200_OK)
+		expected_data = 3
+		self.assert_and_log(self.assertJSONEqual, response.content, expected_data)
+
+	def test_source_list_count_400(self):
+		origin = 0
+		url = reverse("versioning:source_list_count") + f"?origin={origin}"
+		response = self.client.get(url)
+		self.assert_and_log(self.assertEqual, response.status_code, status.HTTP_400_BAD_REQUEST)
+
+	def test_source_list_count_404(self):
+		url = reverse("versioning:source_list_count")
+		response = self.client.get(url)
+		self.assert_and_log(self.assertEqual, response.status_code, status.HTTP_404_NOT_FOUND)
+
+
 class OriginSourceCRUDTest(TestResultHandler):
 
 	def test_origin_source_crud_200(self):

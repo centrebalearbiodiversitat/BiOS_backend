@@ -3,8 +3,8 @@ from rest_framework.reverse import reverse
 
 from common.utils.tests import TestResultHandler
 
-class TaxonSearchTest(TestResultHandler):
 
+class TaxonSearchTest(TestResultHandler):
 	def test_taxon_search_200(self):
 		name = "animalia"
 		url = reverse("taxonomy:search") + f"?name={name}"
@@ -30,7 +30,6 @@ class TaxonSearchTest(TestResultHandler):
 
 
 class TaxonListTest(TestResultHandler):
-
 	def test_taxon_list_200(self):
 		taxon_rank = "order"
 		accepted = "true"
@@ -68,7 +67,6 @@ class TaxonListTest(TestResultHandler):
 
 
 class TaxonCountTest(TestResultHandler):
-
 	def test_taxon_list_count_200(self):
 		taxon_rank = "order"
 		accepted = "true"
@@ -94,7 +92,6 @@ class TaxonCountTest(TestResultHandler):
 
 
 class TaxonCRUDTest(TestResultHandler):
-
 	def test_taxon_crud_200(self):
 		taxon_id = 2
 		url = reverse("taxonomy:taxon_crud") + f"?id={taxon_id}"
@@ -127,7 +124,6 @@ class TaxonCRUDTest(TestResultHandler):
 
 
 class TaxonParentTest(TestResultHandler):
-
 	def test_taxon_parent_200(self):
 		url = reverse("taxonomy:taxon_parent") + "?id=3"
 		response = self.client.get(url)
@@ -169,7 +165,6 @@ class TaxonParentTest(TestResultHandler):
 
 
 class TaxonChildrenTest(TestResultHandler):
-
 	def test_taxon_children_200(self):
 		url = reverse("taxonomy:taxon_children") + "?id=3"
 		response = self.client.get(url)
@@ -201,7 +196,6 @@ class TaxonChildrenTest(TestResultHandler):
 
 
 class TaxonChildrenCountTest(TestResultHandler):
-
 	def test_taxon_children_count_200(self):
 		url = reverse("taxonomy:taxon_children_count") + "?id=1"
 		response = self.client.get(url)
@@ -221,7 +215,6 @@ class TaxonChildrenCountTest(TestResultHandler):
 
 
 class TaxonCompositionTest(TestResultHandler):
-
 	def test_taxon_composition_200(self):
 		taxon_id = 5
 		url = reverse("taxonomy:taxon_composition") + f"?id={taxon_id}"
@@ -229,30 +222,10 @@ class TaxonCompositionTest(TestResultHandler):
 		self.assertEqual(response.status_code, status.HTTP_200_OK)
 
 		expected_data = [
-			{
-				"id": 7,
-				"name": "Bufonidae",
-				"rank": 4,
-				"totalSpecies": 2
-			},
-			{
-				"id": 8,
-				"name": "Hylidae",
-				"rank": 4,
-				"totalSpecies": 1
-			},
-			{
-				"id": 9,
-				"name": "Ranidae",
-				"rank": 4,
-				"totalSpecies": 1
-			},
-			{
-				"id": 6,
-				"name": "Alytidae",
-				"rank": 4,
-				"totalSpecies": 1
-			}
+			{"id": 7, "name": "Bufonidae", "rank": 4, "totalSpecies": 2},
+			{"id": 8, "name": "Hylidae", "rank": 4, "totalSpecies": 1},
+			{"id": 9, "name": "Ranidae", "rank": 4, "totalSpecies": 1},
+			{"id": 6, "name": "Alytidae", "rank": 4, "totalSpecies": 1},
 		]
 		self.assert_and_log(self.assertJSONEqual, response.content, expected_data)
 
@@ -269,7 +242,6 @@ class TaxonCompositionTest(TestResultHandler):
 
 
 class TaxonSynonymTest(TestResultHandler):
-
 	def test_taxon_synonym_200(self):
 		taxon_id = 14
 		url = reverse("taxonomy:taxon_synonyms") + f"?id={taxon_id}"
@@ -292,7 +264,6 @@ class TaxonSynonymTest(TestResultHandler):
 
 
 class TaxonSourceTest(TestResultHandler):
-
 	def test_taxon_source_200(self):
 		taxon_id = 2
 		url = reverse("taxonomy:taxon_sources") + f"?id={taxon_id}"
@@ -312,10 +283,10 @@ class TaxonSourceTest(TestResultHandler):
 					"url": None,
 					"dataType": 0,
 					"batch": None,
-					"synonyms": []
+					"synonyms": [],
 				},
 				"originId": "N",
-				"attribution": None
+				"attribution": None,
 			},
 			{
 				"id": 18,
@@ -329,11 +300,11 @@ class TaxonSourceTest(TestResultHandler):
 					"url": None,
 					"dataType": 0,
 					"batch": None,
-					"synonyms": []
+					"synonyms": [],
 				},
 				"originId": "1",
-				"attribution": None
-			}
+				"attribution": None,
+			},
 		]
 		self.assert_and_log(self.assertJSONEqual, response.content, expected_data)
 
@@ -350,7 +321,6 @@ class TaxonSourceTest(TestResultHandler):
 
 
 class TaxonChecklistTest(TestResultHandler):
-
 	def test_taxon_checklist_200(self):
 		taxon_id = 1
 		url = reverse("taxonomy:taxon_checklist") + f"?id={taxon_id}"
@@ -372,7 +342,6 @@ class TaxonChecklistTest(TestResultHandler):
 
 
 class TaxonDataCRUDTest(TestResultHandler):
-	
 	def test_taxon_data_crud_200(self):
 		taxon_id = 14
 		url = reverse("taxonomy:data_crud") + f"?id={taxon_id}"
@@ -398,13 +367,13 @@ class TaxonDataCRUDTest(TestResultHandler):
 								"url": None,
 								"dataType": 0,
 								"batch": None,
-								"synonyms": []
+								"synonyms": [],
 							},
 							"originId": "5",
-							"attribution": None
+							"attribution": None,
 						}
 					],
-					"name": "wetlands (inland)"
+					"name": "wetlands (inland)",
 				},
 				{
 					"sources": [
@@ -420,13 +389,13 @@ class TaxonDataCRUDTest(TestResultHandler):
 								"url": None,
 								"dataType": 0,
 								"batch": None,
-								"synonyms": []
+								"synonyms": [],
 							},
 							"originId": "14",
-							"attribution": None
+							"attribution": None,
 						}
 					],
-					"name": "artificial/terrestrial"
+					"name": "artificial/terrestrial",
 				},
 				{
 					"sources": [
@@ -442,20 +411,20 @@ class TaxonDataCRUDTest(TestResultHandler):
 								"url": None,
 								"dataType": 0,
 								"batch": None,
-								"synonyms": []
+								"synonyms": [],
 							},
 							"originId": "15",
-							"attribution": None
+							"attribution": None,
 						}
 					],
-					"name": "artificial/aquatic"
-				}
+					"name": "artificial/aquatic",
+				},
 			],
 			"invasive": False,
 			"domesticated": False,
 			"freshwater": True,
 			"marine": False,
-			"terrestrial": True
+			"terrestrial": True,
 		}
 		self.assert_and_log(self.assertJSONEqual, response.content, expected_data)
 
@@ -472,7 +441,6 @@ class TaxonDataCRUDTest(TestResultHandler):
 
 
 class TaxonDataListTest(TestResultHandler):
-	
 	def test_taxon_data_list_200(self):
 		iucn_europe = "en"
 		url = reverse("taxonomy:data_list") + f"?iucnEurope={iucn_europe}"
@@ -500,13 +468,13 @@ class TaxonDataListTest(TestResultHandler):
 									"url": None,
 									"dataType": 0,
 									"batch": None,
-									"synonyms": []
+									"synonyms": [],
 								},
 								"originId": "5",
-								"attribution": None
+								"attribution": None,
 							}
 						],
-						"name": "wetlands (inland)"
+						"name": "wetlands (inland)",
 					},
 					{
 						"sources": [
@@ -522,13 +490,13 @@ class TaxonDataListTest(TestResultHandler):
 									"url": None,
 									"dataType": 0,
 									"batch": None,
-									"synonyms": []
+									"synonyms": [],
 								},
 								"originId": "14",
-								"attribution": None
+								"attribution": None,
 							}
 						],
-						"name": "artificial/terrestrial"
+						"name": "artificial/terrestrial",
 					},
 					{
 						"sources": [
@@ -544,20 +512,20 @@ class TaxonDataListTest(TestResultHandler):
 									"url": None,
 									"dataType": 0,
 									"batch": None,
-									"synonyms": []
+									"synonyms": [],
 								},
 								"originId": "15",
-								"attribution": None
+								"attribution": None,
 							}
 						],
-						"name": "artificial/aquatic"
-					}
+						"name": "artificial/aquatic",
+					},
 				],
 				"invasive": False,
 				"domesticated": False,
 				"freshwater": True,
 				"marine": False,
-				"terrestrial": True
+				"terrestrial": True,
 			}
 		]
 		self.assert_and_log(self.assertJSONEqual, response.content, expected_data)
@@ -570,7 +538,6 @@ class TaxonDataListTest(TestResultHandler):
 
 
 class TaxonDataCountTest(TestResultHandler):
-	
 	def test_taxon_data_list_count_200(self):
 		iucn_europe = "en"
 		url = reverse("taxonomy:data_count") + f"?iucnEurope={iucn_europe}"
@@ -588,17 +555,12 @@ class TaxonDataCountTest(TestResultHandler):
 
 
 class AuthorshipCRUDTest(TestResultHandler):
-
 	def test_authorship_crud_200(self):
 		taxon_id = 1
 		url = reverse("taxonomy:authorship_crud") + f"?id={taxon_id}"
 		response = self.client.get(url)
 		self.assertEqual(response.status_code, status.HTTP_200_OK)
-		expected_data = {
-			"id": 1,
-			"name": "Fitzinger",
-			"accepted": True
-		}
+		expected_data = {"id": 1, "name": "Fitzinger", "accepted": True}
 		self.assert_and_log(self.assertJSONEqual, response.content, expected_data)
 
 	def test_authorship_crud_400(self):

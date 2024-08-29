@@ -78,7 +78,6 @@ class GeographicLevelIdView(APIView):
 
 
 class GeographicLevelFilter(APIView):
-	
 	def get(self, request):
 		geographic_form = GeographicLevelForm(data=request.GET)
 
@@ -195,7 +194,7 @@ class GeographicLevelCountView(GeographicLevelFilter):
 	)
 	def get(self, request):
 		return Response(super().get(request).count())
-	
+
 
 class GeographicLevelParent(APIView):
 	@swagger_auto_schema(

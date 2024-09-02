@@ -11,10 +11,8 @@ EXPECTED_MARKER = {
 	"acceptedModifier": None,
 	"product": "tyrosinase",
 	"batch": 3,
-	"sources": [
-		136
-	],
-	"synonyms": []
+	"sources": [136],
+	"synonyms": [],
 }
 
 EXPECTED_SEQUENCE = {
@@ -28,17 +26,12 @@ EXPECTED_SEQUENCE = {
 	"sequenceVersion": 1,
 	"batch": 3,
 	"occurrence": 114,
-	"sources": [
-		152
-	],
-	"markers": [
-		5
-	]
+	"sources": [152],
+	"markers": [5],
 }
 
 
 class SequenceCRUDTest(TestResultHandler):
-
 	def test_sequence_crud_200(self):
 		marker_id = 14
 		url = reverse("genetics:sequence_crud") + f"?id={marker_id}"
@@ -61,7 +54,6 @@ class SequenceCRUDTest(TestResultHandler):
 
 
 class SequenceSearchTest(TestResultHandler):
-
 	def test_sequence_search_200(self):
 		seq_def = "CAP01 NADH dehydrogenase subunit 4"
 		url = reverse("genetics:sequence_search") + f"?definition={seq_def}"
@@ -76,7 +68,6 @@ class SequenceSearchTest(TestResultHandler):
 
 
 class MarkerCRUDTest(TestResultHandler):
-
 	def test_marker_crud_200(self):
 		marker_id = 1
 		url = reverse("genetics:marker_crud") + f"?id={marker_id}"
@@ -97,7 +88,6 @@ class MarkerCRUDTest(TestResultHandler):
 
 
 class MarkerSearchTest(TestResultHandler):
-
 	def test_marker_search_200(self):
 		marker_name = "yr"
 		url = reverse("genetics:marker_search") + f"?name={marker_name}"
@@ -112,7 +102,6 @@ class MarkerSearchTest(TestResultHandler):
 
 
 class MarkersListTest(TestResultHandler):
-
 	def test_marker_list_200(self):
 		taxon_id = 14
 		url = reverse("genetics:marker_list") + f"?taxonomy={taxon_id}"

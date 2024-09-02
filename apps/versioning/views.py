@@ -92,7 +92,6 @@ class SourceCRUDView(APIView):
 
 
 class SourceFilter(APIView):
-	
 	def get(self, request):
 		source_form = SourceForm(data=self.request.GET)
 
@@ -113,7 +112,7 @@ class SourceFilter(APIView):
 			raise CBBAPIException("No taxonomic levels found for the given filters.", 404)
 
 		return queryset
-	
+
 
 class SourceListView(SourceFilter):
 	@swagger_auto_schema(

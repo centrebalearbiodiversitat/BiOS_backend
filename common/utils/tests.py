@@ -28,14 +28,8 @@ class TestResultHandler(TestCase):
 				"load_gadm",
 				"fixtures/gadm/poblaciones/poblaciones_uncertainess.shp",
 			)
-			call_command(
-				"load_taxonomy",
-				"fixtures/taxonomy/Amphibia.csv"
-			)
-			call_command(
-				"load_occurrences",
-				"fixtures/occurrences/Alytes_muletensis.csv"
-			)
+			call_command("load_taxonomy", "fixtures/taxonomy/Amphibia.csv")
+			call_command("load_occurrences", "fixtures/occurrences/Alytes_muletensis.csv")
 			call_command(
 				"load_occurrences",
 				"fixtures/genetics/Alytes_muletensis.csv",
@@ -53,7 +47,7 @@ class TestResultHandler(TestCase):
 			raise
 
 	def kwargs_to_string(self, **kwargs):
-		return '&'.join([f"{key}={value}" for key, value in kwargs.items()])
+		return "&".join([f"{key}={value}" for key, value in kwargs.items()])
 
 	def _generate_url(self, reverse_name, **kwargs):
-		return f'{reverse(reverse_name)}?{self.kwargs_to_string(**kwargs)}'
+		return f"{reverse(reverse_name)}?{self.kwargs_to_string(**kwargs)}"

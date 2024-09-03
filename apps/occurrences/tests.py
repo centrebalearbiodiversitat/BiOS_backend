@@ -65,7 +65,7 @@ class OccurrenceListTest(TestResultHandler):
 			taxonomy=taxonomy_id,
 			decimalLatitudeMin=decimal_latitude_min,
 			decimalLatitudeMax=decimal_latitude_max,
-			coordinateUncertaintyInMetersMin=coordinate_uncertainty_in_meters_min
+			coordinateUncertaintyInMetersMin=coordinate_uncertainty_in_meters_min,
 		)
 		response = self.client.get(url)
 		self.assertEqual(response.status_code, status.HTTP_200_OK)

@@ -1,4 +1,3 @@
-from django.urls import reverse
 from rest_framework import status
 
 from common.utils.tests import TestResultHandler
@@ -34,20 +33,20 @@ EXPECTED_SEQUENCE = {
 class SequenceCRUDTest(TestResultHandler):
 	def test_sequence_crud_200(self):
 		marker_id = 14
-		url = reverse("genetics:sequence_crud") + f"?id={marker_id}"
+		url = self._generate_url("genetics:sequence_crud", id=marker_id)
 		response = self.client.get(url)
 		self.assertEqual(response.status_code, status.HTTP_200_OK)
 		self.assert_and_log(self.assertJSONEqual, response.content, EXPECTED_SEQUENCE)
 
 	def test_sequence_crud_400(self):
-		url = reverse("genetics:sequence_crud")
+		url = self._generate_url("genetics:sequence_crud")
 		response = self.client.get(url)
 
 		self.assert_and_log(self.assertEqual, response.status_code, status.HTTP_400_BAD_REQUEST)
 
 	def test_sequence_crud_404(self):
 		marker_id = 9999
-		url = reverse("genetics:sequence_crud") + f"?id={marker_id}"
+		url = self._generate_url("genetics:sequence_crud", id=marker_id)
 		response = self.client.get(url)
 
 		self.assert_and_log(self.assertEqual, response.status_code, status.HTTP_404_NOT_FOUND)
@@ -56,13 +55,13 @@ class SequenceCRUDTest(TestResultHandler):
 class SequenceSearchTest(TestResultHandler):
 	def test_sequence_search_200(self):
 		seq_def = "CAP01 NADH dehydrogenase subunit 4"
-		url = reverse("genetics:sequence_search") + f"?definition={seq_def}"
+		url = self._generate_url("genetics:sequence_search", definition=seq_def)
 		response = self.client.get(url)
 		self.assertEqual(response.status_code, status.HTTP_200_OK)
 		self.assert_and_log(self.assertJSONEqual, response.content, [EXPECTED_SEQUENCE])
 
 	def test_sequence_search_400(self):
-		url = reverse("genetics:sequence_search")
+		url = self._generate_url("genetics:sequence_search")
 		response = self.client.get(url)
 		self.assert_and_log(self.assertEqual, response.status_code, status.HTTP_400_BAD_REQUEST)
 
@@ -70,19 +69,19 @@ class SequenceSearchTest(TestResultHandler):
 class MarkerCRUDTest(TestResultHandler):
 	def test_marker_crud_200(self):
 		marker_id = 1
-		url = reverse("genetics:marker_crud") + f"?id={marker_id}"
+		url = self._generate_url("genetics:marker_crud", id=marker_id)
 		response = self.client.get(url)
 		self.assertEqual(response.status_code, status.HTTP_200_OK)
 		self.assert_and_log(self.assertJSONEqual, response.content, EXPECTED_MARKER)
 
 	def test_marker_crud_400(self):
-		url = reverse("genetics:marker_crud")
+		url = self._generate_url("genetics:marker_crud")
 		response = self.client.get(url)
 		self.assert_and_log(self.assertEqual, response.status_code, status.HTTP_400_BAD_REQUEST)
 
 	def test_marker_crud_404(self):
 		invalid_marker_id = 9999
-		url = reverse("genetics:marker_crud") + f"?id={invalid_marker_id}"
+		url = self._generate_url("genetics:marker_crud", id=invalid_marker_id)
 		response = self.client.get(url)
 		self.assert_and_log(self.assertEqual, response.status_code, status.HTTP_404_NOT_FOUND)
 
@@ -90,13 +89,13 @@ class MarkerCRUDTest(TestResultHandler):
 class MarkerSearchTest(TestResultHandler):
 	def test_marker_search_200(self):
 		marker_name = "yr"
-		url = reverse("genetics:marker_search") + f"?name={marker_name}"
+		url = self._generate_url("genetics:marker_search", name=marker_name)
 		response = self.client.get(url)
 		self.assertEqual(response.status_code, status.HTTP_200_OK)
 		self.assert_and_log(self.assertJSONEqual, response.content, [EXPECTED_MARKER])
 
 	def test_marker_search_400(self):
-		url = reverse("genetics:marker_search")
+		url = self._generate_url("genetics:marker_search")
 		response = self.client.get(url)
 		self.assert_and_log(self.assertEqual, response.status_code, status.HTTP_400_BAD_REQUEST)
 
@@ -104,19 +103,19 @@ class MarkerSearchTest(TestResultHandler):
 class MarkersListTest(TestResultHandler):
 	def test_marker_list_200(self):
 		taxon_id = 14
-		url = reverse("genetics:marker_list") + f"?taxonomy={taxon_id}"
+		url = self._generate_url("genetics:marker_list", taxonomy=taxon_id)
 		response = self.client.get(url)
 		expected_data = []
 		self.assertEqual(response.status_code, status.HTTP_200_OK)
 		self.assert_and_log(self.assertJSONEqual, response.content, expected_data)
 
 	def test_marker_list_400(self):
-		url = reverse("genetics:marker_list")
+		url = self._generate_url("genetics:marker_list")
 		response = self.client.get(url)
 		self.assert_and_log(self.assertEqual, response.status_code, status.HTTP_400_BAD_REQUEST)
 
 	def test_marker_list_404(self):
 		invalid_taxonomy_id = 99999
-		url = reverse("genetics:marker_list") + f"?taxonomy={invalid_taxonomy_id}"
+		url = self._generate_url("genetics:marker_list", taxonomy=invalid_taxonomy_id)
 		response = self.client.get(url)
 		self.assert_and_log(self.assertEqual, response.status_code, status.HTTP_404_NOT_FOUND)

@@ -20,13 +20,13 @@ class GeographicLevelSearchTest(TestResultHandler):
 	def test_geographic_level_search_200(self):
 		name = "mallorca"
 		exact = "true"
-		url = reverse("geography:geo_search") + f"?name={name}&exact={exact}"
+		url = self._generate_url("geography:geo_search", name=name, exact=exact)
 		response = self.client.get(url)
 		self.assertEqual(response.status_code, status.HTTP_200_OK)
 		self.assert_and_log(self.assertJSONEqual, response.content, [EXPECTED_GEO])
 
 	def test_geographic_level_search_400(self):
-		url = reverse("geography:geo_search")
+		url = self._generate_url("geography:geo_search")
 		response = self.client.get(url)
 		self.assert_and_log(self.assertEqual, response.status_code, status.HTTP_400_BAD_REQUEST)
 
@@ -34,20 +34,20 @@ class GeographicLevelSearchTest(TestResultHandler):
 class GeographicLevelCRUDTest(TestResultHandler):
 	def test_geographic_level_crud_200(self):
 		geo_id = 4
-		url = reverse("geography:geo_crud") + f"?id={geo_id}"
+		url = self._generate_url("geography:geo_crud", id=geo_id)
 		response = self.client.get(url)
 		self.assertEqual(response.status_code, status.HTTP_200_OK)
 		self.assert_and_log(self.assertJSONEqual, response.content, EXPECTED_GEO)
 
 	def test_geographic_level_crud_400(self):
-		url = reverse("geography:geo_crud")
+		url = self._generate_url("geography:geo_crud")
 		response = self.client.get(url)
 
 		self.assert_and_log(self.assertEqual, response.status_code, status.HTTP_400_BAD_REQUEST)
 
 	def test_geographic_level_crud_404(self):
 		invalid_level_id = 9999
-		url = reverse("geography:geo_crud") + f"?id={invalid_level_id}"
+		url = self._generate_url("geography:geo_crud", id=invalid_level_id)
 		response = self.client.get(url)
 
 		self.assert_and_log(self.assertEqual, response.status_code, status.HTTP_404_NOT_FOUND)
@@ -58,13 +58,13 @@ class GeographicLevelListTest(TestResultHandler):
 		parent_id = 1
 		rank = "island"
 		name = "ma"
-		url = reverse("geography:geo_list") + f"?parent={parent_id}&rank={rank}&name={name}"
+		url = self._generate_url("geography:geo_list", parent=parent_id, rank=rank, name=name)
 		response = self.client.get(url)
 		self.assertEqual(response.status_code, status.HTTP_200_OK)
 		self.assert_and_log(self.assertJSONEqual, response.content, [EXPECTED_GEO])
 
 	def test_geographic_level_list_400(self):
-		url = reverse("geography:geo_list") + "?rank=rango_invalido"
+		url = self._generate_url("geography:geo_list", rank="rango_invalido")
 		response = self.client.get(url)
 
 		self.assert_and_log(self.assertEqual, response.status_code, status.HTTP_400_BAD_REQUEST)
@@ -73,7 +73,7 @@ class GeographicLevelListTest(TestResultHandler):
 class GeographicLevelParentTest(TestResultHandler):
 	def test_geographic_level_parent_200(self):
 		valid_level_id = 4
-		url = reverse("geography:geo_level_parent") + f"?id={valid_level_id}"
+		url = self._generate_url("geography:geo_level_parent", id=valid_level_id)
 		response = self.client.get(url)
 		expected_data = [
 			{
@@ -92,14 +92,14 @@ class GeographicLevelParentTest(TestResultHandler):
 		self.assert_and_log(self.assertJSONEqual, response.content, expected_data)
 
 	def test_geographic_level_parent_400(self):
-		url = reverse("geography:geo_level_parent")
+		url = self._generate_url("geography:geo_level_parent")
 		response = self.client.get(url)
 
 		self.assert_and_log(self.assertEqual, response.status_code, status.HTTP_400_BAD_REQUEST)
 
 	def test_geographic_level_parent_404(self):
 		invalid_level_id = 9999
-		url = reverse("geography:geo_level_parent") + f"?id={invalid_level_id}"
+		url = self._generate_url("geography:geo_level_parent", id=invalid_level_id)
 		response = self.client.get(url)
 
 		self.assert_and_log(self.assertEqual, response.status_code, status.HTTP_404_NOT_FOUND)
@@ -108,7 +108,7 @@ class GeographicLevelParentTest(TestResultHandler):
 class GeographicLevelChildrenTest(TestResultHandler):
 	def test_geographic_level_children_200(self):
 		children_id = 3
-		url = reverse("geography:geo_level_children") + f"?id={children_id}"
+		url = self._generate_url("geography:geo_level_children", id=children_id)
 		response = self.client.get(url)
 		expected_data = [
 			{
@@ -128,14 +128,14 @@ class GeographicLevelChildrenTest(TestResultHandler):
 
 	def test_geographic_level_children_400(self):
 		children_id = None
-		url = reverse("geography:geo_level_children") + f"?id={children_id}"
+		url = self._generate_url("geography:geo_level_children", id=children_id)
 		response = self.client.get(url)
 
 		self.assert_and_log(self.assertEqual, response.status_code, status.HTTP_400_BAD_REQUEST)
 
 	def test_geographic_level_children_404(self):
 		invalid_level_id = 9999
-		url = reverse("geography:geo_level_children") + f"?id={invalid_level_id}"
+		url = self._generate_url("geography:geo_level_children", id=invalid_level_id)
 		response = self.client.get(url)
 
 		self.assert_and_log(self.assertEqual, response.status_code, status.HTTP_404_NOT_FOUND)

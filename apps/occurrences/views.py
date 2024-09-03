@@ -203,7 +203,7 @@ class OccurrenceListView(OccurrenceFilter):
 		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
 	)
 	def get(self, request):
-		return Response(OccurrenceSerializer(super().get(request), many=True).data)
+		return Response(BaseOccurrenceSerializer(super().get(request), many=True).data)
 
 
 class OccurrenceCountView(OccurrenceFilter):

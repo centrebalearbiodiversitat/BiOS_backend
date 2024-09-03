@@ -56,7 +56,7 @@ class TaxonSearchView(APIView):
 		limit = 10
 
 		if not query:
-			return Response(BaseTaxonomicLevelSerializer(TaxonomicLevel.objects.none(), many=True).data)
+			raise CBBAPIException("Missing name parameter", code=400)
 
 		queryset = None
 		query = unidecode(str_clean_up(query).translate(PUNCTUATION_TRANSLATE))
@@ -378,9 +378,6 @@ class TaxonSourceView(ListAPIView):
 		taxon_id = taxon_form.get("id")
 
 		if not taxon_id:
-			raise CBBAPIException(taxon_form.errors, code=400)
-
-		if not taxon_id:
 			raise CBBAPIException("Missing id parameter", code=400)
 
 		try:
@@ -437,8 +434,13 @@ class TaxonChecklistView(APIView):
 		if not taxon_form.is_valid():
 			raise CBBAPIException(taxon_form.errors, code=400)
 
+		taxon_id = taxon_form.cleaned_data.get("id")
+
+		if not taxon_id:
+			raise CBBAPIException("Missing id parameter", code=400)
+
 		try:
-			head_taxon = TaxonomicLevel.objects.get(id=taxon_form.cleaned_data.get("id"))
+			head_taxon = TaxonomicLevel.objects.get(id=taxon_id)
 		except TaxonomicLevel.DoesNotExist:
 			raise CBBAPIException("Taxonomic level does not exist", code=404)
 

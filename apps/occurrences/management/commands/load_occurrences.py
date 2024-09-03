@@ -3,7 +3,7 @@ import json
 from django.core.management.base import BaseCommand
 from django.db import transaction
 from django.utils.dateparse import parse_datetime
-from apps.genetics.models import Sequence, Gene
+from apps.genetics.models import Sequence, Marker
 from apps.geography.models import GeographicLevel
 from apps.occurrences.models import Occurrence
 from apps.taxonomy.models import TaxonomicLevel
@@ -73,7 +73,7 @@ def genetic_sources(line: dict, batch, occ):
 
 	for production in line["genetic_features"]:
 		if production["gene"] and not production["gene"].startswith("LOC"):
-			gene, is_new = Gene.objects.get_or_create(
+			marker, is_new = Marker.objects.get_or_create(
 				name__iexact=production["gene"],
 				defaults={
 					"name": production["gene"],
@@ -83,32 +83,18 @@ def genetic_sources(line: dict, batch, occ):
 				},
 			)
 
-			if not gene.sources.filter(id=os.id).exists():
-				gene.sources.add(os)
+			if not marker.sources.filter(id=os.id).exists():
+				marker.sources.add(os)
 
 			if not is_new and production["product"]:
-				if gene.product:
-					if len(production["product"]) > len(gene.product):
-						gene.product = production["product"]
-						gene.save()
+				if marker.product:
+					if len(production["product"]) > len(marker.product):
+						marker.product = production["product"]
+						marker.save()
 				else:
-					gene.product = production["product"]
-					gene.save()
-			seq.genes.add(gene)
-
-		# product = None
-		# if production["product"]:
-		# 	product, _ = Product.objects.get_or_create(
-		# 		name__iexact=production["product"], defaults={"name": production["product"], "batch": batch, "accepted": True}
-		# 	)
-		# 	if not product.sources.filter(id=os.id).exists():
-		# 		product.sources.add(os)
-
-		# prod_rel, _ = Produces.objects.get_or_create(gene=gene, product=product, defaults={"batch": batch})
-		# if not prod_rel.sources.filter(id=os.id).exists():
-		# 	prod_rel.sources.add(os)
-		# if not seq.products.filter(id=prod_rel.id).exists():
-		# 	seq.products.add(prod_rel)
+					marker.product = production["product"]
+					marker.save()
+			seq.markers.add(marker)
 
 
 def find_gadm(line):

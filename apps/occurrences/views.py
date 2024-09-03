@@ -3,8 +3,10 @@ from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.response import Response
 from rest_framework.views import APIView
+
+from apps.taxonomy.models import TaxonomicLevel
+
 from ..API.exceptions import CBBAPIException
-from ..taxonomy.models import TaxonomicLevel
 from .forms import OccurrenceForm
 from .models import Occurrence
 from .serializers import OccurrenceSerializer, BaseOccurrenceSerializer

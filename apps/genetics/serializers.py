@@ -1,20 +1,20 @@
 from rest_framework import serializers
 
 from common.utils.serializers import CaseModelSerializer
-from .models import Gene, Sequence
+from .models import Marker, Sequence
 
 
-class MarkerSerializer(CaseModelSerializer):
+class SuperMarkerSerializer(CaseModelSerializer):
 	total = serializers.IntegerField()
 
 	class Meta:
-		model = Gene
+		model = Marker
 		fields = ["id", "name", "product", "total"]
 
 
-class GeneSerializer(CaseModelSerializer):
+class MarkerSerializer(CaseModelSerializer):
 	class Meta:
-		model = Gene
+		model = Marker
 		fields = "__all__"
 
 

@@ -152,6 +152,9 @@ class TaxonomicLevel(SynonymModel, MPTTModel, ReferencedModel):
 			("tree_id", "lft"),
 		]
 
+	class MPTTMeta:
+		order_insertion_by = ["name"]
+
 
 class Habitat(ReferencedModel):
 	name = models.CharField(max_length=50, unique=True)

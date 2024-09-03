@@ -1,25 +1,26 @@
-from django.db.models import Q, Count
+from django.db.models import Count, Q
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
-from rest_framework.views import APIView
 from rest_framework.response import Response
-from .forms import GeneForm, SequenceForm, SequenceListForm
-from apps.occurrences.forms import OccurrenceForm
+from rest_framework.views import APIView
+
 from apps.taxonomy.models import TaxonomicLevel
-from .serializers import GeneSerializer, SequenceSerializer, MarkerSerializer
+
 from ..API.exceptions import CBBAPIException
-from .models import Gene, Sequence
+from .forms import MarkerForm, SequenceForm, SequenceListForm
+from .models import Marker, Sequence
+from .serializers import SuperMarkerSerializer, MarkerSerializer, SequenceSerializer
 
 
-class GeneCRUDView(APIView):
+class MarkerCRUDView(APIView):
 	@swagger_auto_schema(
 		tags=["Genetic"],
-		operation_description="Get details of a specific gene.",
+		operation_description="Get details of a specific marker.",
 		manual_parameters=[
 			openapi.Parameter(
 				"id",
 				openapi.IN_QUERY,
-				description="Unique identifier of the gene to retrieve.",
+				description="Unique identifier of the marker to retrieve.",
 				type=openapi.TYPE_INTEGER,
 				required=True,
 			),
@@ -31,32 +32,32 @@ class GeneCRUDView(APIView):
 		},
 	)
 	def get(self, request):
-		gene_form = GeneForm(data=self.request.GET)
+		marker_form = MarkerForm(data=self.request.GET)
 
-		if not gene_form.is_valid():
-			raise CBBAPIException(gene_form.errors, 400)
+		if not marker_form.is_valid():
+			raise CBBAPIException(marker_form.errors, 400)
 
-		gene_id = gene_form.cleaned_data.get("id")
-		if not gene_id:
+		marker_id = marker_form.cleaned_data.get("id")
+		if not marker_id:
 			raise CBBAPIException("Missing id parameter", 400)
 
 		try:
-			gene = Gene.objects.get(id=gene_id)
-		except Gene.DoesNotExist:
-			raise CBBAPIException("Gene does not exist", 404)
+			marker = Marker.objects.get(id=marker_id)
+		except Marker.DoesNotExist:
+			raise CBBAPIException("Marker does not exist", 404)
 
-		return Response(GeneSerializer(gene).data)
+		return Response(MarkerSerializer(marker).data)
 
 
-class GeneDetailView(APIView):
+class MarkerSearchView(APIView):
 	@swagger_auto_schema(
 		tags=["Genetic"],
-		operation_description="Search for a gene by name.",
+		operation_description="Search for a marker by name.",
 		manual_parameters=[
 			openapi.Parameter(
 				"name",
 				openapi.IN_QUERY,
-				description="Name of the gene to search for.",
+				description="Name of the marker to search for.",
 				type=openapi.TYPE_STRING,
 				required=True,
 			),
@@ -76,32 +77,32 @@ class GeneDetailView(APIView):
 		},
 	)
 	def get(self, request):
-		gene_form = GeneForm(data=self.request.GET)
+		marker_form = MarkerForm(data=self.request.GET)
 
-		if not gene_form.is_valid():
-			raise CBBAPIException(gene_form.errors, 400)
+		if not marker_form.is_valid():
+			raise CBBAPIException(marker_form.errors, 400)
 
 		filters = {}
-		query = gene_form.cleaned_data.get("name", None)
-		exact = gene_form.cleaned_data.get("exact", False)
+		query = marker_form.cleaned_data.get("name", None)
+		exact = marker_form.cleaned_data.get("exact", False)
 
 		if not query:
 			raise CBBAPIException("You must specify a name", 400)
 
 		filters["name__iexact" if exact else "name__icontains"] = query
 
-		return Response(GeneSerializer(Gene.objects.filter(**filters)[:10], many=True).data)
+		return Response(MarkerSerializer(Marker.objects.filter(**filters)[:10], many=True).data)
 
 
-class GeneListView(APIView):
+class MarkerListView(APIView):
 	@swagger_auto_schema(
 		tags=["Genetic"],
-		operation_description="List genes with optional filters",
+		operation_description="List markers with optional filters",
 		manual_parameters=[
 			openapi.Parameter(
 				"taxonomy",
 				openapi.IN_QUERY,
-				description="Name of the gene to search for.",
+				description="Name of the marker to search for.",
 				type=openapi.TYPE_STRING,
 				required=False,
 			),
@@ -109,61 +110,22 @@ class GeneListView(APIView):
 		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
 	)
 	def get(self, request):
-		gene_form = GeneForm(data=self.request.GET)
+		marker_form = MarkerForm(data=self.request.GET)
 
-		if not gene_form.is_valid():
-			raise CBBAPIException(gene_form.errors, 400)
+		if not marker_form.is_valid():
+			raise CBBAPIException(marker_form.errors, 400)
 
-		taxon = gene_form.cleaned_data.get("taxonomy")
-		if not taxon:
+		taxon_id = marker_form.cleaned_data.get("taxonomy")
+		if not taxon_id:
 			raise CBBAPIException("Missing taxon id parameter", 400)
 
 		try:
-			taxon = TaxonomicLevel.objects.get(id=taxon)
-		except TaxonomicLevel.DoesNotExist:
-			raise CBBAPIException("Taxonomic level does not exist", 404)
-
-		queryset = Gene.objects.filter(
-			Q(produces__sequence__occurrence__taxonomy=taxon)
-			| Q(produces__sequence__occurrence__taxonomy__lft__gte=taxon.lft)
-			| Q(produces__sequence__occurrence__taxonomy__rght__lte=taxon.rght),
-		).distinct()
-
-		return Response(GeneSerializer(queryset, many=True).data)
-
-
-class MarkersListView(APIView):
-	@swagger_auto_schema(
-		tags=["Genetic"],
-		operation_description="List genes with optional filters",
-		manual_parameters=[
-			openapi.Parameter(
-				"taxonomy",
-				openapi.IN_QUERY,
-				description="Name of the gene to search for.",
-				type=openapi.TYPE_STRING,
-				required=False,
-			),
-		],
-		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
-	)
-	def get(self, request):
-		gene_form = GeneForm(data=self.request.GET)
-
-		if not gene_form.is_valid():
-			raise CBBAPIException(gene_form.errors, 400)
-
-		taxon = gene_form.cleaned_data.get("taxonomy")
-		if not taxon:
-			raise CBBAPIException("Missing taxon id parameter", 400)
-
-		try:
-			taxon = TaxonomicLevel.objects.get(id=taxon)
+			taxon = TaxonomicLevel.objects.get(id=taxon_id)
 		except TaxonomicLevel.DoesNotExist:
 			raise CBBAPIException("Taxonomic level does not exist", 404)
 
 		queryset = (
-			Gene.objects.filter(
+			Marker.objects.filter(
 				Q(sequence__occurrence__taxonomy=taxon)
 				| Q(sequence__occurrence__taxonomy__lft__gte=taxon.lft, sequence__occurrence__taxonomy__rght__lte=taxon.rght),
 			)
@@ -172,7 +134,7 @@ class MarkersListView(APIView):
 			.order_by("-total")
 		)
 
-		return Response(MarkerSerializer(queryset, many=True).data)
+		return Response(SuperMarkerSerializer(queryset, many=True).data)
 
 
 class SequenceCRUDView(APIView):
@@ -233,6 +195,8 @@ class SequenceSearchView(APIView):
 			raise CBBAPIException(seq_form.errors, code=400)
 
 		definition = seq_form.cleaned_data.get("definition", None)
+		if not definition:
+			raise CBBAPIException("Missing definition parameter", code=400)
 
 		return Response(SequenceSerializer(Sequence.objects.filter(definition__icontains=definition), many=True).data)
 
@@ -240,11 +204,12 @@ class SequenceSearchView(APIView):
 class SequenceFilter(APIView):
 	def get(self, request):
 		seq_form = SequenceListForm(data=request.GET)
+		print(seq_form)
 
 		if not seq_form.is_valid():
 			raise CBBAPIException(seq_form.errors, 400)
 
-		taxon = seq_form.cleaned_data.get("taxon_id")
+		taxon = seq_form.cleaned_data.get("taxonomy")
 
 		if not taxon:
 			raise CBBAPIException("Missing taxonomy parameter", code=400)

@@ -3,7 +3,7 @@ from apps.occurrences.models import Occurrence
 from common.utils.models import ReferencedModel, SynonymModel
 
 
-class Gene(ReferencedModel, SynonymModel):
+class Marker(ReferencedModel, SynonymModel):
 	product = models.CharField(max_length=512, null=True, blank=True, default=None, db_index=True)
 
 
@@ -16,7 +16,7 @@ class Sequence(ReferencedModel):
 	published_date = models.DateField(blank=True, null=True)
 	molecule_type = models.CharField(max_length=255)
 	sequence_version = models.PositiveIntegerField()
-	genes = models.ManyToManyField(Gene)
+	markers = models.ManyToManyField(Marker)
 
 	def __str__(self):
 		return self.definition

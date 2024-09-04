@@ -1,5 +1,6 @@
 import csv
 
+from django.db.models import Count, Q, F, Subquery, OuterRef
 from django.db.models.functions import Substr, Lower
 from django.http import StreamingHttpResponse
 from unidecode import unidecode
@@ -353,7 +354,20 @@ class TaxonCompositionView(ListAPIView):
 			raise CBBAPIException("Taxonomic level does not exist.", code=404)
 
 		for child in children:
-			child.total_species = child.get_descendants(include_self=True).filter(rank=TaxonomicLevel.SPECIES, accepted=True).count()
+			child.total_species = child.get_descendants(include_self=True)\
+											.filter(rank=TaxonomicLevel.SPECIES, accepted=True).count()
+
+		# species = TaxonomicLevel.objects.none()
+		# species = children.annotate(
+		# 	total_species=Subquery(
+		# 		TaxonomicLevel.objects.filter(lft__gt=OuterRef('lft'), rght__lt=OuterRef('rght'))
+		# 						.filter(rank=TaxonomicLevel.SPECIES, accepted=True)
+		# 						.annotate(base_parent=Count('id'))
+		# 						.values('base_parent')
+		# 						.annotate(total_species=Count('id'))
+		# 						.values("total_species")
+		# 	)
+		# )
 
 		return Response(TaxonCompositionSerializer(children, many=True).data)
 

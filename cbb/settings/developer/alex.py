@@ -13,10 +13,21 @@ DATABASES = {
 	}
 }
 
-
 SITE_PREFIX = "http://"
 FULL_SITE_URL = f"{SITE_PREFIX}{SITE_URL}"
 CORS_ALLOWED_ORIGINS = ["http://localhost:3000"]
+
+MIDDLEWARE = [
+	"django.middleware.security.SecurityMiddleware",
+	"django.contrib.sessions.middleware.SessionMiddleware",
+	"corsheaders.middleware.CorsMiddleware",
+	"django.middleware.common.CommonMiddleware",
+	"django.middleware.csrf.CsrfViewMiddleware",
+	"django.contrib.auth.middleware.AuthenticationMiddleware",
+	"django.contrib.messages.middleware.MessageMiddleware",
+	"django.middleware.clickjacking.XFrameOptionsMiddleware",
+	'API.middleware.DynamicSerializeMiddleware'
+]
 
 # LOGGING = {
 # 	"version": 1,

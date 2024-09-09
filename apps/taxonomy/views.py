@@ -399,8 +399,7 @@ class TaxonCompositionView(ListAPIView):
 			raise CBBAPIException("Taxonomic level does not exist.", code=404)
 
 		for child in children:
-			child.total_species = child.get_descendants(include_self=True)\
-											.filter(rank=TaxonomicLevel.SPECIES, accepted=True).count()
+			child.total_species = child.get_descendants(include_self=True).filter(rank=TaxonomicLevel.SPECIES, accepted=True).count()
 
 		# species = TaxonomicLevel.objects.none()
 		# species = children.annotate(
@@ -605,7 +604,7 @@ class TaxonDataCRUDView(APIView):
 		return Response(TaxonDataSerializer(taxon).data)
 
 
-class TaxonDataFilter():
+class TaxonDataFilter:
 	def get(self, request):
 		taxon_data_form = TaxonDataForm(data=request.GET)
 

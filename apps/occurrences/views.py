@@ -9,7 +9,7 @@ from apps.taxonomy.models import TaxonomicLevel
 from ..API.exceptions import CBBAPIException
 from .forms import OccurrenceForm
 from .models import Occurrence
-from .serializers import OccurrenceSerializer
+from .serializers import OccurrenceSerializer, BaseOccurrenceSerializer
 
 
 class OccurrenceCRUDView(APIView):
@@ -202,7 +202,7 @@ class OccurrenceListView(OccurrenceFilter):
 		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
 	)
 	def get(self, request):
-		return Response(OccurrenceSerializer(super().get(request), many=True).data)
+		return Response(BaseOccurrenceSerializer(super().get(request), many=True).data)
 
 
 class OccurrenceCountView(OccurrenceFilter):

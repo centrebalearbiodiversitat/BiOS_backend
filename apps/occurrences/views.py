@@ -63,7 +63,6 @@ class OccurrenceFilter(APIView):
 		if not occur_form.is_valid():
 			raise CBBAPIException(occur_form.errors, 400)
 
-		# Filter taxon and synonyms
 		taxonomy = occur_form.cleaned_data.get("taxonomy", None)
 		add_synonyms = occur_form.cleaned_data.get("add_synonyms")
 

@@ -605,7 +605,7 @@ class TaxonDataCRUDView(APIView):
 		return Response(TaxonDataSerializer(taxon).data)
 
 
-class TaxonDataFilter(ListAPIView):
+class TaxonDataFilter():
 	def get(self, request):
 		taxon_data_form = TaxonDataForm(data=request.GET)
 
@@ -637,7 +637,7 @@ class TaxonDataFilter(ListAPIView):
 		return query
 
 
-class TaxonDataListView(TaxonDataFilter):
+class TaxonDataListView(TaxonDataFilter, ListAPIView):
 	@swagger_auto_schema(
 		tags=["Taxonomy"],
 		operation_description="Get a list of taxon data with filtering.",
@@ -676,7 +676,7 @@ class TaxonDataListView(TaxonDataFilter):
 		return Response(TaxonDataSerializer(super().get(request), many=True).data)
 
 
-class TaxonDataCountView(TaxonDataFilter):
+class TaxonDataCountView(TaxonDataFilter, ListAPIView):
 	@swagger_auto_schema(
 		tags=["Taxonomy"],
 		operation_description="Get a list of taxon data with filtering.",

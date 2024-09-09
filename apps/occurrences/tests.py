@@ -1,4 +1,3 @@
-from django.urls import reverse
 from rest_framework import status
 
 from common.utils.tests import TestResultHandler

@@ -95,7 +95,6 @@ class MarkerSearchView(APIView):
 
 
 class MarkerFilter(APIView):
-	
 	def get(self, request):
 		marker_form = MarkerForm(data=self.request.GET)
 
@@ -111,32 +110,25 @@ class MarkerFilter(APIView):
 		except TaxonomicLevel.DoesNotExist:
 			raise CBBAPIException("Taxonomic level does not exist", 404)
 
-		queryset = (
-			Marker.objects.filter(
-				Q(sequence__occurrence__taxonomy=taxon)
-				| Q(sequence__occurrence__taxonomy__lft__gte=taxon.lft, sequence__occurrence__taxonomy__rght__lte=taxon.rght),
-			)
+		queryset = Marker.objects.filter(
+			Q(sequence__occurrence__taxonomy=taxon)
+			| Q(sequence__occurrence__taxonomy__lft__gte=taxon.lft, sequence__occurrence__taxonomy__rght__lte=taxon.rght),
 		)
 
 		return queryset
-	
+
+
 class MarkerListView(MarkerFilter):
-
 	def get(self, request):
-
 		return Response(
-			SuperMarkerSerializer(
-				super().get(request)
-				.annotate(total=Count("id"))
-				.filter(total__gte=10)
-				.order_by("-total"), 
-				many=True
-			).data
+			SuperMarkerSerializer(super().get(request).annotate(total=Count("id")).filter(total__gte=10).order_by("-total"), many=True).data
 		)
-	
+
+
 class MarkerCountView(MarkerFilter):
 	def get(self, request):
 		return Response(super().get(request).count())
+
 
 class SequenceCRUDView(APIView):
 	@swagger_auto_schema(

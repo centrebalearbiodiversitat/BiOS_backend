@@ -4,19 +4,19 @@ from rest_framework import status
 from common.utils.tests import TestResultHandler
 
 EXPECTED_GEO = {
-        "id": 4,
-        "parent": 1,
-        "name": "Mallorca",
-        "rank": "island",
-        "decimalLatitude": 39.64434,
-        "decimalLongitude": 2.89087,
-        "coordinateUncertaintyInMeters": 57620,
-        "elevation": None,
-        "depth": None
-    }
+	"id": 4,
+	"parent": 1,
+	"name": "Mallorca",
+	"rank": "island",
+	"decimalLatitude": 39.64434,
+	"decimalLongitude": 2.89087,
+	"coordinateUncertaintyInMeters": 57620,
+	"elevation": None,
+	"depth": None,
+}
+
 
 class GeographicLevelSearchTest(TestResultHandler):
-
 	def test_geographic_level_search_200(self):
 		name = "mallorca"
 		exact = "true"
@@ -32,7 +32,6 @@ class GeographicLevelSearchTest(TestResultHandler):
 
 
 class GeographicLevelCRUDTest(TestResultHandler):
-
 	def test_geographic_level_crud_200(self):
 		geo_id = 4
 		url = reverse("geography:geo_crud") + f"?id={geo_id}"
@@ -55,7 +54,6 @@ class GeographicLevelCRUDTest(TestResultHandler):
 
 
 class GeographicLevelListTest(TestResultHandler):
-
 	def test_geographic_level_list_200(self):
 		parent_id = 1
 		rank = "island"
@@ -71,8 +69,8 @@ class GeographicLevelListTest(TestResultHandler):
 
 		self.assert_and_log(self.assertEqual, response.status_code, status.HTTP_400_BAD_REQUEST)
 
-class GeographicLevelCountTest(TestResultHandler):
 
+class GeographicLevelCountTest(TestResultHandler):
 	def test_geographic_level_list_count_200(self):
 		parent_id = 1
 		rank = "island"
@@ -90,9 +88,7 @@ class GeographicLevelCountTest(TestResultHandler):
 		self.assert_and_log(self.assertEqual, response.status_code, status.HTTP_400_BAD_REQUEST)
 
 
-
 class GeographicLevelParentTest(TestResultHandler):
-
 	def test_geographic_level_parent_200(self):
 		valid_level_id = 4
 		url = reverse("geography:geo_level_parent") + f"?id={valid_level_id}"
@@ -128,7 +124,6 @@ class GeographicLevelParentTest(TestResultHandler):
 
 
 class GeographicLevelChildrenTest(TestResultHandler):
-
 	def test_geographic_level_children_200(self):
 		children_id = 3
 		url = reverse("geography:geo_level_children") + f"?id={children_id}"

@@ -70,7 +70,7 @@ MIDDLEWARE = [
 	"django.contrib.auth.middleware.AuthenticationMiddleware",
 	"django.contrib.messages.middleware.MessageMiddleware",
 	"django.middleware.clickjacking.XFrameOptionsMiddleware",
-	'API.middleware.DynamicSerializeMiddleware'
+	"API.middleware.DynamicSerializeMiddleware",
 ]
 
 ROOT_URLCONF = "cbb.urls"

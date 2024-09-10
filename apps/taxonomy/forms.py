@@ -24,7 +24,7 @@ class TaxonomicLevelChildrenForm(IdFieldForm, CamelCaseForm):
 	accepted = forms.NullBooleanField(required=False)
 
 	def clean_accepted(self):
-		if self.cleaned_data['accepted'] is False:
+		if self.cleaned_data["accepted"] is False:
 			return False
 		else:
 			return True

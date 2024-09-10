@@ -5,14 +5,14 @@ from django.test import TestCase
 from django.urls import reverse
 
 
-
 class TestResultHandler(TestCase):
 	LOADED_DATA = False
 
 	@classmethod
 	def setUpTestData(cls):
 		super().setUpTestData()
-		if not cls.LOADED_DATA:
+		if not TestResultHandler.LOADED_DATA:
+			print('Loading fixtures...')
 			call_command(
 				"load_gadm",
 				"fixtures/gadm/CA/CA_uncertainess.shp",
@@ -38,9 +38,10 @@ class TestResultHandler(TestCase):
 			call_command("populate_habitats")
 			call_command(
 				"load_taxon_data",
-				"fixtures/NO_BORRAR/iucn/Amphibia_IUCN_2024_07_30.json"
+				"fixtures/iucn/Amphibia.json"
 			)
-			cls.LOADED_DATA = True
+			print("Finished loading fixtures...")
+			TestResultHandler.LOADED_DATA = True
 
 	def assert_and_log(self, assertion_function, *args, **kwargs):
 		current_function_name = inspect.stack()[1].function

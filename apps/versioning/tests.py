@@ -1,4 +1,3 @@
-from django.urls import reverse
 from rest_framework import status
 
 from common.utils.tests import TestResultHandler
@@ -7,7 +6,7 @@ from common.utils.tests import TestResultHandler
 class SourceSearchTest(TestResultHandler):
 	def test_source_search_200(self):
 		source_name = "gb"
-		url = reverse("versioning:source_search") + f"?name={source_name}"
+		url = self._generate_url("versioning:source_search", name=source_name)
 		response = self.client.get(url)
 		expected_data = [
 			{
@@ -39,7 +38,7 @@ class SourceSearchTest(TestResultHandler):
 		self.assert_and_log(self.assertJSONEqual, response.content, expected_data)
 
 	def test_source_search_400(self):
-		url = reverse("versioning:source_search")
+		url = self._generate_url("versioning:source_search")
 		response = self.client.get(url)
 		self.assert_and_log(self.assertEqual, response.status_code, status.HTTP_400_BAD_REQUEST)
 
@@ -47,7 +46,7 @@ class SourceSearchTest(TestResultHandler):
 class SourceCRUDTest(TestResultHandler):
 	def test_source_crud_200(self):
 		source_id = 3
-		url = reverse("versioning:source_crud") + f"?id={source_id}"
+		url = self._generate_url("versioning:source_crud", id=source_id)
 		response = self.client.get(url)
 		self.assertEqual(response.status_code, status.HTTP_200_OK)
 		expected_data = {
@@ -65,13 +64,13 @@ class SourceCRUDTest(TestResultHandler):
 		self.assert_and_log(self.assertJSONEqual, response.content, expected_data)
 
 	def test_source_crud_400(self):
-		url = reverse("versioning:source_crud")
+		url = self._generate_url("versioning:source_crud")
 		response = self.client.get(url)
 		self.assert_and_log(self.assertEqual, response.status_code, status.HTTP_400_BAD_REQUEST)
 
 	def test_source_crud_404(self):
 		source_id = 9999
-		url = reverse("versioning:source_crud") + f"?id={source_id}"
+		url = self._generate_url("versioning:source_crud", id=source_id)
 		response = self.client.get(url)
 		self.assert_and_log(self.assertEqual, response.status_code, status.HTTP_404_NOT_FOUND)
 
@@ -81,7 +80,7 @@ class SourceListTest(TestResultHandler):
 		name = "NCBI"
 		origin = "database"
 		accepted = "True"
-		url = reverse("versioning:source_list") + f"?name={name}&origin={origin}&accepted={accepted}"
+		url = self._generate_url("versioning:source_list", name=name, origin=origin, accepted=accepted)
 		response = self.client.get(url)
 		self.assertEqual(response.status_code, status.HTTP_200_OK)
 		expected_data = [
@@ -126,12 +125,12 @@ class SourceListTest(TestResultHandler):
 
 	def test_source_list_400(self):
 		origin = 0
-		url = reverse("versioning:source_list") + f"?origin={origin}"
+		url = self._generate_url("versioning:source_list", origin=origin)
 		response = self.client.get(url)
 		self.assert_and_log(self.assertEqual, response.status_code, status.HTTP_400_BAD_REQUEST)
 
 	def test_source_list_404(self):
-		url = reverse("versioning:source_list")
+		url = self._generate_url("versioning:source_list")
 		response = self.client.get(url)
 		self.assert_and_log(self.assertEqual, response.status_code, status.HTTP_404_NOT_FOUND)
 
@@ -141,7 +140,7 @@ class SourceCountTest(TestResultHandler):
 		name = "NCBI"
 		origin = "database"
 		accepted = "True"
-		url = reverse("versioning:source_list_count") + f"?name={name}&origin={origin}&accepted={accepted}"
+		url = self._generate_url("versioning:source_list_count", name=name, origin=origin, accepted=accepted)
 		response = self.client.get(url)
 		self.assertEqual(response.status_code, status.HTTP_200_OK)
 		expected_data = 3
@@ -149,12 +148,12 @@ class SourceCountTest(TestResultHandler):
 
 	def test_source_list_count_400(self):
 		origin = 0
-		url = reverse("versioning:source_list_count") + f"?origin={origin}"
+		url = self._generate_url("versioning:source_list_count", origin=origin)
 		response = self.client.get(url)
 		self.assert_and_log(self.assertEqual, response.status_code, status.HTTP_400_BAD_REQUEST)
 
 	def test_source_list_count_404(self):
-		url = reverse("versioning:source_list_count")
+		url = self._generate_url("versioning:source_list_count")
 		response = self.client.get(url)
 		self.assert_and_log(self.assertEqual, response.status_code, status.HTTP_404_NOT_FOUND)
 
@@ -162,7 +161,7 @@ class SourceCountTest(TestResultHandler):
 class OriginSourceCRUDTest(TestResultHandler):
 	def test_origin_source_crud_200(self):
 		os_id = 2
-		url = reverse("versioning:os_crud") + f"?id={os_id}"
+		url = self._generate_url("versioning:os_crud", id=os_id)
 		response = self.client.get(url)
 		self.assertEqual(response.status_code, status.HTTP_200_OK)
 		expected_data = {
@@ -185,12 +184,12 @@ class OriginSourceCRUDTest(TestResultHandler):
 		self.assert_and_log(self.assertJSONEqual, response.content, expected_data)
 
 	def test_origin_source_crud_400(self):
-		url = reverse("versioning:os_crud")
+		url = self._generate_url("versioning:os_crud")
 		response = self.client.get(url)
 		self.assert_and_log(self.assertEqual, response.status_code, status.HTTP_400_BAD_REQUEST)
 
 	def test_origin_source_crud_404(self):
 		os_id = 9999
-		url = reverse("versioning:os_crud") + f"?id={os_id}"
+		url = self._generate_url("versioning:os_crud", id=os_id)
 		response = self.client.get(url)
 		self.assert_and_log(self.assertEqual, response.status_code, status.HTTP_404_NOT_FOUND)

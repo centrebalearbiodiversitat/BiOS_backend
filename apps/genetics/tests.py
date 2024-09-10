@@ -125,19 +125,19 @@ class MarkerCountTest(TestResultHandler):
 	def test_marker_list_count_200(self):
 		taxon_id = 14
 		total = 4
-		url = reverse("genetics:marker_list_count") + f"?taxonomy={taxon_id}&total={total}"
+		url = self._generate_url("genetics:marker_list_count", taxonomy=taxon_id, total=total)
 		response = self.client.get(url)
 		expected_data = 45
 		self.assertEqual(response.status_code, status.HTTP_200_OK)
 		self.assert_and_log(self.assertJSONEqual, response.content, expected_data)
 
 	def test_marker_list_count_400(self):
-		url = reverse("genetics:marker_list_count")
+		url = self._generate_url("genetics:marker_list_count")
 		response = self.client.get(url)
 		self.assert_and_log(self.assertEqual, response.status_code, status.HTTP_400_BAD_REQUEST)
 
 	def test_marker_list_count_404(self):
 		invalid_taxonomy_id = 99999
-		url = reverse("genetics:marker_list_count") + f"?taxonomy={invalid_taxonomy_id}"
+		url = self._generate_url("genetics:marker_list_count", taxonomy=invalid_taxonomy_id)
 		response = self.client.get(url)
 		self.assert_and_log(self.assertEqual, response.status_code, status.HTTP_404_NOT_FOUND)

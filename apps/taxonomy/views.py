@@ -278,9 +278,9 @@ class TaxonChildrenBaseView(APIView):
 		children_rank = TaxonomicLevel.TRANSLATE_RANK.get(taxon_form.cleaned_data.get("children_rank", None), None)
 
 		if children_rank:
-			return taxon.get_descendants().filter(rank=children_rank)
+			return taxon.get_descendants().filter(rank=children_rank, accepted=taxon_form.cleaned_data.get("accepted"))
 		else:
-			return taxon.get_children()
+			return taxon.get_children().filter(accepted=taxon_form.cleaned_data.get("accepted"))
 
 
 class TaxonChildrenView(TaxonChildrenBaseView):

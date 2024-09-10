@@ -65,6 +65,31 @@ class TaxonListTest(TestResultHandler):
 		self.assert_and_log(self.assertEqual, response.status_code, status.HTTP_404_NOT_FOUND)
 
 
+class TaxonCountTest(TestResultHandler):
+	def test_taxon_list_count_200(self):
+		taxon_rank = "order"
+		accepted = "true"
+		url = self._generate_url("taxonomy:list_count", taxonRank=taxon_rank, accepted=accepted)
+		response = self.client.get(url)
+		self.assertEqual(response.status_code, status.HTTP_200_OK)
+		expected_data = 1
+		self.assert_and_log(self.assertJSONEqual, response.content, expected_data)
+
+	def test_taxon_list_count_400(self):
+		taxon_rank = 4
+		url = self._generate_url("taxonomy:list_count", taxonRank=taxon_rank)
+		response = self.client.get(url)
+		self.assert_and_log(self.assertEqual, response.status_code, status.HTTP_400_BAD_REQUEST)
+
+	def test_taxon_list_count_404(self):
+		taxon_rank = "family"
+		accepted = "true"
+		name = "animals"
+		url = self._generate_url("taxonomy:list_count", taxonRank=taxon_rank, accepted=accepted, name=name)
+		response = self.client.get(url)
+		self.assert_and_log(self.assertEqual, response.status_code, status.HTTP_404_NOT_FOUND)
+
+
 class TaxonCRUDTest(TestResultHandler):
 	def test_taxon_crud_200(self):
 		taxon_id = 2
@@ -237,6 +262,28 @@ class TaxonCompositionTest(TestResultHandler):
 		self.assert_and_log(self.assertEqual, response.status_code, status.HTTP_404_NOT_FOUND)
 
 
+class TaxonSynonymTest(TestResultHandler):
+	def test_taxon_synonym_200(self):
+		taxon_id = 14
+		url = self._generate_url("taxonomy:taxon_synonyms", id=taxon_id)
+		response = self.client.get(url)
+		self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+		expected_data = []
+		self.assert_and_log(self.assertJSONEqual, response.content, expected_data)
+
+	def test_taxon_synonym_400(self):
+		url = self._generate_url("taxonomy:taxon_synonyms")
+		response = self.client.get(url)
+		self.assert_and_log(self.assertEqual, response.status_code, status.HTTP_400_BAD_REQUEST)
+
+	def test_taxon_synonym_404(self):
+		taxon_id = 99999
+		url = self._generate_url("taxonomy:taxon_synonyms", id=taxon_id)
+		response = self.client.get(url)
+		self.assert_and_log(self.assertEqual, response.status_code, status.HTTP_404_NOT_FOUND)
+
+
 class TaxonSourceTest(TestResultHandler):
 	def test_taxon_source_200(self):
 		taxon_id = 2
@@ -313,6 +360,219 @@ class TaxonChecklistTest(TestResultHandler):
 		url = self._generate_url("taxonomy:taxon_checklist", id=taxon_id)
 		response = self.client.get(url)
 		self.assert_and_log(self.assertEqual, response.status_code, status.HTTP_404_NOT_FOUND)
+
+
+class TaxonDataCRUDTest(TestResultHandler):
+	def test_taxon_data_crud_200(self):
+		taxon_id = 14
+		url = self._generate_url("taxonomy:data_crud", id=taxon_id)
+		response = self.client.get(url)
+		self.assertEqual(response.status_code, status.HTTP_200_OK)
+		expected_data = {
+			"id": 1,
+			"iucnGlobal": "en",
+			"iucnEurope": "en",
+			"iucnMediterranean": "ne",
+			"habitat": [
+				{
+					"sources": [
+						{
+							"id": 257,
+							"source": {
+								"id": 7,
+								"name": "IUCN",
+								"unidecodeName": "IUCN",
+								"accepted": True,
+								"acceptedModifier": None,
+								"origin": 0,
+								"url": None,
+								"dataType": 0,
+								"batch": None,
+								"synonyms": [],
+							},
+							"originId": "5",
+							"attribution": None,
+						}
+					],
+					"name": "wetlands (inland)",
+				},
+				{
+					"sources": [
+						{
+							"id": 266,
+							"source": {
+								"id": 7,
+								"name": "IUCN",
+								"unidecodeName": "IUCN",
+								"accepted": True,
+								"acceptedModifier": None,
+								"origin": 0,
+								"url": None,
+								"dataType": 0,
+								"batch": None,
+								"synonyms": [],
+							},
+							"originId": "14",
+							"attribution": None,
+						}
+					],
+					"name": "artificial/terrestrial",
+				},
+				{
+					"sources": [
+						{
+							"id": 267,
+							"source": {
+								"id": 7,
+								"name": "IUCN",
+								"unidecodeName": "IUCN",
+								"accepted": True,
+								"acceptedModifier": None,
+								"origin": 0,
+								"url": None,
+								"dataType": 0,
+								"batch": None,
+								"synonyms": [],
+							},
+							"originId": "15",
+							"attribution": None,
+						}
+					],
+					"name": "artificial/aquatic",
+				},
+			],
+			"invasive": False,
+			"domesticated": False,
+			"freshwater": True,
+			"marine": False,
+			"terrestrial": True,
+		}
+		self.assert_and_log(self.assertJSONEqual, response.content, expected_data)
+
+	def test_taxon_data_crud_400(self):
+		url = self._generate_url("taxonomy:data_crud")
+		response = self.client.get(url)
+		self.assert_and_log(self.assertEqual, response.status_code, status.HTTP_400_BAD_REQUEST)
+
+	def test_taxon_data_crud_404(self):
+		taxon_id = 99999
+		url = self._generate_url("taxonomy:data_crud", id=taxon_id)
+		response = self.client.get(url)
+		self.assert_and_log(self.assertEqual, response.status_code, status.HTTP_404_NOT_FOUND)
+
+
+class TaxonDataListTest(TestResultHandler):
+	def test_taxon_data_list_200(self):
+		iucn_europe = "en"
+		url = self._generate_url("taxonomy:data_crud", iucnEurope=iucn_europe)
+		response = self.client.get(url)
+		self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+		expected_data = [
+			{
+				"id": 1,
+				"iucnGlobal": "en",
+				"iucnEurope": "en",
+				"iucnMediterranean": "ne",
+				"habitat": [
+					{
+						"sources": [
+							{
+								"id": 257,
+								"source": {
+									"id": 7,
+									"name": "IUCN",
+									"unidecodeName": "IUCN",
+									"accepted": True,
+									"acceptedModifier": None,
+									"origin": 0,
+									"url": None,
+									"dataType": 0,
+									"batch": None,
+									"synonyms": [],
+								},
+								"originId": "5",
+								"attribution": None,
+							}
+						],
+						"name": "wetlands (inland)",
+					},
+					{
+						"sources": [
+							{
+								"id": 266,
+								"source": {
+									"id": 7,
+									"name": "IUCN",
+									"unidecodeName": "IUCN",
+									"accepted": True,
+									"acceptedModifier": None,
+									"origin": 0,
+									"url": None,
+									"dataType": 0,
+									"batch": None,
+									"synonyms": [],
+								},
+								"originId": "14",
+								"attribution": None,
+							}
+						],
+						"name": "artificial/terrestrial",
+					},
+					{
+						"sources": [
+							{
+								"id": 267,
+								"source": {
+									"id": 7,
+									"name": "IUCN",
+									"unidecodeName": "IUCN",
+									"accepted": True,
+									"acceptedModifier": None,
+									"origin": 0,
+									"url": None,
+									"dataType": 0,
+									"batch": None,
+									"synonyms": [],
+								},
+								"originId": "15",
+								"attribution": None,
+							}
+						],
+						"name": "artificial/aquatic",
+					},
+				],
+				"invasive": False,
+				"domesticated": False,
+				"freshwater": True,
+				"marine": False,
+				"terrestrial": True,
+			}
+		]
+		self.assert_and_log(self.assertJSONEqual, response.content, expected_data)
+
+	def test_taxon_data_list_400(self):
+		iucn_europe = "invalid"
+		url = self._generate_url("taxonomy:data_list", iucnEurope=iucn_europe)
+		response = self.client.get(url)
+		self.assert_and_log(self.assertEqual, response.status_code, status.HTTP_400_BAD_REQUEST)
+
+
+class TaxonDataCountTest(TestResultHandler):
+	def test_taxon_data_list_count_200(self):
+		iucn_europe = "en"
+		url = self._generate_url("taxonomy:data_count", iucnEurope=iucn_europe)
+		response = self.client.get(url)
+		self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+		expected_data = 1
+		self.assert_and_log(self.assertJSONEqual, response.content, expected_data)
+
+	def test_taxon_data_list_count_400(self):
+		iucn_europe = "invalid"
+		url = self._generate_url("taxonomy:data_count", iucnEurope=iucn_europe)
+		response = self.client.get(url)
+		self.assert_and_log(self.assertEqual, response.status_code, status.HTTP_400_BAD_REQUEST)
 
 
 class AuthorshipCRUDTest(TestResultHandler):

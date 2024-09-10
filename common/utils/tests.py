@@ -11,7 +11,8 @@ class TestResultHandler(TestCase):
 	@classmethod
 	def setUpTestData(cls):
 		super().setUpTestData()
-		if not cls.LOADED_DATA:
+		if not TestResultHandler.LOADED_DATA:
+			print("Loading fixtures...")
 			call_command(
 				"load_gadm",
 				"fixtures/gadm/CA/CA_uncertainess.shp",
@@ -34,7 +35,10 @@ class TestResultHandler(TestCase):
 				"load_occurrences",
 				"fixtures/genetics/Alytes_muletensis.csv",
 			)
-			cls.LOADED_DATA = True
+			call_command("populate_habitats")
+			call_command("load_taxon_data", "fixtures/iucn/Amphibia.json")
+			print("Finished loading fixtures...")
+			TestResultHandler.LOADED_DATA = True
 
 	def assert_and_log(self, assertion_function, *args, **kwargs):
 		current_function_name = inspect.stack()[1].function

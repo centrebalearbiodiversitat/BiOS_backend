@@ -19,7 +19,7 @@ class SourceSearchTest(TestResultHandler):
 				"url": None,
 				"dataType": 0,
 				"batch": None,
-				"synonyms": []
+				"synonyms": [],
 			},
 			{
 				"id": 3,
@@ -31,8 +31,8 @@ class SourceSearchTest(TestResultHandler):
 				"url": None,
 				"dataType": 1,
 				"batch": None,
-				"synonyms": []
-			}
+				"synonyms": [],
+			},
 		]
 		self.assertEqual(response.status_code, status.HTTP_200_OK)
 		self.assert_and_log(self.assertJSONEqual, response.content, expected_data)

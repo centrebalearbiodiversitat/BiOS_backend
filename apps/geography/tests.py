@@ -3,16 +3,17 @@ from rest_framework import status
 from common.utils.tests import TestResultHandler
 
 EXPECTED_GEO = {
-        "id": 4,
-        "parent": 1,
-        "name": "Mallorca",
-        "rank": "island",
-        "decimalLatitude": 39.64434,
-        "decimalLongitude": 2.89087,
-        "coordinateUncertaintyInMeters": 57620,
-        "elevation": None,
-        "depth": None
-    }
+	"id": 4,
+	"parent": 1,
+	"name": "Mallorca",
+	"rank": "island",
+	"decimalLatitude": 39.64434,
+	"decimalLongitude": 2.89087,
+	"coordinateUncertaintyInMeters": 57620,
+	"elevation": None,
+	"depth": None,
+}
+
 
 class GeographicLevelSearchTest(TestResultHandler):
 	def test_geographic_level_search_200(self):

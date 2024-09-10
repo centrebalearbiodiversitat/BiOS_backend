@@ -12,7 +12,7 @@ class TestResultHandler(TestCase):
 	def setUpTestData(cls):
 		super().setUpTestData()
 		if not TestResultHandler.LOADED_DATA:
-			print('Loading fixtures...')
+			print("Loading fixtures...")
 			call_command(
 				"load_gadm",
 				"fixtures/gadm/CA/CA_uncertainess.shp",
@@ -36,10 +36,7 @@ class TestResultHandler(TestCase):
 				"fixtures/genetics/Alytes_muletensis.csv",
 			)
 			call_command("populate_habitats")
-			call_command(
-				"load_taxon_data",
-				"fixtures/iucn/Amphibia.json"
-			)
+			call_command("load_taxon_data", "fixtures/iucn/Amphibia.json")
 			print("Finished loading fixtures...")
 			TestResultHandler.LOADED_DATA = True
 

@@ -304,10 +304,10 @@ class TaxonSourceTest(TestResultHandler):
 					"url": None,
 					"dataType": 0,
 					"batch": None,
-					"synonyms": []
+					"synonyms": [],
 				},
 				"originId": "N",
-				"attribution": None
+				"attribution": None,
 			},
 			{
 				"id": 18,
@@ -321,11 +321,11 @@ class TaxonSourceTest(TestResultHandler):
 					"url": None,
 					"dataType": 0,
 					"batch": None,
-					"synonyms": []
+					"synonyms": [],
 				},
 				"originId": "1",
-				"attribution": None
-			}
+				"attribution": None,
+			},
 		]
 		self.assert_and_log(self.assertJSONEqual, response.content, expected_data)
 
@@ -581,11 +581,7 @@ class AuthorshipCRUDTest(TestResultHandler):
 		url = self._generate_url("taxonomy:authorship_crud", id=taxon_id)
 		response = self.client.get(url)
 		self.assertEqual(response.status_code, status.HTTP_200_OK)
-		expected_data = {
-			"id": 1,
-			"name": "Fitzinger",
-			"accepted": True
-		}
+		expected_data = {"id": 1, "name": "Fitzinger", "accepted": True}
 		self.assert_and_log(self.assertJSONEqual, response.content, expected_data)
 
 	def test_authorship_crud_400(self):

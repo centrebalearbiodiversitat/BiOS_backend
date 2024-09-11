@@ -21,13 +21,7 @@ class TaxonomicLevelForm(IdFieldForm, TranslateForm):
 
 class TaxonomicLevelChildrenForm(IdFieldForm, CamelCaseForm):
 	children_rank = forms.CharField(max_length=100, required=False)
-	accepted = forms.NullBooleanField(required=False)
-
-	def clean_accepted(self):
-		if self.cleaned_data["accepted"] is False:
-			return False
-		else:
-			return True
+	accepted_only = forms.NullBooleanField(required=False)
 
 
 class TaxonDataForm(IdFieldForm, TranslateForm):

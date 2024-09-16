@@ -73,8 +73,8 @@ MIDDLEWARE = [
 ]
 
 DATABASES = {
-	'default': {
-		'ENGINE': 'django.contrib.gis.db.backends.postgis',
+	"default": {
+		"ENGINE": "django.contrib.gis.db.backends.postgis",
 		"HOST": os.environ.get("DB_HOST"),
 		"PORT": os.environ.get("DB_PORT"),
 		"NAME": os.environ.get("POSTGRES_DB"),

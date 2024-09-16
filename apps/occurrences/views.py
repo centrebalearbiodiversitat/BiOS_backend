@@ -89,7 +89,7 @@ class OccurrenceFilter(APIView):
 				gl = GeographicLevel.objects.get(id=gl)
 				filters &= Q(location__within=gl.area.simplify(0.0001) if gl.area.num_points > 20000 else gl.area)
 			except GeographicLevel.DoesNotExist:
-				raise CBBAPIException('Geographical location does not exist', 404)
+				raise CBBAPIException("Geographical location does not exist", 404)
 
 		voucher = occur_form.cleaned_data.get("voucher", None)
 		if voucher:

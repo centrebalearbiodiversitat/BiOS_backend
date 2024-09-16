@@ -41,6 +41,7 @@ LEVELS_PARAMS = {
 	VARIETY: TaxonomicLevel.VARIETY,
 }
 
+
 @transaction.atomic
 def create_taxonomic_level(line, parent, batch, idx_name, rank):
 	if idx_name == VARIETY and idx_name not in line:
@@ -62,9 +63,7 @@ def create_taxonomic_level(line, parent, batch, idx_name, rank):
 			accepted = False
 			accepted_modifier = TaxonomicLevel.MISAPPLIED
 		else:
-			raise Exception(
-				f'{STATUS} must be either "accepted", "misapplied" or "synonym" but was "{line[STATUS]}"\n{line}'
-			)
+			raise Exception(f'{STATUS} must be either "accepted", "misapplied" or "synonym" but was "{line[STATUS]}"\n{line}')
 
 		if line[idx_name][0].isupper() and rank in [TaxonomicLevel.SPECIES, TaxonomicLevel.SUBSPECIES, TaxonomicLevel.VARIETY]:
 			raise Exception(f"Epithet cant be upper cased.\n{line}")

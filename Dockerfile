@@ -15,3 +15,8 @@ RUN echo """deb https://dl.yarnpkg.com/debian/ stable main""" > /etc/apt/sources
 RUN #curl -sL https://deb.nodesource.com/setup_13.x | /bin/bash -
 
 RUN apt-get clean
+RUN echo deb http://deb.debian.org/debian testing main contrib non-free >> /etc/apt/sources.list && \
+    apt-get update && \
+    apt-get remove -y binutils && \
+    apt-get autoremove -y
+RUN apt-get install binutils libproj-dev gdal-bin -y

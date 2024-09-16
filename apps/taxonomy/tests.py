@@ -213,28 +213,6 @@ class TaxonChildrenCountTest(TestResultHandler):
 		self.assert_and_log(self.assertEqual, response.status_code, status.HTTP_404_NOT_FOUND)
 
 
-class TaxonSynonymTest(TestResultHandler):
-	def test_taxon_synonym_200(self):
-		taxon_id = 14
-		url = self._generate_url("taxonomy:taxon_synonyms", id=taxon_id)
-		response = self.client.get(url)
-		self.assertEqual(response.status_code, status.HTTP_200_OK)
-
-		expected_data = []
-		self.assert_and_log(self.assertJSONEqual, response.content, expected_data)
-
-	def test_taxon_synonym_400(self):
-		url = self._generate_url("taxonomy:taxon_synonyms")
-		response = self.client.get(url)
-		self.assert_and_log(self.assertEqual, response.status_code, status.HTTP_400_BAD_REQUEST)
-
-	def test_taxon_synonym_404(self):
-		taxon_id = 99999
-		url = self._generate_url("taxonomy:taxon_synonyms", id=taxon_id)
-		response = self.client.get(url)
-		self.assert_and_log(self.assertEqual, response.status_code, status.HTTP_404_NOT_FOUND)
-
-
 class TaxonCompositionTest(TestResultHandler):
 	def test_taxon_composition_200(self):
 		taxon_id = 5

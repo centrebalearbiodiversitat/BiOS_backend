@@ -10,6 +10,7 @@ from ..API.exceptions import CBBAPIException
 from .forms import OccurrenceForm
 from .models import Occurrence
 from .serializers import OccurrenceSerializer, BaseOccurrenceSerializer
+from ..geography.models import GeographicLevel
 
 
 class OccurrenceCRUDView(APIView):
@@ -84,9 +85,11 @@ class OccurrenceFilter(APIView):
 
 		gl = occur_form.cleaned_data.get("geographical_location", None)
 		if gl:
-			filters &= Q(geographical_location__id=gl.id) | Q(
-				geographical_location__lft__gte=gl.lft, geographical_location__rght__lte=gl.rght
-			)
+			try:
+				gl = GeographicLevel.objects.get(id=gl)
+				filters &= Q(location__within=gl.area.simplify(0.0001) if gl.area.num_points > 20000 else gl.area)
+			except GeographicLevel.DoesNotExist:
+				raise CBBAPIException('Geographical location does not exist', 404)
 
 		voucher = occur_form.cleaned_data.get("voucher", None)
 		if voucher:
@@ -102,9 +105,7 @@ class OccurrenceFilter(APIView):
 				occur_form.cleaned_data.get(f"{param}_max"),
 			)
 
-		query = Occurrence.objects.filter(filters).distinct()
-
-		return query
+		return Occurrence.objects.filter(filters).distinct()
 
 
 class OccurrenceListView(OccurrenceFilter):

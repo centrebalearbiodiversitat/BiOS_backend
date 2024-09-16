@@ -1,7 +1,9 @@
 import geopandas as gpd
+from django.contrib.gis.geos import Point, GEOSGeometry
 
 from django.core.management.base import BaseCommand
 from django.db import transaction
+from shapely import Polygon, MultiPolygon
 
 from apps.geography.models import GeographicLevel
 
@@ -28,6 +30,7 @@ class Command(BaseCommand):
 		levels = db.loc[:]
 
 		for i in range(len(levels)):
+			print(levels.iloc[i])
 			parent = None
 			for level in LEVELS:
 				if level["key"] in levels:
@@ -40,22 +43,27 @@ class Command(BaseCommand):
 						levels["CEN_LAT"].iloc[i],
 						levels["CEN_LON"].iloc[i],
 						levels["RADIUS_M"].iloc[i],
+						levels["geometry"].iloc[i],
 						GeographicLevel.TRANSLATE_RANK[levels["RANK"].iloc[i].lower()],
 					)
 
-	def load_geo_level(self, parent, name, rank, lat, lon, uncert, new_rank):
+	def load_geo_level(self, parent, name, rank, lat, lon, uncert, geometry, new_rank):
 		name = str(name).strip()
 
 		if not name:
 			return parent
+
 		if rank == new_rank:
+			if isinstance(geometry, Polygon):
+				geometry = MultiPolygon([geometry])
+			geometry = GEOSGeometry(str(geometry))
 			gl, _ = GeographicLevel.objects.get_or_create(
 				parent=parent,
 				name__iexact=name,
 				defaults={
 					"name": name,
-					"decimal_latitude": lat,
-					"decimal_longitude": lon,
+					"location": Point(lon, lat),
+					"area": geometry,
 					"coordinate_uncertainty_in_meters": uncert,
 					"accepted": True,
 					"rank": rank,

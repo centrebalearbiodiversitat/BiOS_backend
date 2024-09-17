@@ -15,14 +15,14 @@ git clone https://github.com/centrebalearbiodiversitat/cbbdb.git
 git checkout -b PROJECT-ID
 ```
 
-Replace "PROJECT-ID" with the code of the Notion ticket you are working on. To do this, you should use the name of the project to which the ticket belongs, followed by its ID. For example:
+Replace "PROJECT-ID" with the code of the Notion ticket you are working on[^1]. To do this, you should use the name of the project to which the ticket belongs, followed by its ID. For example:
 
-![ETicket example](assets/images/example_ticket.jpg)
+![ETicket example](assets/images/example_ticket.png)
 
-In this case, you should name your branch "BIODUMPY-38."
+In this case, you should name your branch "BIODUMPY-137."
 
 >[!NOTE]
->Please note that the ID numbering of each ticket is not consecutive in relation to its project. In other words, following the previous example, "BIODUMPY-38" does not mean it is the 38th ticket created for the BIODUMPY project, but rather that out of all the tickets created for all projects, the ID number 38 was generated when creating that ticket for this project.
+>Please note that the ID numbering of each ticket is not consecutive in relation to its project. In other words, following the previous example, "BIODUMPY-137" does not mean it is the 137th ticket created for the BIODUMPY project, but rather that out of all the tickets created for all projects, the ID number 137 was generated when creating that ticket for this project.
 
 
 ## 2. Make the Changes 🥚🐣🐥🐓
@@ -46,7 +46,7 @@ git commit -m "feat(geography): Implementation of Balearic municipalities"
 >
 >Follow the best practices guide for writing commits :arrow_down:
 
-### Best Practices for Commits 🧘‍♀️
+### Best practices for Commits 🧘‍♀️
 
 To maintain a clear and concise Git history, it's recommended to adopt conventions for commit messages. A common practice is to use SemVer conventions (Semantic Versioning), which allow for a clear and automatic classification of changes.
 
@@ -54,15 +54,13 @@ Basic structure of a commit message:
 
 **<font color="BF4458">type</font> <font color="05ADBA">(scope)</font>: <font color="7BB926">short message</font>**
 
-**<font color="BF4458">type</font>** -> Indicates the type of change made. Some common types are:
+**<font color="BF4458">type</font>** -> Indicates the type of change made. Must be one of the following:
 
 - **<font color="BF4458">feat</font>**: New functionality
 - **<font color="BF4458">fix</font>**: Bug fix
-- **<font color="BF4458">docs</font>**: Documentation changes
-- **<font color="BF4458">style</font>**: Styling changes (spacing, formatting, etc.)
 - **<font color="BF4458">refactor</font>**: Code refactoring (no changes in functionality)
 - **<font color="BF4458">test</font>**: New tests or changes to existing tests
-- **<font color="BF4458">chore</font>**: Maintenance tasks (build, configuration, etc.)
+- **<font color="BF4458">docs</font>**: Documentation changes
 
 **<font color="05ADBA">scope</font>** -> (optional) A more specific scope of the change (e.g. api, database, utils).
 

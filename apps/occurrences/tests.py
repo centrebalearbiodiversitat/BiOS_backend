@@ -14,26 +14,28 @@ EXPECTED_OCURRENCE = {
 	# "taxonomy": 14,
 }
 
-EXPECTED_OCURRENCE_EXTRA = {
-	"id": 1,
-	"basisOfRecord": 4,
-	"coordinateUncertaintyInMeters": 28030,
-	"decimalLatitude": 39.99735,
-	"decimalLongitude": 2.82283,
-	"depth": None,
-	"elevation": None,
-	"location": 1,
-	"taxonomy": 14,
-}
 
-
-class OccurrenceCRUDTest(TestResultHandler):
+class OccurrencesTest(TestResultHandler):
 	def test_occurrence_crud_200(self):
 		occurrence_id = 1
-		url = self._generate_url("occurrences:occurrence_crud", id=occurrence_id)
+		choice = "location,taxonomy"
+		url = self._generate_url("occurrences:occurrence_crud", id=occurrence_id, choice=choice)
 		response = self.client.get(url)
+		expected_data = {
+			"location": 1,
+			"taxonomy": {
+				"id": 14,
+				"name": "Alytes muletensis",
+				"taxonRank": "species",
+				"scientificNameAuthorship": "(Sanchíz & Adrover, 1979)",
+				"accepted": True,
+				"acceptedModifier": "",
+				"images": [],
+				"parent": 10
+			}
+		}
 		self.assertEqual(response.status_code, status.HTTP_200_OK)
-		self.assert_and_log(self.assertJSONEqual, response.content, EXPECTED_OCURRENCE_EXTRA)
+		self.assert_and_log(self.assertJSONEqual, response.content, expected_data)
 
 	def test_occurrence_crud_400(self):
 		url = self._generate_url("occurrences:occurrence_crud")
@@ -52,8 +54,6 @@ class OccurrenceCRUDTest(TestResultHandler):
 		expected_data = {"detail": "Occurrence does not exist"}
 		self.assert_and_log(self.assertJSONEqual, response.content, expected_data)
 
-
-class OccurrenceListTest(TestResultHandler):
 	def test_occurrence_list_200(self):
 		taxonomy_id = 14
 		decimal_latitude_min = 39.99
@@ -80,8 +80,6 @@ class OccurrenceListTest(TestResultHandler):
 		response = self.client.get(url)
 		self.assert_and_log(self.assertEqual, response.status_code, status.HTTP_404_NOT_FOUND)
 
-
-class OccurrenceCountTest(TestResultHandler):
 	def test_occurrence_count_200(self):
 		taxon_id = 14
 		url = self._generate_url("occurrences:occurrence_list_count", taxonomy=taxon_id)

@@ -3,7 +3,7 @@ from rest_framework import status
 from common.utils.tests import TestResultHandler
 
 
-class SourceSearchTest(TestResultHandler):
+class VersioningTest(TestResultHandler):
 	def test_source_search_200(self):
 		source_name = "gb"
 		url = self._generate_url("versioning:source_search", name=source_name)
@@ -42,8 +42,6 @@ class SourceSearchTest(TestResultHandler):
 		response = self.client.get(url)
 		self.assert_and_log(self.assertEqual, response.status_code, status.HTTP_400_BAD_REQUEST)
 
-
-class SourceCRUDTest(TestResultHandler):
 	def test_source_crud_200(self):
 		source_id = 3
 		url = self._generate_url("versioning:source_crud", id=source_id)
@@ -74,13 +72,11 @@ class SourceCRUDTest(TestResultHandler):
 		response = self.client.get(url)
 		self.assert_and_log(self.assertEqual, response.status_code, status.HTTP_404_NOT_FOUND)
 
-
-class SourceListTest(TestResultHandler):
 	def test_source_list_200(self):
 		name = "NCBI"
 		origin = "database"
-		accepted = "True"
-		url = self._generate_url("versioning:source_list", name=name, origin=origin, accepted=accepted)
+		accepted = True
+		url = self._generate_url("versioning:source_list",accepted=accepted, origin=origin, name=name)
 		response = self.client.get(url)
 		self.assertEqual(response.status_code, status.HTTP_200_OK)
 		expected_data = [
@@ -94,7 +90,7 @@ class SourceListTest(TestResultHandler):
 				"url": None,
 				"dataType": 0,
 				"batch": None,
-				"synonyms": [],
+				"synonyms": []
 			},
 			{
 				"id": 5,
@@ -106,7 +102,7 @@ class SourceListTest(TestResultHandler):
 				"url": None,
 				"dataType": 1,
 				"batch": None,
-				"synonyms": [],
+				"synonyms": []
 			},
 			{
 				"id": 6,
@@ -118,8 +114,8 @@ class SourceListTest(TestResultHandler):
 				"url": None,
 				"dataType": 2,
 				"batch": None,
-				"synonyms": [],
-			},
+				"synonyms": []
+			}
 		]
 		self.assert_and_log(self.assertJSONEqual, response.content, expected_data)
 
@@ -134,8 +130,6 @@ class SourceListTest(TestResultHandler):
 		response = self.client.get(url)
 		self.assert_and_log(self.assertEqual, response.status_code, status.HTTP_404_NOT_FOUND)
 
-
-class SourceCountTest(TestResultHandler):
 	def test_source_list_count_200(self):
 		name = "NCBI"
 		origin = "database"
@@ -157,8 +151,6 @@ class SourceCountTest(TestResultHandler):
 		response = self.client.get(url)
 		self.assert_and_log(self.assertEqual, response.status_code, status.HTTP_404_NOT_FOUND)
 
-
-class OriginSourceCRUDTest(TestResultHandler):
 	def test_origin_source_crud_200(self):
 		os_id = 2
 		url = self._generate_url("versioning:os_crud", id=os_id)

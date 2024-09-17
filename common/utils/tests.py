@@ -6,39 +6,36 @@ from django.urls import reverse
 
 
 class TestResultHandler(TestCase):
-	LOADED_DATA = False
 
-	@classmethod
-	def setUpTestData(cls):
-		super().setUpTestData()
-		if not TestResultHandler.LOADED_DATA:
-			print("Loading fixtures...")
-			call_command(
-				"load_gadm",
-				"fixtures/gadm/CA/CA_uncertainess.shp",
-			)
-			call_command(
-				"load_gadm",
-				"fixtures/gadm/island/island_uncertainess.shp",
-			)
-			call_command(
-				"load_gadm",
-				"fixtures/gadm/municipality/municipality_uncertainess.shp",
-			)
-			call_command(
-				"load_gadm",
-				"fixtures/gadm/poblaciones/poblaciones_uncertainess.shp",
-			)
-			call_command("load_taxonomy", "fixtures/taxonomy/Amphibia.csv")
-			call_command("load_occurrences", "fixtures/occurrences/Alytes_muletensis.csv")
-			call_command(
-				"load_occurrences",
-				"fixtures/genetics/Alytes_muletensis.csv",
-			)
-			call_command("populate_habitats")
-			call_command("load_taxon_data", "fixtures/iucn/Amphibia.json")
-			print("Finished loading fixtures...")
-			TestResultHandler.LOADED_DATA = True
+    @classmethod
+    def setUpTestData(cls):
+        super().setUpTestData()
+		print("Loading fixtures...")
+		call_command(
+			"load_gadm",
+			"fixtures/gadm/CA/CA_uncertainess.shp",
+		)
+		call_command(
+			"load_gadm",
+			"fixtures/gadm/island/island_uncertainess.shp",
+		)
+		call_command(
+			"load_gadm",
+			"fixtures/gadm/municipality/municipality_uncertainess.shp",
+		)
+		call_command(
+			"load_gadm",
+			"fixtures/gadm/poblaciones/poblaciones_uncertainess.shp",
+		)
+		call_command("load_taxonomy", "fixtures/taxonomy/Amphibia.csv")
+		call_command("load_occurrences", "fixtures/occurrences/Alytes_muletensis.csv")
+		call_command(
+			"load_occurrences",
+			"fixtures/genetics/Alytes_muletensis.csv",
+		)
+		call_command("populate_habitats")
+		call_command("load_taxon_data", "fixtures/iucn/Amphibia.json")
+		print("Finished loading fixtures...")
 
 	def assert_and_log(self, assertion_function, *args, **kwargs):
 		current_function_name = inspect.stack()[1].function

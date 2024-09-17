@@ -6,7 +6,6 @@ from django.db.models.functions import Substr, Lower, Upper
 
 from mptt.fields import TreeForeignKey
 from mptt.models import MPTTModel, TreeManager
-
 from apps.versioning.models import Batch, OriginSource
 from common.utils.models import ReferencedModel, SynonymManager, SynonymModel
 from common.utils.utils import str_clean_up

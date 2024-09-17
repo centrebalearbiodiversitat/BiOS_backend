@@ -272,7 +272,6 @@ class TaxonChildrenBaseView(APIView):
 
 		try:
 			taxon = TaxonomicLevel.objects.get(id=taxon_id)
-
 		except TaxonomicLevel.DoesNotExist:
 			raise CBBAPIException("Taxonomic level does not exist.", code=404)
 

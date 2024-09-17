@@ -227,30 +227,10 @@ class TaxonomyTest(TestResultHandler):
 		self.assertEqual(response.status_code, status.HTTP_200_OK)
 
 		expected_data = [
-			{
-				"id": 6,
-				"name": "Alytidae",
-				"rank": 4,
-				"totalSpecies": 1
-			},
-			{
-				"id": 7,
-				"name": "Bufonidae",
-				"rank": 4,
-				"totalSpecies": 2
-			},
-			{
-				"id": 8,
-				"name": "Hylidae",
-				"rank": 4,
-				"totalSpecies": 1
-			},
-			{
-				"id": 9,
-				"name": "Ranidae",
-				"rank": 4,
-				"totalSpecies": 1
-			}
+			{"id": 6, "name": "Alytidae", "rank": 4, "totalSpecies": 1},
+			{"id": 7, "name": "Bufonidae", "rank": 4, "totalSpecies": 2},
+			{"id": 8, "name": "Hylidae", "rank": 4, "totalSpecies": 1},
+			{"id": 9, "name": "Ranidae", "rank": 4, "totalSpecies": 1},
 		]
 		self.assert_and_log(self.assertJSONEqual, response.content, expected_data)
 
@@ -264,7 +244,6 @@ class TaxonomyTest(TestResultHandler):
 		url = self._generate_url("taxonomy:taxon_composition", id=taxon_id)
 		response = self.client.get(url)
 		self.assert_and_log(self.assertEqual, response.status_code, status.HTTP_404_NOT_FOUND)
-
 
 	def test_taxon_source_200(self):
 		taxon_id = 2

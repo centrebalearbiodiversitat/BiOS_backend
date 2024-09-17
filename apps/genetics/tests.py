@@ -30,64 +30,27 @@ EXPECTED_SEQUENCE = {
 }
 
 EXPECTED_LIST = [
-    {
-        "name": "ND5"
-    },
-    {
-        "name": "COX3"
-    },
-    {
-        "name": "COX1"
-    },
-    {
-        "name": "ND2"
-    },
-    {
-        "name": "RPL9"
-    },
-    {
-        "name": "ND4"
-    },
-    {
-        "name": "c-myc"
-    },
-    {
-        "name": "Cytb"
-    },
-    {
-        "name": "PPP3CA"
-    },
-    {
-        "name": "ND6"
-    },
-    {
-        "name": "ND3"
-    },
-    {
-        "name": "ND4L"
-    },
-    {
-        "name": "ATP6"
-    },
-    {
-        "name": "COX2"
-    },
-    {
-        "name": "ND1"
-    },
-    {
-        "name": "Tyr"
-    },
-    {
-        "name": "beta-fibrinogen"
-    },
-    {
-        "name": "16S rRNA"
-    },
-    {
-        "name": "12S rRNA"
-    }
+	{"name": "ND5"},
+	{"name": "COX3"},
+	{"name": "COX1"},
+	{"name": "ND2"},
+	{"name": "RPL9"},
+	{"name": "ND4"},
+	{"name": "c-myc"},
+	{"name": "Cytb"},
+	{"name": "PPP3CA"},
+	{"name": "ND6"},
+	{"name": "ND3"},
+	{"name": "ND4L"},
+	{"name": "ATP6"},
+	{"name": "COX2"},
+	{"name": "ND1"},
+	{"name": "Tyr"},
+	{"name": "beta-fibrinogen"},
+	{"name": "16S rRNA"},
+	{"name": "12S rRNA"},
 ]
+
 
 class GeneticsTest(TestResultHandler):
 	def test_sequence_crud_200(self):

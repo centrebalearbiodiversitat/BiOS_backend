@@ -76,7 +76,7 @@ class VersioningTest(TestResultHandler):
 		name = "NCBI"
 		origin = "database"
 		accepted = True
-		url = self._generate_url("versioning:source_list",accepted=accepted, origin=origin, name=name)
+		url = self._generate_url("versioning:source_list", accepted=accepted, origin=origin, name=name)
 		response = self.client.get(url)
 		self.assertEqual(response.status_code, status.HTTP_200_OK)
 		expected_data = [
@@ -90,7 +90,7 @@ class VersioningTest(TestResultHandler):
 				"url": None,
 				"dataType": 0,
 				"batch": None,
-				"synonyms": []
+				"synonyms": [],
 			},
 			{
 				"id": 5,
@@ -102,7 +102,7 @@ class VersioningTest(TestResultHandler):
 				"url": None,
 				"dataType": 1,
 				"batch": None,
-				"synonyms": []
+				"synonyms": [],
 			},
 			{
 				"id": 6,
@@ -114,8 +114,8 @@ class VersioningTest(TestResultHandler):
 				"url": None,
 				"dataType": 2,
 				"batch": None,
-				"synonyms": []
-			}
+				"synonyms": [],
+			},
 		]
 		self.assert_and_log(self.assertJSONEqual, response.content, expected_data)
 

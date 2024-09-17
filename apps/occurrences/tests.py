@@ -31,8 +31,8 @@ class OccurrencesTest(TestResultHandler):
 				"accepted": True,
 				"acceptedModifier": "",
 				"images": [],
-				"parent": 10
-			}
+				"parent": 10,
+			},
 		}
 		self.assertEqual(response.status_code, status.HTTP_200_OK)
 		self.assert_and_log(self.assertJSONEqual, response.content, expected_data)

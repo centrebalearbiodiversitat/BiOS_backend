@@ -33,18 +33,3 @@ if not SECRET_KEY:
             to generate your secret key!"
 				% SECRET_FILE
 			)
-
-
-# Database
-# https://docs.djangoproject.com/en/4.0/ref/settings/#databases
-
-DATABASES = {
-	"default": {
-		"ENGINE": "django.db.backends.postgresql",
-		"HOST": os.environ.get("DB_HOST"),
-		"PORT": os.environ.get("DB_PORT"),
-		"NAME": os.environ.get("POSTGRES_DB"),
-		"USER": os.environ.get("POSTGRES_USER"),
-		"PASSWORD": os.environ.get("POSTGRES_PASSWORD"),
-	}
-}

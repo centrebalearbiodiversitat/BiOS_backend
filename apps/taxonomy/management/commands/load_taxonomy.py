@@ -224,30 +224,31 @@ class Command(BaseCommand):
 		file_name = options["file"]
 		delimiter = options["d"]
 		exception = False
-		with open(file_name, encoding="windows-1252") as file:
-			csv_file = csv.DictReader(file, delimiter=delimiter)
-			batch = Batch.objects.create()
-			biota, _ = TaxonomicLevel.objects.get_or_create(
-				name__iexact="Biota",
-				rank=TaxonomicLevel.LIFE,
-				defaults={
-					"name": "Biota",
-					"accepted": True,
-					"batch": batch,
-					"parent": None,
-				},
-			)
+		with TaxonomicLevel.objects.delay_mptt_updates():
+			with open(file_name, encoding="windows-1252") as file:
+				csv_file = csv.DictReader(file, delimiter=delimiter)
+				batch = Batch.objects.create()
+				biota, _ = TaxonomicLevel.objects.get_or_create(
+					name__iexact="Biota",
+					rank=TaxonomicLevel.LIFE,
+					defaults={
+						"name": "Biota",
+						"accepted": True,
+						"batch": batch,
+						"parent": None,
+					},
+				)
 
-			for line in csv_file:
-				parent = biota
-				clean_up_input_line(line)
+				for line in csv_file:
+					parent = biota
+					clean_up_input_line(line)
 
-				try:
-					for level in LEVELS:
-						parent = create_taxonomic_level(line, parent, batch, level, *LEVELS_PARAMS[level])
-				except:
-					exception = True
-					print(traceback.format_exc())
+					try:
+						for level in LEVELS:
+							parent = create_taxonomic_level(line, parent, batch, level, *LEVELS_PARAMS[level])
+					except:
+						exception = True
+						print(traceback.format_exc())
 
-			if exception:
-				raise Exception("Errors found: Rollback control")
+				if exception:
+					raise Exception("Errors found: Rollback control")

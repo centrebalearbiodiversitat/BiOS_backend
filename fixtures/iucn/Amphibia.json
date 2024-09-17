@@ -1,0 +1,81 @@
+[
+    {
+        "taxonomy": "Alytes muletensis",
+        "iucn_global": "EN",
+        "iucn_europe": "EN",
+        "iucn_mediterranean": null,
+        "habitat": [
+            "14",
+            "5",
+            "15"
+        ],
+        "freshwater": true,
+        "marine": false,
+        "terrestrial": true
+    },
+    {
+        "taxonomy": "Bufotes balearicus",
+        "iucn_global": "LC",
+        "iucn_europe": "LC",
+        "iucn_mediterranean": null,
+        "habitat": [
+            "3",
+            "13",
+            "14",
+            "5",
+            "15"
+        ],
+        "freshwater": true,
+        "marine": false,
+        "terrestrial": true
+    },
+    {
+        "taxonomy": "Bufotes viridis",
+        "iucn_global": "LC",
+        "iucn_europe": null,
+        "iucn_mediterranean": null,
+        "habitat": [
+            "4",
+            "1",
+            "3",
+            "14",
+            "5",
+            "15"
+        ],
+        "freshwater": true,
+        "marine": false,
+        "terrestrial": true
+    },
+    {
+        "taxonomy": "Hyla meridionalis",
+        "iucn_global": "LC",
+        "iucn_europe": null,
+        "iucn_mediterranean": null,
+        "habitat": [
+            "4",
+            "1",
+            "8",
+            "3",
+            "5",
+            "15"
+        ],
+        "freshwater": true,
+        "marine": false,
+        "terrestrial": true
+    },
+    {
+        "taxonomy": "Pelophylax perezi",
+        "iucn_global": "LC",
+        "iucn_europe": "LC",
+        "iucn_mediterranean": null,
+        "habitat": [
+            "14",
+            "1",
+            "5",
+            "3"
+        ],
+        "freshwater": true,
+        "marine": false,
+        "terrestrial": true
+    }
+]

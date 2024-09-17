@@ -34,8 +34,8 @@ def create_taxon_data(line, taxonomy):
 			"iucn_mediterranean": TaxonData.TRANSLATE_CS[line["iucn_mediterranean"].lower()]
 			if line["iucn_mediterranean"]
 			else TaxonData.NE,
-			"invasive": None,
-			"domesticated": None,
+			"invasive": False,
+			"domesticated": False,
 			"freshwater": line["freshwater"],
 			"marine": line["marine"],
 			"terrestrial": line["terrestrial"],

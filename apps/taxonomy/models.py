@@ -2,9 +2,11 @@ import re
 
 from django.core.exceptions import ValidationError
 from django.db import models
+from django.db.models.functions import Substr, Lower, Upper
+
 from mptt.fields import TreeForeignKey
-from mptt.models import MPTTModel
-from mptt.managers import TreeManager
+from mptt.models import MPTTModel, TreeManager
+
 from apps.versioning.models import Batch, OriginSource
 from common.utils.models import ReferencedModel, SynonymManager, SynonymModel
 from common.utils.utils import str_clean_up
@@ -12,9 +14,6 @@ from common.utils.utils import str_clean_up
 
 class Authorship(SynonymModel):
 	batch = models.ForeignKey(Batch, on_delete=models.CASCADE, null=True, blank=True, default=None)
-
-	class Meta:
-		app_label = "taxonomy"
 
 
 class TaxonomicLevelManager(SynonymManager, TreeManager):
@@ -133,10 +132,36 @@ class TaxonomicLevel(SynonymModel, MPTTModel, ReferencedModel):
 
 	class Meta:
 		unique_together = ("parent", "name", "rank")
-		app_label = "taxonomy"
+		indexes = [
+			models.Index(
+				Lower(Substr("unidecode_name", 1, 1)),
+				name="unidecode_name_l1_substr_idx",
+			),
+			models.Index(
+				Lower(Substr("unidecode_name", 1, 2)),
+				name="unidecode_name_l2_substr_idx",
+			),
+			models.Index(
+				Lower(Substr("unidecode_name", 1, 3)),
+				name="unidecode_name_l3_substr_idx",
+			),
+			models.Index(
+				Upper("unidecode_name"),
+				name="unidecode_name_insensitive",
+			),
+		]
+		index_together = [
+			("tree_id", "lft", "rght"),
+			("tree_id", "rght"),
+			("tree_id", "lft"),
+			("rght", "lft"),
+			("rght",),
+			("lft",),
+			("rank",),
+		]
 
 	class MPTTMeta:
-		order_insertion_by = ["id"]
+		order_insertion_by = ["name"]
 
 
 class Habitat(ReferencedModel):

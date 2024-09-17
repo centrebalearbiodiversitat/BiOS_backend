@@ -21,6 +21,7 @@ class TaxonomicLevelForm(IdFieldForm, TranslateForm):
 
 class TaxonomicLevelChildrenForm(IdFieldForm, CamelCaseForm):
 	children_rank = forms.CharField(max_length=100, required=False)
+	accepted_only = forms.NullBooleanField(required=False)
 
 
 class TaxonDataForm(IdFieldForm, TranslateForm):

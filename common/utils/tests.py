@@ -38,7 +38,7 @@ class TestResultHandler(TestCase):
 		print("Finished loading fixtures...")
 
 	def assert_and_log(self, assertion_function, *args, **kwargs):
-		current_function_name = inspect.stack()[1].function
+		# current_function_name = inspect.stack()[1].function
 		try:
 			assertion_function(*args, **kwargs)
 		# print(f"\033[92m==> {current_function_name}: PASSED\033[0m")

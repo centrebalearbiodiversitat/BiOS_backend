@@ -29,8 +29,30 @@ EXPECTED_SEQUENCE = {
 	"markers": [5],
 }
 
+EXPECTED_LIST = [
+	{"name": "ND5"},
+	{"name": "COX3"},
+	{"name": "COX1"},
+	{"name": "ND2"},
+	{"name": "RPL9"},
+	{"name": "ND4"},
+	{"name": "c-myc"},
+	{"name": "Cytb"},
+	{"name": "PPP3CA"},
+	{"name": "ND6"},
+	{"name": "ND3"},
+	{"name": "ND4L"},
+	{"name": "ATP6"},
+	{"name": "COX2"},
+	{"name": "ND1"},
+	{"name": "Tyr"},
+	{"name": "beta-fibrinogen"},
+	{"name": "16S rRNA"},
+	{"name": "12S rRNA"},
+]
 
-class SequenceCRUDTest(TestResultHandler):
+
+class GeneticsTest(TestResultHandler):
 	def test_sequence_crud_200(self):
 		marker_id = 14
 		url = self._generate_url("genetics:sequence_crud", id=marker_id)
@@ -51,8 +73,6 @@ class SequenceCRUDTest(TestResultHandler):
 
 		self.assert_and_log(self.assertEqual, response.status_code, status.HTTP_404_NOT_FOUND)
 
-
-class SequenceSearchTest(TestResultHandler):
 	def test_sequence_search_200(self):
 		seq_def = "CAP01 NADH dehydrogenase subunit 4"
 		url = self._generate_url("genetics:sequence_search", definition=seq_def)
@@ -65,8 +85,6 @@ class SequenceSearchTest(TestResultHandler):
 		response = self.client.get(url)
 		self.assert_and_log(self.assertEqual, response.status_code, status.HTTP_400_BAD_REQUEST)
 
-
-class MarkerCRUDTest(TestResultHandler):
 	def test_marker_crud_200(self):
 		marker_id = 1
 		url = self._generate_url("genetics:marker_crud", id=marker_id)
@@ -85,8 +103,6 @@ class MarkerCRUDTest(TestResultHandler):
 		response = self.client.get(url)
 		self.assert_and_log(self.assertEqual, response.status_code, status.HTTP_404_NOT_FOUND)
 
-
-class MarkerSearchTest(TestResultHandler):
 	def test_marker_search_200(self):
 		marker_name = "yr"
 		url = self._generate_url("genetics:marker_search", name=marker_name)
@@ -99,15 +115,13 @@ class MarkerSearchTest(TestResultHandler):
 		response = self.client.get(url)
 		self.assert_and_log(self.assertEqual, response.status_code, status.HTTP_400_BAD_REQUEST)
 
-
-class MarkersListTest(TestResultHandler):
 	def test_marker_list_200(self):
 		taxon_id = 14
-		url = self._generate_url("genetics:marker_list", taxonomy=taxon_id)
+		choice = "name"
+		url = self._generate_url("genetics:marker_list", taxonomy=taxon_id, choice=choice)
 		response = self.client.get(url)
-		expected_data = []
 		self.assertEqual(response.status_code, status.HTTP_200_OK)
-		self.assert_and_log(self.assertJSONEqual, response.content, expected_data)
+		self.assert_and_log(self.assertJSONEqual, response.content, EXPECTED_LIST)
 
 	def test_marker_list_400(self):
 		url = self._generate_url("genetics:marker_list")
@@ -120,8 +134,6 @@ class MarkersListTest(TestResultHandler):
 		response = self.client.get(url)
 		self.assert_and_log(self.assertEqual, response.status_code, status.HTTP_404_NOT_FOUND)
 
-
-class MarkerCountTest(TestResultHandler):
 	def test_marker_list_count_200(self):
 		taxon_id = 14
 		total = 4

@@ -1,5 +1,4 @@
 from rest_framework import status
-
 from common.utils.tests import TestResultHandler
 
 
@@ -199,7 +198,7 @@ class TaxonomyTest(TestResultHandler):
 		url = self._generate_url("taxonomy:taxon_children_count", id=99999)
 		response = self.client.get(url)
 		self.assert_and_log(self.assertEqual, response.status_code, status.HTTP_404_NOT_FOUND)
-
+  
 	def test_taxon_synonym_200(self):
 		taxon_id = 14
 		url = self._generate_url("taxonomy:taxon_synonyms", id=taxon_id)

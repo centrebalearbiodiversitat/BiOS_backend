@@ -38,7 +38,7 @@ INSTALLED_APPS = [
 	"django.contrib.sessions",
 	"django.contrib.messages",
 	"django.contrib.staticfiles",
-	"django.contrib.postgres",
+	"django.contrib.gis",
 	"rest_framework",
 	"drf_yasg",
 	"corsheaders",
@@ -71,6 +71,17 @@ MIDDLEWARE = [
 	"django.contrib.messages.middleware.MessageMiddleware",
 	"django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
+
+DATABASES = {
+	"default": {
+		"ENGINE": "django.contrib.gis.db.backends.postgis",
+		"HOST": os.environ.get("DB_HOST"),
+		"PORT": os.environ.get("DB_PORT"),
+		"NAME": os.environ.get("POSTGRES_DB"),
+		"USER": os.environ.get("POSTGRES_USER"),
+		"PASSWORD": os.environ.get("POSTGRES_PASSWORD"),
+	}
+}
 
 ROOT_URLCONF = "cbb.urls"
 

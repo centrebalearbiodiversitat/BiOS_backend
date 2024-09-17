@@ -2,12 +2,14 @@ from rest_framework import serializers
 from common.utils.serializers import CaseModelSerializer
 from ..geography.models import GeographicLevel
 from .models import Occurrence
-from ..geography.serializers import GeographicLevelSerializer
 from ..taxonomy.serializers import BaseTaxonomicLevelSerializer
 from ..versioning.serializers import OriginSourceSerializer
 
 
 class BaseOccurrenceSerializer(CaseModelSerializer):
+	decimal_latitude = serializers.DecimalField(source="location.y", max_digits=8, decimal_places=5, allow_null=True)
+	decimal_longitude = serializers.DecimalField(source="location.x", max_digits=8, decimal_places=5, allow_null=True)
+
 	class Meta:
 		model = Occurrence
 		fields = (
@@ -16,6 +18,7 @@ class BaseOccurrenceSerializer(CaseModelSerializer):
 			"coordinate_uncertainty_in_meters",
 			"decimal_latitude",
 			"decimal_longitude",
+			# "coords",
 			# "day",
 			# "depth",
 			# "elevation",

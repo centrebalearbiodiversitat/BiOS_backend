@@ -50,13 +50,13 @@ class OccurrenceForm(LatLonModelForm):
 	basis_of_record = forms.IntegerField(required=False)
 	batch = forms.IntegerField(required=False)
 	sources = forms.IntegerField(required=False)
+	add_synonyms = forms.BooleanField(required=False, initial=True)
+
 	TRANSLATE_FIELDS = {
 		"year": "collection_date_year",
 		"month": "collection_date_month",
 		"day": "collection_date_day",
 	}
-
-	add_synonyms = forms.BooleanField(required=False, initial=True)
 
 	def __init__(self, *args, **kwargs):
 		super().__init__(*args, **kwargs)

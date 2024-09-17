@@ -7,9 +7,9 @@ from django.urls import reverse
 
 class TestResultHandler(TestCase):
 
-    @classmethod
-    def setUpTestData(cls):
-        super().setUpTestData()
+	@classmethod
+	def setUpTestData(cls):
+		super().setUpTestData()
 		print("Loading fixtures...")
 		call_command(
 			"load_gadm",
@@ -41,7 +41,7 @@ class TestResultHandler(TestCase):
 		current_function_name = inspect.stack()[1].function
 		try:
 			assertion_function(*args, **kwargs)
-			# print(f"\033[92m==> {current_function_name}: PASSED\033[0m")
+		# print(f"\033[92m==> {current_function_name}: PASSED\033[0m")
 		except AssertionError as e:
 			# print(f"\033[91m{e}\033[0m")
 			# print(f"\033[91m==> {current_function_name}: FAILED\033[0m")

@@ -235,12 +235,12 @@ class Command(BaseCommand):
 					parent = biota
 					clean_up_input_line(line)
 
-				try:
-					for level in LEVELS:
-						parent = create_taxonomic_level(line, parent, batch, level, LEVELS_PARAMS[level])
-				except:
-					exception = True
-					print(traceback.format_exc())
+					try:
+						for level in LEVELS:
+							parent = create_taxonomic_level(line, parent, batch, level, LEVELS_PARAMS[level])
+					except:
+						exception = True
+						print(traceback.format_exc())
 
 			if exception:
 				raise Exception("Errors found: Rollback control")

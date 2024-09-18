@@ -1,4 +1,6 @@
 from django.db import models
+
+from apps.geography.models import GeographicLevel
 from apps.taxonomy.models import TaxonomicLevel
 from common.utils.models import LatLonModel, ReferencedModel
 
@@ -45,6 +47,7 @@ class Occurrence(ReferencedModel, LatLonModel):
 	collection_date_month = models.PositiveSmallIntegerField(null=True, blank=True)
 	collection_date_day = models.PositiveSmallIntegerField(null=True, blank=True)
 	basis_of_record = models.PositiveSmallIntegerField(choices=BASIS_OF_RECORD)
+	loc_inter = models.ForeignKey(GeographicLevel, on_delete=models.CASCADE, null=True, blank=True)
 
 	def __str__(self):
 		return f"{self.taxonomy} ({self.voucher})"

@@ -284,7 +284,10 @@ class TaxonChildrenBaseView(APIView):
 		if taxon_form.cleaned_data.get("accepted_only") is True:
 			filters["accepted"] = True
 
-		return taxon.get_children().filter(**filters)
+		if children_rank:
+			return taxon.get_descendants().filter(rank=children_rank).filter(**filters)
+		else:
+			return taxon.get_children().filter(**filters)
 
 
 class TaxonChildrenView(TaxonChildrenBaseView):

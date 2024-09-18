@@ -1,5 +1,6 @@
 import geopandas as gpd
-from django.contrib.gis.geos import Point, GEOSGeometry
+import shapely
+from django.contrib.gis.geos import Point, GEOSGeometry, MultiPolygon
 
 from django.core.management.base import BaseCommand
 from django.db import transaction
@@ -30,7 +31,7 @@ class Command(BaseCommand):
 		levels = db.loc[:]
 
 		for i in range(len(levels)):
-			print(levels.iloc[i])
+			# print(levels.iloc[i])
 			parent = None
 			for level in LEVELS:
 				if level["key"] in levels:
@@ -56,7 +57,14 @@ class Command(BaseCommand):
 		if rank == new_rank:
 			if isinstance(geometry, Polygon):
 				geometry = MultiPolygon([geometry])
+
 			geometry = GEOSGeometry(str(geometry))
+
+			if geometry.num_points > 30000:
+				geometry = geometry.simplify(0.0005, preserve_topology=True)
+				# geometry = MultiPolygon([geometry])
+				# geometry = GEOSGeometry(str(geometry))
+
 			gl, _ = GeographicLevel.objects.get_or_create(
 				parent=parent,
 				name__iexact=name,

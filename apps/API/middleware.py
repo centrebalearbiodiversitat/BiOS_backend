@@ -6,9 +6,11 @@ class DynamicSerializeMiddleware:
 		return self.get_response(request)
 
 	def process_template_response(self, request, response):
-		if (hasattr(response, 'accepted_media_type') and
-				response.accepted_media_type == "application/json" and
-				isinstance(response.data, (list, dict))):
+		if (
+			hasattr(response, "accepted_media_type")
+			and response.accepted_media_type == "application/json"
+			and isinstance(response.data, (list, dict))
+		):
 			choice = request.GET.get("choice")
 
 			if choice:

@@ -6,7 +6,6 @@ from django.urls import reverse
 
 
 class TestResultHandler(TestCase):
-
 	@classmethod
 	def setUpTestData(cls):
 		super().setUpTestData()

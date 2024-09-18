@@ -275,12 +275,19 @@ class TaxonChildrenBaseView(APIView):
 		except TaxonomicLevel.DoesNotExist:
 			raise CBBAPIException("Taxonomic level does not exist.", code=404)
 
+		filters = {}
 		children_rank = TaxonomicLevel.TRANSLATE_RANK.get(taxon_form.cleaned_data.get("children_rank", None), None)
 
 		if children_rank:
-			return taxon.get_descendants().filter(rank=children_rank)
+			filters["rank"] = children_rank
+
+		if taxon_form.cleaned_data.get("accepted_only") is True:
+			filters["accepted"] = True
+
+		if children_rank:
+			return taxon.get_descendants().filter(rank=children_rank).filter(**filters)
 		else:
-			return taxon.get_children()
+			return taxon.get_children().filter(**filters)
 
 
 class TaxonChildrenView(TaxonChildrenBaseView):

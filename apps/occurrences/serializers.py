@@ -8,6 +8,9 @@ from ..versioning.serializers import OriginSourceSerializer
 
 
 class BaseOccurrenceSerializer(CaseModelSerializer):
+	decimal_latitude = serializers.DecimalField(source="location.y", max_digits=8, decimal_places=5, allow_null=True)
+	decimal_longitude = serializers.DecimalField(source="location.x", max_digits=8, decimal_places=5, allow_null=True)
+
 	class Meta:
 		model = Occurrence
 		fields = (
@@ -16,6 +19,7 @@ class BaseOccurrenceSerializer(CaseModelSerializer):
 			"coordinate_uncertainty_in_meters",
 			"decimal_latitude",
 			"decimal_longitude",
+			# "coords",
 			# "day",
 			# "depth",
 			# "elevation",
@@ -53,7 +57,7 @@ class OccurrenceSerializer(BaseOccurrenceSerializer):
 	month = serializers.IntegerField(source="collection_date_month")
 	year = serializers.IntegerField(source="collection_date_year")
 
-	location = serializers.PrimaryKeyRelatedField(queryset=GeographicLevel.objects.all(), source="geographical_location")
+	location = serializers.SerializerMethodField()
 	taxonomy = BaseTaxonomicLevelSerializer()
 	sources = OriginSourceSerializer(many=True)
 
@@ -76,6 +80,9 @@ class OccurrenceSerializer(BaseOccurrenceSerializer):
 			"year",
 			"sources",
 		)
+
+	def get_location(self, obj):
+		return GeographicLevelSerializer(GeographicLevel.objects.filter(area__intersects=obj.location).order_by('-rank').first()).data
 
 	def get_basis_of_record(self, obj):
 		return Occurrence.TRANSLATE_BASIS_OF_RECORD[obj.basis_of_record]

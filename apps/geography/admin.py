@@ -9,6 +9,7 @@ class BaseTaxonLevelAdmin(admin.ModelAdmin):
 	list_display = ["name", "rank"]
 	autocomplete_fields = ["synonyms"]
 	exclude = ["references"]
+	readonly_fields = ["location"]
 
 
 admin.site.register(GeographicLevel, BaseTaxonLevelAdmin)

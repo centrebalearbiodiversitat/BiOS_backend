@@ -121,7 +121,7 @@ class MarkerFilter(APIView):
 class MarkerListView(MarkerFilter):
 	def get(self, request):
 		return Response(
-			SuperMarkerSerializer(super().get(request).annotate(total=Count("id")).filter(total__gte=1).order_by("-total"), many=True).data
+			SuperMarkerSerializer(super().get(request).annotate(total=Count("id")).filter(total__gte=10).order_by("-total"), many=True).data
 		)
 
 

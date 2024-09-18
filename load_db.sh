@@ -9,7 +9,7 @@ python manage.py load_gadm data/NO_BORRAR/GIS/CNIG_poblaciones/*uncertainess*/*.
 for file in data/NO_BORRAR/taxonomy/*/*.csv
 do
   echo "$file"
-  python manage.py load_taxonomy "$file"
+  python manage.py load_taxonomy_new "$file"
 done
 
 # Taxon data

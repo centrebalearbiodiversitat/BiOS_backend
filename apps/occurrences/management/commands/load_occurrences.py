@@ -3,7 +3,8 @@ import json
 from django.core.management.base import BaseCommand
 from django.db import transaction
 from django.utils.dateparse import parse_datetime
-from apps.genetics.models import Sequence, Gene
+from django.contrib.gis.geos import Point
+from apps.genetics.models import Sequence, Marker
 from apps.geography.models import GeographicLevel
 from apps.occurrences.models import Occurrence
 from apps.taxonomy.models import TaxonomicLevel
@@ -73,7 +74,7 @@ def genetic_sources(line: dict, batch, occ):
 
 	for production in line["genetic_features"]:
 		if production["gene"] and not production["gene"].startswith("LOC"):
-			gene, is_new = Gene.objects.get_or_create(
+			marker, is_new = Marker.objects.get_or_create(
 				name__iexact=production["gene"],
 				defaults={
 					"name": production["gene"],
@@ -83,32 +84,18 @@ def genetic_sources(line: dict, batch, occ):
 				},
 			)
 
-			if not gene.sources.filter(id=os.id).exists():
-				gene.sources.add(os)
+			if not marker.sources.filter(id=os.id).exists():
+				marker.sources.add(os)
 
 			if not is_new and production["product"]:
-				if gene.product:
-					if len(production["product"]) > len(gene.product):
-						gene.product = production["product"]
-						gene.save()
+				if marker.product:
+					if len(production["product"]) > len(marker.product):
+						marker.product = production["product"]
+						marker.save()
 				else:
-					gene.product = production["product"]
-					gene.save()
-			seq.genes.add(gene)
-
-		# product = None
-		# if production["product"]:
-		# 	product, _ = Product.objects.get_or_create(
-		# 		name__iexact=production["product"], defaults={"name": production["product"], "batch": batch, "accepted": True}
-		# 	)
-		# 	if not product.sources.filter(id=os.id).exists():
-		# 		product.sources.add(os)
-
-		# prod_rel, _ = Produces.objects.get_or_create(gene=gene, product=product, defaults={"batch": batch})
-		# if not prod_rel.sources.filter(id=os.id).exists():
-		# 	prod_rel.sources.add(os)
-		# if not seq.products.filter(id=prod_rel.id).exists():
-		# 	seq.products.add(prod_rel)
+					marker.product = production["product"]
+					marker.save()
+			seq.markers.add(marker)
 
 
 def find_gadm(line):
@@ -146,6 +133,7 @@ class Command(BaseCommand):
 			line: dict
 			for line in csv_file:
 				line = parse_line(line)
+				# print(line["sample_id"])
 				source, _ = Source.objects.get_or_create(
 					name__iexact=line["occurrenceSource"],
 					data_type=Source.TAXON,
@@ -161,17 +149,19 @@ class Command(BaseCommand):
 				for taxon_key, taxon_id_key, taxon_rank in TAXON_KEYS:
 					if line[taxon_key] and line[taxon_id_key]:
 						taxon = taxon.get_descendants().filter(rank=taxon_rank, name__iexact=line[taxon_key])
-						if taxon.count() > 1:
+						taxon_count = taxon.count()
+						if taxon_count > 1:
 							raise Exception(f"Found multiple taxa for {taxon_key}:{taxon_id_key}.\n{line}")
-						elif taxon.count() == 0:
+						elif taxon_count == 0:
 							continue
 						taxon = taxon.first()
 						create_origin_source(taxon, line[taxon_id_key], source)
 
 				taxonomy = TaxonomicLevel.objects.find(taxon=line["originalName"])
-				if taxonomy.count() == 0:
+				taxon_count = taxonomy.count()
+				if taxon_count == 0:
 					raise Exception(f"Taxonomy not found.\n{line}")
-				elif taxonomy.count() > 1:
+				elif taxon_count > 1:
 					raise Exception(f"Multiple taxonomy found.\n{line}")
 
 				if line["lat_lon"] and len(line["lat_lon"]) != 2:
@@ -198,9 +188,7 @@ class Command(BaseCommand):
 						collection_date_year=(int(line["year"]) if line["year"] else None),
 						collection_date_month=(int(line["month"]) if line["month"] else None),
 						collection_date_day=int(line["day"]) if line["day"] else None,
-						geographical_location=find_gadm(line),
-						decimal_latitude=(float(line["lat_lon"][0]) if line["lat_lon"] else None),
-						decimal_longitude=(float(line["lat_lon"][1]) if line["lat_lon"] else None),
+						location=(Point(list(reversed(line.get("lat_lon", []))))),
 						coordinate_uncertainty_in_meters=(
 							int(line["coordinateUncertaintyInMeters"]) if line["coordinateUncertaintyInMeters"] else None
 						),

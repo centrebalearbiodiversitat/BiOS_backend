@@ -71,6 +71,9 @@ def create_taxonomic_level(line, parent, batch, idx_name, rank, idx_author, idx_
 				f'{ORIGINAL_STATUS} must be either "accepted", "misapplied" or "synonym" but was "{line[ORIGINAL_STATUS]}"\n{line}'
 			)
 
+		if line[idx_name][0].isupper() and rank in [TaxonomicLevel.SPECIES, TaxonomicLevel.SUBSPECIES, TaxonomicLevel.VARIETY]:
+			raise Exception(f"Epithet cant be upper cased.\n{line}")
+
 		child, new_taxon = TaxonomicLevel.objects.get_or_create(
 			parent=parent,
 			rank=rank,
@@ -187,7 +190,7 @@ def get_or_create_authorship(line, idx_author, batch, source):
 
 def get_or_create_source(line, idx_source, idx_source_origin):
 	if not line[idx_source]:
-		raise Exception("All records must have a source")
+		raise Exception(f"All records must have a source\n{line}")
 
 	source, _ = Source.objects.get_or_create(
 		name__iexact=line[idx_source],
@@ -221,30 +224,31 @@ class Command(BaseCommand):
 		file_name = options["file"]
 		delimiter = options["d"]
 		exception = False
-		with open(file_name, encoding="windows-1252") as file:
-			csv_file = csv.DictReader(file, delimiter=delimiter)
-			batch = Batch.objects.create()
-			biota, _ = TaxonomicLevel.objects.get_or_create(
-				name__iexact="Biota",
-				rank=TaxonomicLevel.LIFE,
-				defaults={
-					"name": "Biota",
-					"accepted": True,
-					"batch": batch,
-					"parent": None,
-				},
-			)
+		with TaxonomicLevel.objects.delay_mptt_updates():
+			with open(file_name, encoding="windows-1252") as file:
+				csv_file = csv.DictReader(file, delimiter=delimiter)
+				batch = Batch.objects.create()
+				biota, _ = TaxonomicLevel.objects.get_or_create(
+					name__iexact="Biota",
+					rank=TaxonomicLevel.LIFE,
+					defaults={
+						"name": "Biota",
+						"accepted": True,
+						"batch": batch,
+						"parent": None,
+					},
+				)
 
-			for line in csv_file:
-				parent = biota
-				clean_up_input_line(line)
+				for line in csv_file:
+					parent = biota
+					clean_up_input_line(line)
 
-				try:
-					for level in LEVELS:
-						parent = create_taxonomic_level(line, parent, batch, level, *LEVELS_PARAMS[level])
-				except:
-					exception = True
-					print(traceback.format_exc())
+					try:
+						for level in LEVELS:
+							parent = create_taxonomic_level(line, parent, batch, level, *LEVELS_PARAMS[level])
+					except:
+						exception = True
+						print(traceback.format_exc())
 
-			if exception:
-				raise Exception("Errors found: Rollback control")
+				if exception:
+					raise Exception("Errors found: Rollback control")

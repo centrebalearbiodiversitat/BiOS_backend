@@ -1,5 +1,5 @@
 from django.core.exceptions import ValidationError
-from django.db import models
+from django.contrib.gis.db import models
 from django.db.models.signals import m2m_changed, pre_delete
 from unidecode import unidecode
 
@@ -7,19 +7,10 @@ from common.utils.utils import str_clean_up
 
 
 class LatLonModel(models.Model):
-	decimal_latitude = models.DecimalField(max_digits=8, decimal_places=5, null=True, blank=True)
-	decimal_longitude = models.DecimalField(max_digits=8, decimal_places=5, null=True, blank=True)
+	location = models.PointField(srid=4326, geography=True, null=True, blank=True)
 	coordinate_uncertainty_in_meters = models.PositiveIntegerField(null=True, blank=True, default=None)
 	elevation = models.IntegerField(null=True, blank=True, default=None)
 	depth = models.IntegerField(null=True, blank=True, default=None)
-
-	def save(self, force_insert=False, force_update=False, using=None, update_fields=None):
-		if not (
-			(self.decimal_latitude is not None and self.decimal_longitude is not None)
-			or (self.decimal_latitude == self.decimal_longitude == None)
-		):
-			raise ValidationError("Latitude and longitude must both exist or None")
-		super().save(force_insert, force_update, using, update_fields)
 
 	class Meta:
 		abstract = True

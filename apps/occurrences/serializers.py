@@ -1,19 +1,15 @@
 from rest_framework import serializers
-from .models import Occurrence
 from common.utils.serializers import CaseModelSerializer
+from ..geography.models import GeographicLevel
+from .models import Occurrence
 from ..geography.serializers import GeographicLevelSerializer
 from ..taxonomy.serializers import BaseTaxonomicLevelSerializer
 from ..versioning.serializers import OriginSourceSerializer
 
 
 class BaseOccurrenceSerializer(CaseModelSerializer):
-	# basis_of_record = serializers.SerializerMethodField()
-	# location = serializers.PrimaryKeyRelatedField(queryset=GeographicLevel.objects.all(), source="geographical_location")
-
-	# event_date = serializers.SerializerMethodField()
-	# day = serializers.IntegerField(source="collection_date_day")
-	# month = serializers.IntegerField(source="collection_date_month")
-	# year = serializers.IntegerField(source="collection_date_year")
+	decimal_latitude = serializers.DecimalField(source="location.y", max_digits=8, decimal_places=5, allow_null=True)
+	decimal_longitude = serializers.DecimalField(source="location.x", max_digits=8, decimal_places=5, allow_null=True)
 
 	class Meta:
 		model = Occurrence
@@ -23,6 +19,7 @@ class BaseOccurrenceSerializer(CaseModelSerializer):
 			"coordinate_uncertainty_in_meters",
 			"decimal_latitude",
 			"decimal_longitude",
+			# "coords",
 			# "day",
 			# "depth",
 			# "elevation",
@@ -60,7 +57,7 @@ class OccurrenceSerializer(BaseOccurrenceSerializer):
 	month = serializers.IntegerField(source="collection_date_month")
 	year = serializers.IntegerField(source="collection_date_year")
 
-	location = GeographicLevelSerializer(source="geographical_location")
+	location = serializers.SerializerMethodField()
 	taxonomy = BaseTaxonomicLevelSerializer()
 	sources = OriginSourceSerializer(many=True)
 
@@ -83,6 +80,9 @@ class OccurrenceSerializer(BaseOccurrenceSerializer):
 			"year",
 			"sources",
 		)
+
+	def get_location(self, obj):
+		return GeographicLevelSerializer(GeographicLevel.objects.filter(area__intersects=obj.location).order_by("-rank").first()).data
 
 	def get_basis_of_record(self, obj):
 		return Occurrence.TRANSLATE_BASIS_OF_RECORD[obj.basis_of_record]

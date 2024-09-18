@@ -1,9 +1,9 @@
-from common.utils.forms import CamelCaseForm, IdFieldForm
-from .models import Gene, Sequence
 from django import forms
 
+from common.utils.forms import CamelCaseForm, IdFieldForm
 
-class GeneForm(IdFieldForm, CamelCaseForm):
+
+class MarkerForm(IdFieldForm, CamelCaseForm):
 	sources = forms.IntegerField(required=False)
 	exact = forms.BooleanField(required=False)
 	batch = forms.CharField(required=False)
@@ -31,4 +31,4 @@ class SequenceForm(IdFieldForm, CamelCaseForm):
 
 
 class SequenceListForm(CamelCaseForm):
-	taxon_id = forms.IntegerField()
+	taxonomy = forms.IntegerField()

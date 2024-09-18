@@ -4,6 +4,8 @@ from apps.geography.models import GeographicLevel
 
 
 class GeographicLevelSerializer(CaseModelSerializer):
+	decimal_latitude = serializers.DecimalField(source="location.y", max_digits=8, decimal_places=5, allow_null=True)
+	decimal_longitude = serializers.DecimalField(source="location.x", max_digits=8, decimal_places=5, allow_null=True)
 	rank = serializers.SerializerMethodField()
 	name = serializers.SerializerMethodField()
 

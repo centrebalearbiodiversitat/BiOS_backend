@@ -1,18 +1,14 @@
 import csv
 
-from django.db.models import Q
+from django.db.models import Count, Q, F, Subquery, OuterRef
+from django.db.models.functions import Substr, Lower
 from django.http import StreamingHttpResponse
 from unidecode import unidecode
 
-from apps.taxonomy.models import TaxonomicLevel, Authorship
 from apps.taxonomy.serializers import (
-	BaseTaxonomicLevelSerializer,
-	AuthorshipSerializer,
-	TaxonCompositionSerializer,
 	SearchTaxonomicLevelSerializer,
 	BaseTaxonDataSerializer,
 )
-from apps.API.exceptions import CBBAPIException
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.generics import ListAPIView
@@ -61,7 +57,7 @@ class TaxonSearchView(APIView):
 		limit = 10
 
 		if not query:
-			return Response(BaseTaxonomicLevelSerializer(TaxonomicLevel.objects.none(), many=True).data)
+			raise CBBAPIException("Missing name parameter", code=400)
 
 		queryset = None
 		query = unidecode(str_clean_up(query).translate(PUNCTUATION_TRANSLATE))
@@ -69,25 +65,62 @@ class TaxonSearchView(APIView):
 		for query in query.split(" "):
 			filters["name__istartswith"] = query
 			if queryset:
-				queryset = TaxonomicLevel.objects.filter(
-					**filters, rank__in=[TaxonomicLevel.SPECIES, TaxonomicLevel.SUBSPECIES, TaxonomicLevel.VARIETY], parent__in=queryset
+				queryset = (
+					TaxonomicLevel.objects.annotate(prefix=Lower(Substr("unidecode_name", 1, min(3, len(query)))))
+					.filter(prefix=query[:3].lower())
+					.filter(
+						**filters, rank__in=[TaxonomicLevel.SPECIES, TaxonomicLevel.SUBSPECIES, TaxonomicLevel.VARIETY], parent__in=queryset
+					)
 				)
 			else:
-				queryset = TaxonomicLevel.objects.filter(**filters)
+				queryset = (
+					TaxonomicLevel.objects.annotate(prefix=Lower(Substr("unidecode_name", 1, min(3, len(query)))))
+					.filter(prefix=query[:3].lower())
+					.filter(**filters)
+				)
 
 		if not exact and queryset.count() < limit:
-			sub_genus = Q()
-
-			for instance in queryset.filter(rank__in=[TaxonomicLevel.GENUS, TaxonomicLevel.SPECIES]):
-				sub_genus |= Q(tree_id=instance.tree_id, lft__gte=instance.lft, rght__lte=instance.rght)
-
-			if sub_genus:
-				queryset |= TaxonomicLevel.objects.filter(sub_genus)[:limit]
+			for instance in queryset.filter(rank__in=[TaxonomicLevel.GENUS, TaxonomicLevel.SPECIES])[:limit]:
+				queryset |= instance.get_descendants()
 
 		return Response(SearchTaxonomicLevelSerializer(queryset.distinct()[:limit], many=True).data)
 
 
-class TaxonListView(ListAPIView):
+class TaxonFilter(ListAPIView):
+	def get(self, request):
+		taxon_form = TaxonomicLevelForm(data=request.GET)
+
+		if not taxon_form.is_valid():
+			raise CBBAPIException(taxon_form.errors, code=400)
+		exact = taxon_form.cleaned_data.get("exact", False)
+		str_fields = ["name"]
+
+		filters = {}
+		for param in taxon_form.cleaned_data:
+			if param != "exact":
+				if param in str_fields:
+					value = taxon_form.cleaned_data.get(param)
+
+					if value:
+						param = f"{param}__iexact" if exact else f"{param}__icontains"
+						filters[param] = value
+				else:
+					value = taxon_form.cleaned_data.get(param)
+					if value or isinstance(value, int) or isinstance(value, bool):
+						filters[param] = value
+
+		if filters:
+			query = TaxonomicLevel.objects.filter(**filters)
+		else:
+			query = TaxonomicLevel.objects.none()
+
+		if not query.exists():
+			raise CBBAPIException("No taxonomic levels found for the given filters.", 404)
+
+		return query
+
+
+class TaxonListView(TaxonFilter):
 	@swagger_auto_schema(
 		tags=["Taxonomy"],
 		operation_description="Get a list of taxa, with optional filtering.",
@@ -121,33 +154,44 @@ class TaxonListView(ListAPIView):
 		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
 	)
 	def get(self, request):
-		taxon_form = TaxonomicLevelForm(data=request.GET)
+		return Response(BaseTaxonomicLevelSerializer(super().get(request), many=True).data)
 
-		if not taxon_form.is_valid():
-			raise CBBAPIException(taxon_form.errors, code=400)
-		exact = taxon_form.cleaned_data.get("exact", False)
-		str_fields = ["name"]
 
-		filters = {}
-		for param in taxon_form.cleaned_data:
-			if param != "exact":
-				if param in str_fields:
-					value = taxon_form.cleaned_data.get(param)
-
-					if value:
-						param = f"{param}__iexact" if exact else f"{param}__icontains"
-						filters[param] = value
-				else:
-					value = taxon_form.cleaned_data.get(param)
-					if value or isinstance(value, int) or isinstance(value, bool):
-						filters[param] = value
-
-		if filters:
-			query = TaxonomicLevel.objects.filter(**filters)
-		else:
-			query = TaxonomicLevel.objects.none()
-
-		return Response(BaseTaxonomicLevelSerializer(query, many=True).data)
+class TaxonCountView(TaxonFilter):
+	@swagger_auto_schema(
+		tags=["Taxonomy"],
+		operation_description="Get a list of taxa, with optional filtering.",
+		manual_parameters=[
+			openapi.Parameter("name", openapi.IN_QUERY, description="Name of the taxon to search for.", type=openapi.TYPE_STRING),
+			openapi.Parameter(
+				"taxonRank",
+				openapi.IN_QUERY,
+				description="Rank id of the taxon to search for.",
+				type=openapi.TYPE_STRING,
+			),
+			openapi.Parameter(
+				"scientificNameAuthorship",
+				openapi.IN_QUERY,
+				description="Authorship id of the taxon to search for.",
+				type=openapi.TYPE_STRING,
+			),
+			openapi.Parameter(
+				"parent",
+				openapi.IN_QUERY,
+				description="Parent id of the taxon to search for.",
+				type=openapi.TYPE_INTEGER,
+			),
+			openapi.Parameter(
+				"exact",
+				openapi.IN_QUERY,
+				description="Indicates whether to search for an exact match. Defaults to False.",
+				type=openapi.TYPE_BOOLEAN,
+			),
+		],
+		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
+	)
+	def get(self, request):
+		return Response(super().get(request).count())
 
 
 class TaxonCRUDView(APIView):
@@ -231,12 +275,19 @@ class TaxonChildrenBaseView(APIView):
 		except TaxonomicLevel.DoesNotExist:
 			raise CBBAPIException("Taxonomic level does not exist.", code=404)
 
+		filters = {}
 		children_rank = TaxonomicLevel.TRANSLATE_RANK.get(taxon_form.cleaned_data.get("children_rank", None), None)
 
 		if children_rank:
-			return taxon.get_descendants().filter(rank=children_rank)
+			filters["rank"] = children_rank
+
+		if taxon_form.cleaned_data.get("accepted_only") is True:
+			filters["accepted"] = True
+
+		if children_rank:
+			return taxon.get_descendants().filter(rank=children_rank).filter(**filters)
 		else:
-			return taxon.get_children()
+			return taxon.get_children().filter(**filters)
 
 
 class TaxonChildrenView(TaxonChildrenBaseView):
@@ -357,6 +408,18 @@ class TaxonCompositionView(ListAPIView):
 		for child in children:
 			child.total_species = child.get_descendants(include_self=True).filter(rank=TaxonomicLevel.SPECIES, accepted=True).count()
 
+		# species = TaxonomicLevel.objects.none()
+		# species = children.annotate(
+		# 	total_species=Subquery(
+		# 		TaxonomicLevel.objects.filter(lft__gt=OuterRef('lft'), rght__lt=OuterRef('rght'))
+		# 						.filter(rank=TaxonomicLevel.SPECIES, accepted=True)
+		# 						.annotate(base_parent=Count('id'))
+		# 						.values('base_parent')
+		# 						.annotate(total_species=Count('id'))
+		# 						.values("total_species")
+		# 	)
+		# )
+
 		return Response(TaxonCompositionSerializer(children, many=True).data)
 
 
@@ -378,9 +441,6 @@ class TaxonSourceView(ListAPIView):
 		taxon_form = self.request.GET
 
 		taxon_id = taxon_form.get("id")
-
-		if not taxon_id:
-			raise CBBAPIException(taxon_form.errors, code=400)
 
 		if not taxon_id:
 			raise CBBAPIException("Missing id parameter", code=400)
@@ -439,8 +499,13 @@ class TaxonChecklistView(APIView):
 		if not taxon_form.is_valid():
 			raise CBBAPIException(taxon_form.errors, code=400)
 
+		taxon_id = taxon_form.cleaned_data.get("id")
+
+		if not taxon_id:
+			raise CBBAPIException("Missing id parameter", code=400)
+
 		try:
-			head_taxon = TaxonomicLevel.objects.get(id=taxon_form.cleaned_data.get("id"))
+			head_taxon = TaxonomicLevel.objects.get(id=taxon_id)
 		except TaxonomicLevel.DoesNotExist:
 			raise CBBAPIException("Taxonomic level does not exist", code=404)
 
@@ -458,8 +523,6 @@ class TaxonChecklistView(APIView):
 
 		upper_taxon = head_taxon.get_ancestors(include_self=False)  # .exclude(name__iexact='Biota')
 		upper_taxon = list(upper_taxon)
-		# upper_taxon = map_taxa_to_rank(ranks_map, upper_taxon)
-		# print(upper_taxon)
 		checklist = head_taxon.get_descendants(include_self=True)
 		current_taxon = []
 		last_level = -1
@@ -514,7 +577,73 @@ class AuthorshipCRUDView(APIView):
 		return Response(AuthorshipSerializer(authorship).data)
 
 
-class TaxonDataListView(ListAPIView):
+class TaxonDataCRUDView(APIView):
+	@swagger_auto_schema(
+		tags=["Taxonomy"],
+		operation_description="Retrieve a specific taxonomic data instance by its id",
+		manual_parameters=[
+			openapi.Parameter(
+				"id",
+				openapi.IN_QUERY,
+				description="ID of the taxon data to retrieve",
+				type=openapi.TYPE_INTEGER,
+				required=True,
+			)
+		],
+		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
+	)
+	def get(self, request):
+		taxon_form = TaxonDataForm(self.request.GET)
+
+		if not taxon_form.is_valid():
+			raise CBBAPIException(taxon_form.errors, code=400)
+
+		taxon_id = taxon_form.cleaned_data.get("id")
+
+		if not taxon_id:
+			raise CBBAPIException("Missing id parameter", code=400)
+
+		try:
+			taxon = TaxonData.objects.get(taxonomy=taxon_id)
+		except TaxonData.DoesNotExist:
+			raise CBBAPIException("Taxonomic data does not exist", code=404)
+
+		return Response(TaxonDataSerializer(taxon).data)
+
+
+class TaxonDataFilter:
+	def get(self, request):
+		taxon_data_form = TaxonDataForm(data=request.GET)
+
+		if not taxon_data_form.is_valid():
+			raise CBBAPIException(taxon_data_form.errors, code=400)
+
+		exact = taxon_data_form.cleaned_data.get("exact", False)
+		str_fields = ["habitat"]
+
+		filters = {}
+		for param in taxon_data_form.cleaned_data:
+			if param != "exact":
+				if param in str_fields:
+					value = taxon_data_form.cleaned_data.get(param)
+
+					if value:
+						param = f"{param}__iexact" if exact else f"{param}__icontains"
+						filters[param] = value
+				else:
+					value = taxon_data_form.cleaned_data.get(param)
+					if value or isinstance(value, int):
+						filters[param] = value
+
+		if filters:
+			query = TaxonData.objects.filter(**filters)
+		else:
+			query = TaxonData.objects.none()
+
+		return query
+
+
+class TaxonDataListView(TaxonDataFilter, ListAPIView):
 	@swagger_auto_schema(
 		tags=["Taxonomy"],
 		operation_description="Get a list of taxon data with filtering.",
@@ -550,65 +679,43 @@ class TaxonDataListView(ListAPIView):
 		responses={200: "Success", 400: "Bad Request"},
 	)
 	def get(self, request):
-		taxon_data_form = TaxonDataForm(data=request.GET)
-
-		if not taxon_data_form.is_valid():
-			raise CBBAPIException(taxon_data_form.errors, code=400)
-
-		exact = taxon_data_form.cleaned_data.get("exact", False)
-		str_fields = ["habitat"]
-
-		filters = {}
-		for param in taxon_data_form.cleaned_data:
-			if param != "exact":
-				if param in str_fields:
-					value = taxon_data_form.cleaned_data.get(param)
-
-					if value:
-						param = f"{param}__iexact" if exact else f"{param}__icontains"
-						filters[param] = value
-				else:
-					value = taxon_data_form.cleaned_data.get(param)
-					if value or isinstance(value, int):
-						filters[param] = value
-
-		if filters:
-			query = TaxonData.objects.filter(**filters)
-		else:
-			query = TaxonData.objects.none()
-
-		return Response(BaseTaxonDataSerializer(query, many=True).data)
+		return Response(TaxonDataSerializer(super().get(request), many=True).data)
 
 
-class TaxonDataCRUDView(APIView):
+class TaxonDataCountView(TaxonDataFilter, ListAPIView):
 	@swagger_auto_schema(
 		tags=["Taxonomy"],
-		operation_description="Retrieve a specific taxonomic data instance by its id",
+		operation_description="Get a list of taxon data with filtering.",
 		manual_parameters=[
+			openapi.Parameter("taxonomy_id", openapi.IN_QUERY, description="ID of the taxon", type=openapi.TYPE_INTEGER),
 			openapi.Parameter(
-				"id",
+				"iucn_global",
 				openapi.IN_QUERY,
-				description="ID of the taxon data to retrieve",
-				type=openapi.TYPE_INTEGER,
-				required=True,
-			)
+				description="IUCN Global status",
+				type=openapi.TYPE_STRING,
+				enum=[str(c[0]) for c in TaxonData.CS_CHOICES],
+			),
+			openapi.Parameter(
+				"iucn_europe",
+				openapi.IN_QUERY,
+				description="IUCN Europe status",
+				type=openapi.TYPE_STRING,
+				enum=[str(c[0]) for c in TaxonData.CS_CHOICES],
+			),
+			openapi.Parameter(
+				"iucn_mediterranean",
+				openapi.IN_QUERY,
+				description="IUCN Mediterranean status",
+				type=openapi.TYPE_STRING,
+				enum=[str(c[0]) for c in TaxonData.CS_CHOICES],
+			),
+			openapi.Parameter("invasive", openapi.IN_QUERY, description="Is invasive?", type=openapi.TYPE_BOOLEAN),
+			openapi.Parameter("domesticated", openapi.IN_QUERY, description="Is domesticated?", type=openapi.TYPE_BOOLEAN),
+			openapi.Parameter("freshwater", openapi.IN_QUERY, description="Inhabit freshwater?", type=openapi.TYPE_BOOLEAN),
+			openapi.Parameter("marine", openapi.IN_QUERY, description="Inhabit marine?", type=openapi.TYPE_BOOLEAN),
+			openapi.Parameter("terrestrial", openapi.IN_QUERY, description="Inhabit terrestrial?", type=openapi.TYPE_BOOLEAN),
 		],
-		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
+		responses={200: "Success", 400: "Bad Request"},
 	)
 	def get(self, request):
-		taxon_form = TaxonDataForm(self.request.GET)
-
-		if not taxon_form.is_valid():
-			raise CBBAPIException(taxon_form.errors, code=400)
-
-		taxon_id = taxon_form.cleaned_data.get("id")
-
-		if not taxon_id:
-			raise CBBAPIException("Missing id parameter", code=400)
-
-		try:
-			taxon = TaxonData.objects.get(taxonomy=taxon_id)
-		except TaxonData.DoesNotExist:
-			raise CBBAPIException("Taxonomic data does not exist", code=404)
-
-		return Response(TaxonDataSerializer(taxon).data)
+		return Response(super().get(request).count())

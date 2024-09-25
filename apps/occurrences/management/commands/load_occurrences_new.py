@@ -1,3 +1,4 @@
+
 import csv
 import json
 from django.core.management.base import BaseCommand
@@ -53,6 +54,8 @@ def genetic_sources(line: dict, batch, occ):
 
 	os, new = OriginSource.objects.get_or_create(origin_id=line["sample_id"], source=source)
 	if not new:
+		if Sequence.objects.filter(sources=os, occurrence=occ).exists():
+			return
 		raise Exception(f"OriginSource already exists\n{line}")
 
 	seq, _ = Sequence.objects.get_or_create(
@@ -98,6 +101,14 @@ def genetic_sources(line: dict, batch, occ):
 			seq.markers.add(marker)
 
 
+def find_gadm(line):
+	gadm_query = ""
+	for gl_key in GEOGRAPHIC_LEVELS:
+		if line[gl_key["key"]]:
+			gadm_query = f'{gadm_query}, {line[gl_key["key"]]}'
+	return GeographicLevel.objects.search(location=gadm_query)
+
+
 def create_origin_source(ref_model_elem, origin_id, source):
 	os, new = OriginSource.objects.get_or_create(origin_id=origin_id, source=source)
 	if new:
@@ -117,23 +128,21 @@ class Command(BaseCommand):
 	@transaction.atomic
 	def handle(self, *args, **options):
 		file_name = options["file"]
-		delimiter = options["d"]
-		with open(file_name, encoding="utf-8") as file:
-			csv_file = csv.DictReader(file, delimiter=delimiter)
+		with open(file_name, 'r') as file:
+			data = json.load(file)
 			batch = Batch.objects.create()
 			biota = TaxonomicLevel.objects.get(rank=TaxonomicLevel.LIFE)
 			line: dict
-			for line in csv_file:
+			for line in data:
 				line = parse_line(line)
 				# print(line["sample_id"])
-				print(line)
 				source, _ = Source.objects.get_or_create(
 					name__iexact=line["occurrenceSource"],
 					data_type=Source.TAXON,
 					defaults={
-						"name": line["occurrence_source"],
+						"name": line["occurrenceSource"],
 						"accepted": True,
-						"origin": Source.TRANSLATE_CHOICES[line["occurrence_source_origin"]],
+						"origin": Source.TRANSLATE_CHOICES[line["occurrenceOrigin"]],
 						"url": None,
 					},
 				)
@@ -157,8 +166,11 @@ class Command(BaseCommand):
 				elif taxon_count > 1:
 					raise Exception(f"Multiple taxonomy found.\n{line}")
 
-				if line["lat_lon"] and len(line["lat_lon"]) != 2:
-					raise Exception(f"Bad formatting for lat_lon field\n{line}")
+				if line["lat_lon"]:
+					if len(line["lat_lon"]) != 2:
+						raise Exception(f"Bad formatting for lat_lon field\n{line}")
+				else:
+					del line["lat_lon"]
 
 				source, _ = Source.objects.get_or_create(
 					name__iexact=line["occurrenceSource"],

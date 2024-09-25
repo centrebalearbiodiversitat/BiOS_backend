@@ -1,14 +1,11 @@
 import csv
 
-from django.db.models import Count, Q, F, Subquery, OuterRef
 from django.db.models.functions import Substr, Lower
 from django.http import StreamingHttpResponse
 from unidecode import unidecode
 
-from apps.taxonomy.serializers import (
-	SearchTaxonomicLevelSerializer,
-	BaseTaxonDataSerializer,
-)
+from apps.taxonomy.serializers import SearchTaxonomicLevelSerializer
+
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.generics import ListAPIView

@@ -60,10 +60,8 @@ class Command(BaseCommand):
 
 			geometry = GEOSGeometry(str(geometry))
 
-			if geometry.num_points > 30000:
-				geometry = geometry.simplify(0.0005, preserve_topology=True)
-				# geometry = MultiPolygon([geometry])
-				# geometry = GEOSGeometry(str(geometry))
+			if geometry.num_points > 10000:
+				geometry = geometry.simplify(0.001, preserve_topology=True)
 
 			gl, _ = GeographicLevel.objects.get_or_create(
 				parent=parent,

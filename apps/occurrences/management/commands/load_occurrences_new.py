@@ -1,4 +1,3 @@
-
 import csv
 import json
 from django.core.management.base import BaseCommand
@@ -128,7 +127,7 @@ class Command(BaseCommand):
 	@transaction.atomic
 	def handle(self, *args, **options):
 		file_name = options["file"]
-		with open(file_name, 'r') as file:
+		with open(file_name, "r") as file:
 			data = json.load(file)
 			batch = Batch.objects.create()
 			biota = TaxonomicLevel.objects.get(rank=TaxonomicLevel.LIFE)

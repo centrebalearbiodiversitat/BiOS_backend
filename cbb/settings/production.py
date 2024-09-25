@@ -6,18 +6,16 @@ STATIC_ROOT = "/var/www/site/static/"
 STATIC_URL = "/static/"
 
 CSRF_TRUSTED_ORIGINS = [
-	"http://cbbdb.uib.es", "https://cbbdb.uib.es",
-	"http://cbbdb.uib.cat", "https://cbbdb.uib.cat",
-	"http://cbbdb.uib.eu", "https://cbbdb.uib.eu",
-	"http://130.206.132.33", "https://130.206.132.33"
+	"http://cbbdb.uib.es",
+	"https://cbbdb.uib.es",
+	"http://cbbdb.uib.cat",
+	"https://cbbdb.uib.cat",
+	"http://cbbdb.uib.eu",
+	"https://cbbdb.uib.eu",
+	"http://130.206.132.33",
+	"https://130.206.132.33",
 ]
-ALLOWED_HOSTS = [
-	"cbbdb.uib.es",
-	"cbbdb.uib.cat",
-	"cbbdb.uib.eu",
-	"localhost",
-	"130.206.132.33"
-]
+ALLOWED_HOSTS = ["cbbdb.uib.es", "cbbdb.uib.cat", "cbbdb.uib.eu", "localhost", "130.206.132.33"]
 
 CORS_ALLOWED_ORIGINS = CSRF_TRUSTED_ORIGINS
 

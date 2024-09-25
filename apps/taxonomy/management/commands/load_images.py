@@ -1,4 +1,5 @@
 import csv
+import json
 
 from django.core.management.base import BaseCommand
 from django.db import transaction
@@ -7,7 +8,6 @@ from apps.taxonomy.models import TaxonomicLevel
 from apps.versioning.models import OriginSource, Source, Batch
 
 
-@transaction.atomic
 def add_taxonomic_image(line, batch):
 	if not line["taxon"]:
 		print(f"Taxon does not exist\n{line}")
@@ -23,10 +23,15 @@ def add_taxonomic_image(line, batch):
 
 		source = get_or_create_source("iNaturalist", "database", batch)
 		# source = get_or_create_source(line["source"], line["origin"], batch)
-		os, new_os = OriginSource.objects.get_or_create(origin_id=line["image_id"], source=source, attribution=line["attribution"])
+		os, new_os = OriginSource.objects.get_or_create(
+			origin_id=line["image_id"], source=source, defaults={"attribution": line["attribution"]}
+		)
 
-		if not taxon.images.filter(source=os.source, origin_id=os.origin_id).exists():
+		if new_os:
 			taxon.images.add(os)
+		else:
+			if not taxon.images.filter(id=os.id).exists():
+				raise Exception("Image already exists but assigned to other taxon")
 
 		taxon.save()
 
@@ -56,19 +61,17 @@ class Command(BaseCommand):
 
 	def add_arguments(self, parser):
 		parser.add_argument("file", type=str)
-		parser.add_argument("-d", nargs="?", type=str, default=",")
 
 	@transaction.atomic
 	def handle(self, *args, **options):
 		file_name = options["file"]
-		delimiter = options["d"]
 		exception = False
 
 		with open(file_name, encoding="utf-8") as file:
-			csv_file = csv.DictReader(file, delimiter=delimiter)
+			data = json.load(file)
 			batch = Batch.objects.create()
 
-			for line in csv_file:
+			for line in data:
 				try:
 					add_taxonomic_image(line, batch)
 				except Exception as e:

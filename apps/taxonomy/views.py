@@ -435,9 +435,12 @@ class TaxonSourceView(ListAPIView):
 		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
 	)
 	def get(self, request):
-		taxon_form = self.request.GET
+		taxon_form = TaxonomicLevelForm(self.request.GET)
 
-		taxon_id = taxon_form.get("id")
+		if not taxon_form.is_valid():
+			raise CBBAPIException(taxon_form.errors, 400)
+
+		taxon_id = taxon_form.cleaned_data.get("id")
 
 		if not taxon_id:
 			raise CBBAPIException("Missing id parameter", code=400)

@@ -99,6 +99,7 @@ def create_taxonomic_level(line, parent, batch, idx_name, rank, idx_author, idx_
 
 		if auths:
 			child.authorship.add(*auths)
+			child.save()
 
 		if child.accepted != accepted or child.accepted_modifier != accepted_modifier:
 			raise Exception(f"Trying to change taxonomy level status. {child.readable_rank()}:{child.name}\n{line}")

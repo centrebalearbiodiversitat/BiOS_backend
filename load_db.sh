@@ -6,7 +6,7 @@ python manage.py load_gadm data/NO_BORRAR/GIS/IDEIB_municipalities/*uncertainess
 python manage.py load_gadm data/NO_BORRAR/GIS/CNIG_poblaciones/*uncertainess*/*.shp
 
 # Taxonomy
-for file in data/NO_BORRAR/taxonomy/*/*.csv
+for file in data/NO_BORRAR/taxonomy_2/*/*.csv
 do
   echo "$file"
   python manage.py load_taxonomy_new "$file"
@@ -21,10 +21,10 @@ do
 done
 
 # Occurrences
-for file in data/NO_BORRAR/occurrences/*/*/*.csv
+for file in data/NO_BORRAR/occurrences/*/*.csv
 do
   echo "$file"
-  python manage.py load_occurrences "$file"
+  python manage.py load_occurrences_new "$file"
 done
 
 # Images
@@ -35,7 +35,7 @@ do
 done
 
 # genetics
-for file in data/NO_BORRAR/genetics/*/*/*.csv
+for file in data/NO_BORRAR/genetics/*/*.csv
 do
   echo "$file"
   python manage.py load_occurrences "$file"

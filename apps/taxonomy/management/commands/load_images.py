@@ -27,11 +27,8 @@ def add_taxonomic_image(line, batch):
 			origin_id=line["image_id"], source=source, defaults={"attribution": line["attribution"]}
 		)
 
-		if new_os:
+		if not taxon.images.filter(id=os.id):
 			taxon.images.add(os)
-		else:
-			if not taxon.images.filter(id=os.id).exists():
-				raise Exception("Image already exists but assigned to other taxon")
 
 		taxon.save()
 

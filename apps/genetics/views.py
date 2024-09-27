@@ -197,7 +197,6 @@ class SequenceSearchView(APIView):
 class SequenceFilter(APIView):
 	def get(self, request):
 		seq_form = SequenceListForm(data=request.GET)
-		print(seq_form)
 
 		if not seq_form.is_valid():
 			raise CBBAPIException(seq_form.errors, 400)

@@ -91,17 +91,18 @@ def genetic_sources(line: dict, batch, occ):
 				if marker.product:
 					if len(production["product"]) > len(marker.product):
 						marker.product = production["product"]
-						marker.save()
 				else:
 					marker.product = production["product"]
-					marker.save()
+			marker.save()
 			seq.markers.add(marker)
+	seq.save()
 
 
 def create_origin_source(ref_model_elem, origin_id, source):
 	os, new = OriginSource.objects.get_or_create(origin_id=origin_id, source=source)
 	if new:
 		ref_model_elem.sources.add(os)
+		ref_model_elem.save()
 	else:
 		if not ref_model_elem.sources.filter(id=os.id).exists():
 			raise Exception(f"Origin id already assigned to another model. {ref_model_elem}, {ref_model_elem.sources}, {os}")
@@ -189,6 +190,7 @@ class Command(BaseCommand):
 						depth=int(line["depth"]) if line["depth"] else None,
 					)
 					occ.sources.add(os)
+					occ.sources.save()
 				else:
 					occ = Occurrence.objects.get(sources=os)
 

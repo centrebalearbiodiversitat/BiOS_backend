@@ -65,6 +65,9 @@ def create_taxonomic_level(line, parent, batch, idx_name, rank):
 		else:
 			raise Exception(f'{STATUS} must be either "accepted", "misapplied" or "synonym" but was "{line[STATUS]}"\n{line}')
 
+		if line[ORIGIN_TAXON].split()[-1] != line[idx_name].replace("x ", ""):
+			raise Exception(f"Taxonomy mismatch with accepted taxon name.\n{line}")
+
 		if line[idx_name][0].isupper() and rank in [TaxonomicLevel.SPECIES, TaxonomicLevel.SUBSPECIES, TaxonomicLevel.VARIETY]:
 			raise Exception(f"Epithet cant be upper cased.\n{line}")
 
@@ -96,6 +99,7 @@ def create_taxonomic_level(line, parent, batch, idx_name, rank):
 
 		if auths:
 			child.authorship.add(*auths)
+			child.save()
 
 		if child.accepted != accepted or child.accepted_modifier != accepted_modifier:
 			raise Exception(f"Trying to change taxonomy level status. {child.readable_rank()}:{child.name}\n{line}")

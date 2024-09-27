@@ -93,11 +93,11 @@ def genetic_sources(line: dict, batch, occ):
 				if marker.product:
 					if len(production["product"]) > len(marker.product):
 						marker.product = production["product"]
-						marker.save()
 				else:
 					marker.product = production["product"]
-					marker.save()
+			marker.save()
 			seq.markers.add(marker)
+	seq.save()
 
 
 def find_gadm(line):
@@ -112,9 +112,10 @@ def create_origin_source(ref_model_elem, origin_id, source):
 	os, new = OriginSource.objects.get_or_create(origin_id=origin_id, source=source)
 	if new:
 		ref_model_elem.sources.add(os)
-	else:
-		if not ref_model_elem.sources.filter(id=os.id).exists():
-			raise Exception(f"Origin id already assigned to another model. {ref_model_elem}, {ref_model_elem.sources}, {os}")
+		ref_model_elem.save()
+	# else:
+	# 	if not ref_model_elem.sources.filter(id=os.id).exists():
+	# 		raise Exception(f"Origin id already assigned to another model. {ref_model_elem}, {ref_model_elem.sources}, {os}")
 
 
 class Command(BaseCommand):
@@ -150,11 +151,13 @@ class Command(BaseCommand):
 				for taxon_key, taxon_id_key, taxon_rank in TAXON_KEYS:
 					if line[taxon_key] and line[taxon_id_key]:
 						taxon = taxon.get_descendants().filter(rank=taxon_rank, name__iexact=line[taxon_key])
+
 						taxon_count = taxon.count()
 						if taxon_count > 1:
 							raise Exception(f"Found multiple taxa for {taxon_key}:{taxon_id_key}.\n{line}")
 						elif taxon_count == 0:
 							continue
+
 						taxon = taxon.first()
 						create_origin_source(taxon, line[taxon_id_key], source)
 
@@ -192,7 +195,7 @@ class Command(BaseCommand):
 						collection_date_year=(int(line["year"]) if line["year"] else None),
 						collection_date_month=(int(line["month"]) if line["month"] else None),
 						collection_date_day=int(line["day"]) if line["day"] else None,
-						location=(Point(list(reversed(line.get("lat_lon", []))))),
+						location=(Point(list(reversed(line["lat_lon"])), srid=4326)) if line.get("lat_lon", None) else None,
 						coordinate_uncertainty_in_meters=(
 							int(line["coordinateUncertaintyInMeters"]) if line["coordinateUncertaintyInMeters"] else None
 						),
@@ -200,6 +203,7 @@ class Command(BaseCommand):
 						depth=int(line["depth"]) if line["depth"] else None,
 					)
 					occ.sources.add(os)
+					occ.save()
 				else:
 					occ = Occurrence.objects.get(sources=os)
 

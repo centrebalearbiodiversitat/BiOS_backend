@@ -1,3 +1,4 @@
+from django.contrib.gis.geos import Point
 from django.db.models import Q
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema

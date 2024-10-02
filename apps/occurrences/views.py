@@ -104,7 +104,7 @@ class OccurrenceFilter(APIView):
 		if gl:
 			try:
 				gl = GeographicLevel.objects.get(id=gl)
-				occurrences = Occurrence.objects.filter(id__in=occurrences.values('id'), location__within=gl.area)
+				occurrences = Occurrence.objects.filter(id__in=occurrences.values("id"), location__within=gl.area)
 			except GeographicLevel.DoesNotExist:
 				raise CBBAPIException("Geographical location does not exist", 404)
 

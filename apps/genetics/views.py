@@ -117,19 +117,15 @@ class MarkerFilter(APIView):
 		)
 
 		# Annotate with the accepted id
-		accepted_marker = Marker.objects.filter(
-			Q(accepted=True, id=OuterRef("id")) | Q(synonyms=OuterRef("id"), accepted=True)
-		)
+		accepted_marker = Marker.objects.filter(Q(accepted=True, id=OuterRef("id")) | Q(synonyms=OuterRef("id"), accepted=True))
 
 		queryset = queryset.annotate(accepted_marker=accepted_marker.values("id")[:1])
 
-		queryset = Marker.objects.filter(
-			id__in=queryset.values('accepted_marker')
-		).annotate(
+		queryset = Marker.objects.filter(id__in=queryset.values("accepted_marker")).annotate(
 			total=queryset.filter(accepted_marker=OuterRef("id"))
-							.values('accepted_marker')
-							.annotate(total=Count('accepted_marker'))
-							.values('total')[:1]
+			.values("accepted_marker")
+			.annotate(total=Count("accepted_marker"))
+			.values("total")[:1]
 		)
 
 		queryset = queryset.filter(total__gte=1).order_by("-total")
@@ -139,9 +135,7 @@ class MarkerFilter(APIView):
 
 class MarkerListView(MarkerFilter):
 	def get(self, request):
-		return Response(
-			SuperMarkerSerializer(super().get(request), many=True).data
-		)
+		return Response(SuperMarkerSerializer(super().get(request), many=True).data)
 
 
 class MarkerCountView(MarkerFilter):
@@ -231,8 +225,7 @@ class SequenceFilter(APIView):
 			raise CBBAPIException("Taxonomic level does not exist", 404)
 
 		return Sequence.objects.filter(
-			Q(occurrence__taxonomy=taxon) | Q(occurrence__taxonomy__lft__gte=taxon.lft,
-											  occurrence__taxonomy__rght__lte=taxon.rght)
+			Q(occurrence__taxonomy=taxon) | Q(occurrence__taxonomy__lft__gte=taxon.lft, occurrence__taxonomy__rght__lte=taxon.rght)
 		)
 
 

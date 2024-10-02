@@ -190,8 +190,8 @@ class Command(BaseCommand):
 					occ = Occurrence.objects.create(
 						taxonomy=taxonomy.first(),
 						batch=batch,
-						voucher=line["voucher"],
-						basis_of_record=Occurrence.TRANSLATE_BASIS_OF_RECORD.get(line["basisOfRecord"], Occurrence.UNKNOWN),
+						voucher=line["voucher"] if line["voucher"] else None,
+						basis_of_record=Occurrence.TRANSLATE_BASIS_OF_RECORD.get(line["basisOfRecord"].lower(), Occurrence.UNKNOWN),
 						collection_date_year=(int(line["year"]) if line["year"] else None),
 						collection_date_month=(int(line["month"]) if line["month"] else None),
 						collection_date_day=int(line["day"]) if line["day"] else None,

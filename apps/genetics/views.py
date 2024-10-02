@@ -1,4 +1,4 @@
-from django.db.models import Count, Q
+from django.db.models import Count, Q, OuterRef
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.response import Response
@@ -110,10 +110,29 @@ class MarkerFilter(APIView):
 		except TaxonomicLevel.DoesNotExist:
 			raise CBBAPIException("Taxonomic level does not exist", 404)
 
+		# Filter all markers by taxon
 		queryset = Marker.objects.filter(
 			Q(sequence__occurrence__taxonomy=taxon)
 			| Q(sequence__occurrence__taxonomy__lft__gte=taxon.lft, sequence__occurrence__taxonomy__rght__lte=taxon.rght),
 		)
+
+		# Annotate with the accepted id
+		accepted_marker = Marker.objects.filter(
+			Q(accepted=True, id=OuterRef("id")) | Q(synonyms=OuterRef("id"), accepted=True)
+		)
+
+		queryset = queryset.annotate(accepted_marker=accepted_marker.values("id")[:1])
+
+		queryset = Marker.objects.filter(
+			id__in=queryset.values('accepted_marker')
+		).annotate(
+			total=queryset.filter(accepted_marker=OuterRef("id"))
+							.values('accepted_marker')
+							.annotate(total=Count('accepted_marker'))
+							.values('total')[:1]
+		)
+
+		queryset = queryset.filter(total__gte=1).order_by("-total")
 
 		return queryset
 
@@ -121,7 +140,7 @@ class MarkerFilter(APIView):
 class MarkerListView(MarkerFilter):
 	def get(self, request):
 		return Response(
-			SuperMarkerSerializer(super().get(request).annotate(total=Count("id")).filter(total__gte=1).order_by("-total"), many=True).data
+			SuperMarkerSerializer(super().get(request), many=True).data
 		)
 
 
@@ -212,7 +231,8 @@ class SequenceFilter(APIView):
 			raise CBBAPIException("Taxonomic level does not exist", 404)
 
 		return Sequence.objects.filter(
-			Q(occurrence__taxonomy=taxon) | Q(occurrence__taxonomy__lft__gte=taxon.lft, occurrence__taxonomy__rght__lte=taxon.rght)
+			Q(occurrence__taxonomy=taxon) | Q(occurrence__taxonomy__lft__gte=taxon.lft,
+											  occurrence__taxonomy__rght__lte=taxon.rght)
 		)
 
 

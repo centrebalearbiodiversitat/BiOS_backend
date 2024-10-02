@@ -2,6 +2,7 @@ import csv
 
 from django.db.models.functions import Substr, Lower
 from django.http import StreamingHttpResponse
+from rest_framework_tracking.mixins import LoggingMixin
 from unidecode import unidecode
 
 from apps.taxonomy.serializers import SearchTaxonomicLevelSerializer
@@ -83,8 +84,8 @@ class TaxonSearchView(APIView):
 		return Response(SearchTaxonomicLevelSerializer(queryset.distinct()[:limit], many=True).data)
 
 
-class TaxonFilter(ListAPIView):
-	def get(self, request):
+class TaxonFilter:
+	def get_taxon_list(self, request):
 		taxon_form = TaxonomicLevelForm(data=request.GET)
 
 		if not taxon_form.is_valid():
@@ -117,7 +118,7 @@ class TaxonFilter(ListAPIView):
 		return query
 
 
-class TaxonListView(TaxonFilter):
+class TaxonListView(APIView, TaxonFilter):
 	@swagger_auto_schema(
 		tags=["Taxonomy"],
 		operation_description="Get a list of taxa, with optional filtering.",
@@ -151,10 +152,10 @@ class TaxonListView(TaxonFilter):
 		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
 	)
 	def get(self, request):
-		return Response(BaseTaxonomicLevelSerializer(super().get(request), many=True).data)
+		return Response(BaseTaxonomicLevelSerializer(self.get_taxon_list(request), many=True).data)
 
 
-class TaxonCountView(TaxonFilter):
+class TaxonCountView(LoggingMixin, APIView, TaxonFilter):
 	@swagger_auto_schema(
 		tags=["Taxonomy"],
 		operation_description="Get a list of taxa, with optional filtering.",
@@ -188,7 +189,7 @@ class TaxonCountView(TaxonFilter):
 		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
 	)
 	def get(self, request):
-		return Response(super().get(request).count())
+		return Response(self.get_taxon_list(request).count())
 
 
 class TaxonCRUDView(APIView):
@@ -313,7 +314,7 @@ class TaxonChildrenView(TaxonChildrenBaseView):
 		return Response(BaseTaxonomicLevelSerializer(super().get(request), many=True).data)
 
 
-class TaxonChildrenCountView(TaxonChildrenBaseView):
+class TaxonChildrenCountView(LoggingMixin, TaxonChildrenBaseView):
 	@swagger_auto_schema(
 		tags=["Taxonomy"],
 		operation_description="Get the total children of the given taxon id",

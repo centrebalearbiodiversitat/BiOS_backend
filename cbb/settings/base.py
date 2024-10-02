@@ -40,6 +40,7 @@ INSTALLED_APPS = [
 	"django.contrib.staticfiles",
 	"django.contrib.gis",
 	"rest_framework",
+	"rest_framework_tracking",
 	"drf_yasg",
 	"corsheaders",
 	"mptt",

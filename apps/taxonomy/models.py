@@ -24,7 +24,9 @@ class TaxonomicLevelManager(SynonymManager, TreeManager):
 		)
 
 	def find(self, taxon):
-		levels: list = taxon.split()
+		# regex for properly split handle when hybrids or
+		# 	hyphen "-" (eg. Allium antonii-bolosii)
+		levels = re.findall(r"\bx\s+[\w|-]+|[\w|-]+", taxon)
 		if len(levels) < 1:
 			return self.none()
 

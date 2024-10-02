@@ -28,6 +28,7 @@ def add_taxonomic_image(line, batch):
 		)
 
 		if not taxon.images.filter(id=os.id):
+			taxon.images.clear()
 			taxon.images.add(os)
 
 		taxon.save()

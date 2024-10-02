@@ -84,14 +84,6 @@ class OccurrenceFilter(APIView):
 		for taxon in taxa:
 			filters |= Q(taxonomy__id=taxon.id) | Q(taxonomy__lft__gte=taxon.lft, taxonomy__rght__lte=taxon.rght)
 
-		gl = occur_form.cleaned_data.get("geographical_location", None)
-		if gl:
-			try:
-				gl = GeographicLevel.objects.get(id=gl)
-				filters &= Q(location__within=gl.area)
-			except GeographicLevel.DoesNotExist:
-				raise CBBAPIException("Geographical location does not exist", 404)
-
 		voucher = occur_form.cleaned_data.get("voucher", None)
 		if voucher:
 			filters &= Q(voucher__icontains=voucher)
@@ -106,7 +98,17 @@ class OccurrenceFilter(APIView):
 				occur_form.cleaned_data.get(f"{param}_max"),
 			)
 
-		return Occurrence.objects.filter(filters).distinct()
+		occurrences = Occurrence.objects.filter(filters).distinct()
+
+		gl = occur_form.cleaned_data.get("geographical_location", None)
+		if gl:
+			try:
+				gl = GeographicLevel.objects.get(id=gl)
+				occurrences = Occurrence.objects.filter(id__in=occurrences.values("id"), location__within=gl.area)
+			except GeographicLevel.DoesNotExist:
+				raise CBBAPIException("Geographical location does not exist", 404)
+
+		return occurrences
 
 
 class OccurrenceListView(OccurrenceFilter):

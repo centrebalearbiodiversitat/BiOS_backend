@@ -1,6 +1,4 @@
 from django.db import models
-
-from apps.geography.models import GeographicLevel
 from apps.taxonomy.models import TaxonomicLevel
 from common.utils.models import LatLonModel, ReferencedModel
 

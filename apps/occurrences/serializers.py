@@ -100,7 +100,7 @@ class OccurrenceSerializer(BaseOccurrenceSerializer):
 			return f"{year}"
 		else:
 			return None
-		
+
 
 class DynamicSerializer(serializers.Serializer):
 	count = serializers.IntegerField()
@@ -109,7 +109,6 @@ class DynamicSerializer(serializers.Serializer):
 	def __init__(self, *args, view_class, **kwargs):
 		self.view_class = view_class
 		super().__init__(*args, **kwargs)
-
 
 	def get_date_field_name(self):
 		"""
@@ -122,22 +121,20 @@ class DynamicSerializer(serializers.Serializer):
 		else:
 			return "sources"
 
-
 	def get_date_field(self, obj):
 		date_field_name = self.get_date_field_name()
 		return obj[date_field_name]
 
-
 	def to_representation(self, instance):
 		data = super().to_representation(instance)
 		if self.view_class.__name__ == "OccurrenceCountByTaxonMonth":
-			data['month'] = data.pop('date_field')
+			data["month"] = data.pop("date_field")
 		elif self.view_class.__name__ == "OccurrenceCountByTaxonMonth":
-			data['year'] = data.pop('date_field')
+			data["year"] = data.pop("date_field")
 		else:
-			data['source'] = data.pop('date_field')
+			data["source"] = data.pop("date_field")
 		return data
-	
+
 
 # class DynamicSourceSerializer(serializers.Serializer):
 # 	count = serializers.IntegerField()
@@ -153,13 +150,11 @@ class DynamicSerializer(serializers.Serializer):
 # 			return {'count': instance.id, 'source': source.name}
 # 		else:
 # 			return {'count': instance.id, 'source': None}
-		
-class DynamicSourceSerializer(serializers.Serializer):
-    count = serializers.IntegerField()
-    source = serializers.CharField()  # Renamed for clarity
 
-    def to_representation(self, instance):
-        return {
-			'source': instance['sources__source__name'],
-            'count': instance['count']
-        }
+
+class DynamicSourceSerializer(serializers.Serializer):
+	count = serializers.IntegerField()
+	source = serializers.CharField()  # Renamed for clarity
+
+	def to_representation(self, instance):
+		return {"source": instance["sources__source__name"], "count": instance["count"]}

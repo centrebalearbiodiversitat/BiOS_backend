@@ -103,7 +103,6 @@ class OccurrenceFilter(APIView):
 				occur_form.cleaned_data.get(f"{param}_min"),
 				occur_form.cleaned_data.get(f"{param}_max"),
 			)
-		
 
 		return Occurrence.objects.filter(filters).distinct()
 
@@ -259,12 +258,13 @@ class OccurrenceCountView(OccurrenceFilter):
 	def get(self, request):
 		return Response(super().get(request).count())
 
-#Añadir control de errores
+
+# Añadir control de errores
 class OccurrenceCountBySource(APIView):
 	@swagger_auto_schema(
-        tags=["Occurrences"],
-        operation_description="Get counts of occurrences grouped by Source name.",
-		manual_parameters= [
+		tags=["Occurrences"],
+		operation_description="Get counts of occurrences grouped by Source name.",
+		manual_parameters=[
 			openapi.Parameter(
 				"source_name",
 				openapi.IN_QUERY,
@@ -272,35 +272,35 @@ class OccurrenceCountBySource(APIView):
 				type=openapi.TYPE_STRING,
 			),
 		],
-        responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
-    )
+		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
+	)
 	def get(self, request):
 		occur_form = OccurrenceForm(data=request.GET)
 
 		if not occur_form.is_valid():
 			raise CBBAPIException(occur_form.errors, 400)
-		
-		taxonomy = occur_form.cleaned_data.get('taxonomy', None)
+
+		taxonomy = occur_form.cleaned_data.get("taxonomy", None)
 		if not taxonomy:
 			raise CBBAPIException("Missing taxonomy id parameter", 400)
 
-		occurrences = Occurrence.objects.filter(taxonomy__id=taxonomy) \
-			.prefetch_related('sources') \
-			.values('sources__source__name') \
-			.annotate(count=Count('id')) \
-            .order_by('sources__source__name') 
+		occurrences = (
+			Occurrence.objects.filter(taxonomy__id=taxonomy)
+			.prefetch_related("sources")
+			.values("sources__source__name")
+			.annotate(count=Count("id"))
+			.order_by("sources__source__name")
+		)
 
 		serializer = DynamicSourceSerializer(occurrences, many=True)
 		return Response(serializer.data)
-	
 
-	
 
-class OccurrenceCountByTaxonAndChildren(APIView): 
+class OccurrenceCountByTaxonAndChildren(APIView):
 	@swagger_auto_schema(
-        tags=["Occurrences"],
-        operation_description="Get count of occurrence grouped by the children of a taxon according to its ID.",
-		manual_parameters= [
+		tags=["Occurrences"],
+		operation_description="Get count of occurrence grouped by the children of a taxon according to its ID.",
+		manual_parameters=[
 			openapi.Parameter(
 				"taxonomy",
 				openapi.IN_QUERY,
@@ -308,15 +308,14 @@ class OccurrenceCountByTaxonAndChildren(APIView):
 				type=openapi.TYPE_INTEGER,
 			),
 		],
-        responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
-    )
-
+		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
+	)
 	def get(self, request):
 		occur_form = OccurrenceForm(data=request.GET)
 
 		if not occur_form.is_valid():
 			raise CBBAPIException(occur_form.errors, 400)
-		
+
 		taxonomy = occur_form.cleaned_data.get("taxonomy", None)
 
 		if not taxonomy:
@@ -328,29 +327,25 @@ class OccurrenceCountByTaxonAndChildren(APIView):
 			raise CBBAPIException("Taxonomic level does not exist", 404)
 		childrens = taxon_parent.get_children()
 		descendants = taxon_parent.get_descendants(include_self=True)
-	
-		annotated_occ = Occurrence.objects.annotate(
-		descendant_taxonomy=Case(
-			When(taxonomy__in=descendants, then=F('taxonomy__name')),
-			default=Value('Unknown')
-		),
-		descendant_taxon_id=Case(
-			When(taxonomy__in=descendants, then=F('taxonomy__id')),
-			default=None
-		)
-		).values('descendant_taxonomy', 'descendant_taxon_id').annotate(
-			count=Count('id')
-		).order_by('descendant_taxonomy')
 
+		annotated_occ = (
+			Occurrence.objects.annotate(
+				descendant_taxonomy=Case(When(taxonomy__in=descendants, then=F("taxonomy__name")), default=Value("Unknown")),
+				descendant_taxon_id=Case(When(taxonomy__in=descendants, then=F("taxonomy__id")), default=None),
+			)
+			.values("descendant_taxonomy", "descendant_taxon_id")
+			.annotate(count=Count("id"))
+			.order_by("descendant_taxonomy")
+		)
 
 		response = []
-		for i in annotated_occ:			
-			ancestor = self.check_ancestors(i['descendant_taxon_id'], childrens, i['count'])
+		for i in annotated_occ:
+			ancestor = self.check_ancestors(i["descendant_taxon_id"], childrens, i["count"])
 			response.append(ancestor)
-			
-		return JsonResponse(response, safe=False)	
 
-	def check_ancestors (self, children_id, parents_list, count):
+		return JsonResponse(response, safe=False)
+
+	def check_ancestors(self, children_id, parents_list, count):
 		taxon_children = TaxonomicLevel.objects.get(id=children_id)
 		ancestors = taxon_children.get_ancestors()
 
@@ -358,18 +353,17 @@ class OccurrenceCountByTaxonAndChildren(APIView):
 			if ancestors.filter(id=parent.id).exists():
 				ancestor = ancestors.get(id=parent.id)
 				context = {
-					'taxonomy': ancestor.name,
-					'count': count,
+					"taxonomy": ancestor.name,
+					"count": count,
 				}
 				return context
-	
 
 
 class OccurrenceCountByTaxonMonth(APIView):
 	@swagger_auto_schema(
-        tags=["Occurrences"],
-        operation_description="Get counts of occurrences grouped by month for a given Taxon ID.",
-		manual_parameters= [
+		tags=["Occurrences"],
+		operation_description="Get counts of occurrences grouped by month for a given Taxon ID.",
+		manual_parameters=[
 			openapi.Parameter(
 				"taxonomy",
 				openapi.IN_QUERY,
@@ -377,8 +371,8 @@ class OccurrenceCountByTaxonMonth(APIView):
 				type=openapi.TYPE_INTEGER,
 			),
 		],
-        responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
-    )
+		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
+	)
 	def get(self, request):
 		occur_form = OccurrenceForm(data=request.GET)
 
@@ -388,25 +382,27 @@ class OccurrenceCountByTaxonMonth(APIView):
 		taxonomy = occur_form.cleaned_data.get("taxonomy", None)
 		if not taxonomy:
 			raise CBBAPIException("Missing taxonomy id parameter", 400)
-		
+
 		try:
 			taxonomy = TaxonomicLevel.objects.get(id=taxonomy)
 		except TaxonomicLevel.DoesNotExist:
 			raise CBBAPIException("Taxonomic level does not exist", 404)
 
-		occurrences = Occurrence.objects.filter(taxonomy__id=taxonomy.id) \
-			.values('collection_date_month') \
-			.annotate(count=Count('id')) \
-			.order_by('collection_date_month')
+		occurrences = (
+			Occurrence.objects.filter(taxonomy__id=taxonomy.id)
+			.values("collection_date_month")
+			.annotate(count=Count("id"))
+			.order_by("collection_date_month")
+		)
 		serializer = DynamicSerializer(occurrences, many=True, view_class=self.__class__)
 		return Response(serializer.data)
 
 
 class OccurrenceCountByTaxonYear(APIView):
 	@swagger_auto_schema(
-        tags=["Occurrences"],
-        operation_description="Get counts of occurrences grouped by year for a given Taxon ID.",
-		manual_parameters= [
+		tags=["Occurrences"],
+		operation_description="Get counts of occurrences grouped by year for a given Taxon ID.",
+		manual_parameters=[
 			openapi.Parameter(
 				"taxonomy",
 				openapi.IN_QUERY,
@@ -414,8 +410,8 @@ class OccurrenceCountByTaxonYear(APIView):
 				type=openapi.TYPE_INTEGER,
 			),
 		],
-        responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
-    )
+		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
+	)
 	def get(self, request):
 		occur_form = OccurrenceForm(data=request.GET)
 
@@ -425,16 +421,17 @@ class OccurrenceCountByTaxonYear(APIView):
 		taxonomy = occur_form.cleaned_data.get("taxonomy", None)
 		if not taxonomy:
 			raise CBBAPIException("Missing taxonomy id parameter", 400)
-		
+
 		try:
 			taxonomy = TaxonomicLevel.objects.get(id=taxonomy)
 		except TaxonomicLevel.DoesNotExist:
 			raise CBBAPIException("Taxonomic level does not exist", 404)
-		
-		occurrences = Occurrence.objects.filter(taxonomy__id=taxonomy.id) \
-			.values('collection_date_year') \
-			.annotate(count=Count('id')) \
-			.order_by('collection_date_year')
+
+		occurrences = (
+			Occurrence.objects.filter(taxonomy__id=taxonomy.id)
+			.values("collection_date_year")
+			.annotate(count=Count("id"))
+			.order_by("collection_date_year")
+		)
 		serializer = DynamicSerializer(occurrences, many=True, view_class=self.__class__)
 		return Response(serializer.data)
-

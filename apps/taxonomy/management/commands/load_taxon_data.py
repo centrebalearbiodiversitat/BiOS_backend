@@ -1,5 +1,6 @@
 import json
 import traceback
+import re
 
 from django.core.management.base import BaseCommand
 from django.db import transaction
@@ -17,6 +18,14 @@ def check_taxon(line):
 
 	return taxonomy
 
+iucn_regex = re.compile(r'^[A-Z]{2}/[a-z]{2}$')
+
+def transform_iucn_status(line):
+	iucn_fields = ["iucn_global", "iucn_europe", "iucn_mediterranean"]
+	for field in line.keys() & iucn_fields:
+		if field in line and line[field]:
+			if re.match(iucn_regex, line[field]):
+				line[field] = line[field][-2:].upper()
 
 def create_taxon_data(line, taxonomy):
 	habitat_ids = set(line["habitat"] or [])
@@ -25,6 +34,8 @@ def create_taxon_data(line, taxonomy):
 	if len(valid_habitats) != len(habitat_ids):
 		invalid_ids = habitat_ids - set(valid_habitats.values_list("sources__origin_id", flat=True))
 		raise Exception(f"Invalid habitat IDs: {invalid_ids}")
+
+	transform_iucn_status(line)
 
 	taxon_data, _ = TaxonData.objects.get_or_create(
 		taxonomy=taxonomy.first(),

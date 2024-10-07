@@ -437,4 +437,3 @@ class OccurrenceCountByTaxonYear(APIView):
 			.order_by('collection_date_year')
 		serializer = DynamicSerializer(occurrences, many=True, view_class=self.__class__)
 		return Response(serializer.data)
-

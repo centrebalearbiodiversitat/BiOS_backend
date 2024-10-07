@@ -18,7 +18,9 @@ def check_taxon(line):
 
 	return taxonomy
 
-iucn_regex = re.compile(r'^[A-Z]{2}/[a-z]{2}$')
+
+iucn_regex = re.compile(r"^[A-Z]{2}/[a-z]{2}$")
+
 
 def transform_iucn_status(line):
 	iucn_fields = ["iucn_global", "iucn_europe", "iucn_mediterranean"]
@@ -26,6 +28,7 @@ def transform_iucn_status(line):
 		if field in line and line[field]:
 			if re.match(iucn_regex, line[field]):
 				line[field] = line[field][-2:].upper()
+
 
 def create_taxon_data(line, taxonomy):
 	habitat_ids = set(line["habitat"] or [])

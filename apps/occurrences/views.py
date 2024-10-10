@@ -215,19 +215,19 @@ class OccurrenceListView(OccurrenceFilter):
 class OccurrenceListDownloadView(OccurrenceFilter):
 	def stream_json_response(self, occurrences):
 		"""Generator that yields JSON data from a queryset."""
-		yield '['  # Start of the JSON array
+		yield "["  # Start of the JSON array
 		first = True  # Flag to handle comma placement
 
 		for occurrence in occurrences:
 			if not first:
-				yield ', '  # Add comma before the next item
+				yield ", "  # Add comma before the next item
 			first = False
 
 			# Serialize the occurrence and convert it to JSON
 			occurrence_data = DownloadOccurrenceSerializer(occurrence).data
 			yield json.dumps(occurrence_data, indent=1, cls=DjangoJSONEncoder)  # Convert to JSON and yield
 
-		yield ']'  # End of the JSON array
+		yield "]"  # End of the JSON array
 
 	def get(self, request):
 		occurrences = super().get(request).prefetch_related("sources__source")

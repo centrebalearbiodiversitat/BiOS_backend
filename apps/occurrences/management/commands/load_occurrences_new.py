@@ -47,8 +47,8 @@ def genetic_sources(line: dict, batch, occ):
 		origin_id=line["sample_id"],
 		source=source,
 		defaults={
-			'attribution': line["attribution"],
-		}
+			"attribution": line["attribution"],
+		},
 	)
 	if not new:
 		if Sequence.objects.filter(sources=os, occurrence=occ).exists():
@@ -150,8 +150,9 @@ class Command(BaseCommand):
 						taxon = taxon.first()
 						create_origin_source(taxon, line[taxon_id_key], source)
 
-				taxonomy = TaxonomicLevel.objects.find(taxon=line["originalName"])\
-											.filter(rank=TaxonomicLevel.TRANSLATE_RANK[line["taxonRank"].lower()])
+				taxonomy = TaxonomicLevel.objects.find(taxon=line["originalName"]).filter(
+					rank=TaxonomicLevel.TRANSLATE_RANK[line["taxonRank"].lower()]
+				)
 				taxon_count = taxonomy.count()
 				if taxon_count == 0:
 					raise Exception(f"Taxonomy not found.\n{line}")
@@ -180,7 +181,7 @@ class Command(BaseCommand):
 					source=source,
 					defaults={
 						"attribution": line["attribution"],
-					}
+					},
 				)
 				if new:
 					occ = Occurrence.objects.create(

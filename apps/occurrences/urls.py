@@ -1,7 +1,6 @@
 from django.urls import path
 
-from apps.occurrences.views import OccurrenceCountView, OccurrenceCRUDView, OccurrenceListView, \
-	OccurrenceListDownloadView
+from apps.occurrences.views import OccurrenceCountView, OccurrenceCRUDView, OccurrenceListView, OccurrenceListDownloadView
 
 app_name = "occurrences"
 urlpatterns = [

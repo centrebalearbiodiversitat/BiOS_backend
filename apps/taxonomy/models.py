@@ -183,7 +183,7 @@ class TaxonData(models.Model):
 	CD = 9
 	NA = 10
 
-	CS_CHOICES = (		
+	CS_CHOICES = (
 		(NE, "ne"),
 		(DD, "dd"),
 		(LC, "lc"),
@@ -194,7 +194,7 @@ class TaxonData(models.Model):
 		(EW, "ew"),
 		(EX, "ex"),
 		(CD, "cd"),
-		(NA, "na")
+		(NA, "na"),
 	)
 
 	TRANSLATE_CS = {
@@ -205,7 +205,7 @@ class TaxonData(models.Model):
 		LC: "lc",
 		"lc": LC,
 		NT: "nt",
-		"nt": NT,	
+		"nt": NT,
 		VU: "vu",
 		"vu": VU,
 		EN: "en",
@@ -219,7 +219,7 @@ class TaxonData(models.Model):
 		CD: "cd",
 		"cd": CD,
 		NA: "na",
-		"na": NA
+		"na": NA,
 	}
 
 	taxonomy = models.ForeignKey(TaxonomicLevel, on_delete=models.CASCADE, db_index=True)

@@ -1,5 +1,8 @@
-from django.contrib.gis.geos import Point
+import json
+
+from django.core.serializers.json import DjangoJSONEncoder
 from django.db.models import Q
+from django.http import StreamingHttpResponse, JsonResponse
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.response import Response
@@ -10,7 +13,7 @@ from apps.taxonomy.models import TaxonomicLevel
 from ..API.exceptions import CBBAPIException
 from .forms import OccurrenceForm
 from .models import Occurrence
-from .serializers import OccurrenceSerializer, BaseOccurrenceSerializer
+from .serializers import OccurrenceSerializer, BaseOccurrenceSerializer, DownloadOccurrenceSerializer
 from ..geography.models import GeographicLevel
 
 
@@ -207,6 +210,35 @@ class OccurrenceListView(OccurrenceFilter):
 	)
 	def get(self, request):
 		return Response(BaseOccurrenceSerializer(super().get(request), many=True).data)
+
+
+class OccurrenceListDownloadView(OccurrenceFilter):
+	def stream_json_response(self, occurrences):
+		"""Generator that yields JSON data from a queryset."""
+		yield '['  # Start of the JSON array
+		first = True  # Flag to handle comma placement
+
+		for occurrence in occurrences:
+			if not first:
+				yield ', '  # Add comma before the next item
+			first = False
+
+			# Serialize the occurrence and convert it to JSON
+			occurrence_data = DownloadOccurrenceSerializer(occurrence).data
+			yield json.dumps(occurrence_data, indent=1, cls=DjangoJSONEncoder)  # Convert to JSON and yield
+
+		yield ']'  # End of the JSON array
+
+	def get(self, request):
+		occurrences = super().get(request).prefetch_related("sources__source")
+
+		return StreamingHttpResponse(
+			self.stream_json_response(occurrences),
+			content_type="application/json",
+			headers={
+				"Content-Disposition": f'attachment; filename="occurrences.json"',
+			},
+		)
 
 
 class OccurrenceCountView(OccurrenceFilter):

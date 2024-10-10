@@ -1,11 +1,9 @@
-import csv
 import json
 from django.core.management.base import BaseCommand
 from django.db import transaction
 from django.utils.dateparse import parse_datetime
 from django.contrib.gis.geos import Point
 from apps.genetics.models import Sequence, Marker
-from apps.geography.models import GeographicLevel
 from apps.occurrences.models import Occurrence
 from apps.taxonomy.models import TaxonomicLevel
 from apps.versioning.models import Batch, Source, OriginSource
@@ -17,15 +15,9 @@ TAXON_KEYS = [
 	("order", "orderKey", TaxonomicLevel.ORDER),
 	("family", "familyKey", TaxonomicLevel.FAMILY),
 	("genus", "genusKey", TaxonomicLevel.GENUS),
-	("specificEpithet", "speciesKey", TaxonomicLevel.SPECIES),
-]
-
-GEOGRAPHIC_LEVELS = [
-	{"key": "AC", "rank": GeographicLevel.AC},
-	{"key": "ISLAND", "rank": GeographicLevel.ISLAND},
-	{"key": "MUNICIPALI", "rank": GeographicLevel.MUNICIPALITY},
-	{"key": "TOWN", "rank": GeographicLevel.TOWN},
-	{"key": "WB_0", "rank": GeographicLevel.WATER_BODY},
+	("species", "speciesKey", TaxonomicLevel.SPECIES),
+	("subspecies", "subspeciesKey", TaxonomicLevel.SUBSPECIES),
+	("variety", "varietyKey", TaxonomicLevel.SUBSPECIES),
 ]
 
 
@@ -51,7 +43,13 @@ def genetic_sources(line: dict, batch, occ):
 		},
 	)
 
-	os, new = OriginSource.objects.get_or_create(origin_id=line["sample_id"], source=source)
+	os, new = OriginSource.objects.get_or_create(
+		origin_id=line["sample_id"],
+		source=source,
+		defaults={
+			'attribution': line["attribution"],
+		}
+	)
 	if not new:
 		if Sequence.objects.filter(sources=os, occurrence=occ).exists():
 			return
@@ -100,14 +98,6 @@ def genetic_sources(line: dict, batch, occ):
 	seq.save()
 
 
-def find_gadm(line):
-	gadm_query = ""
-	for gl_key in GEOGRAPHIC_LEVELS:
-		if line[gl_key["key"]]:
-			gadm_query = f'{gadm_query}, {line[gl_key["key"]]}'
-	return GeographicLevel.objects.search(location=gadm_query)
-
-
 def create_origin_source(ref_model_elem, origin_id, source):
 	os, new = OriginSource.objects.get_or_create(origin_id=origin_id, source=source)
 	if new:
@@ -147,10 +137,9 @@ class Command(BaseCommand):
 					},
 				)
 
-				taxon = biota
 				for taxon_key, taxon_id_key, taxon_rank in TAXON_KEYS:
 					if line[taxon_key] and line[taxon_id_key]:
-						taxon = taxon.get_descendants().filter(rank=taxon_rank, name__iexact=line[taxon_key])
+						taxon = TaxonomicLevel.objects.find(taxon=line[taxon_key]).filter(rank=taxon_rank)
 
 						taxon_count = taxon.count()
 						if taxon_count > 1:
@@ -161,7 +150,8 @@ class Command(BaseCommand):
 						taxon = taxon.first()
 						create_origin_source(taxon, line[taxon_id_key], source)
 
-				taxonomy = TaxonomicLevel.objects.find(taxon=line["originalName"])
+				taxonomy = TaxonomicLevel.objects.find(taxon=line["originalName"])\
+											.filter(rank=TaxonomicLevel.TRANSLATE_RANK[line["taxonRank"].lower()])
 				taxon_count = taxonomy.count()
 				if taxon_count == 0:
 					raise Exception(f"Taxonomy not found.\n{line}")
@@ -185,13 +175,19 @@ class Command(BaseCommand):
 					},
 				)
 
-				os, new = OriginSource.objects.get_or_create(origin_id=line["sample_id"], source=source)
+				os, new = OriginSource.objects.get_or_create(
+					origin_id=line["sample_id"],
+					source=source,
+					defaults={
+						"attribution": line["attribution"],
+					}
+				)
 				if new:
 					occ = Occurrence.objects.create(
 						taxonomy=taxonomy.first(),
 						batch=batch,
 						voucher=line["voucher"] if line["voucher"] else None,
-						basis_of_record=Occurrence.TRANSLATE_BASIS_OF_RECORD.get(line["basisOfRecord"].lower(), Occurrence.UNKNOWN),
+						basis_of_record=Occurrence.TRANSLATE_BASIS_OF_RECORD[line["basisOfRecord"] if line["basisOfRecord"] else "unknown"],
 						collection_date_year=(int(line["year"]) if line["year"] else None),
 						collection_date_month=(int(line["month"]) if line["month"] else None),
 						collection_date_day=int(line["day"]) if line["day"] else None,
@@ -201,6 +197,7 @@ class Command(BaseCommand):
 						),
 						elevation=int(line["elevation"]) if line["elevation"] else None,
 						depth=int(line["depth"]) if line["depth"] else None,
+						recorded_by=line["recordedBy"],
 					)
 					occ.sources.add(os)
 					occ.save()

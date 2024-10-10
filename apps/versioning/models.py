@@ -69,6 +69,16 @@ class Source(SynonymModel):
 		(SEQUENCE, "sequence"),
 		(IMAGE, "image"),
 	)
+	TRANSLATE_DATA_TYPE = {
+		TAXON: "taxon",
+		OCCURRENCE: "occurrence",
+		SEQUENCE: "sequence",
+		IMAGE: "image",
+		"taxon": TAXON,
+		"occurrence": OCCURRENCE,
+		"sequence": SEQUENCE,
+		"image": IMAGE,
+	}
 
 	origin = models.PositiveSmallIntegerField(choices=ORIGIN_CHOICES)
 	url = models.URLField(null=True, blank=True, default=None)

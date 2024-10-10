@@ -537,6 +537,7 @@ class TaxonChecklistView(APIView):
 			last_level = taxon.level
 
 		csv_writer = csv.writer(EchoWriter())
+
 		return StreamingHttpResponse(
 			(csv_writer.writerow(row) for row in to_csv),
 			content_type="text/csv",

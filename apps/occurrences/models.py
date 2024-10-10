@@ -43,6 +43,7 @@ class Occurrence(ReferencedModel, LatLonModel):
 
 	taxonomy = models.ForeignKey(TaxonomicLevel, on_delete=models.CASCADE, db_index=True)
 	voucher = models.CharField(max_length=255, null=True, blank=True)
+	recorded_by = models.CharField(max_length=512, null=True, blank=True)
 	collection_date_year = models.PositiveSmallIntegerField(null=True, blank=True)
 	collection_date_month = models.PositiveSmallIntegerField(null=True, blank=True)
 	collection_date_day = models.PositiveSmallIntegerField(null=True, blank=True)

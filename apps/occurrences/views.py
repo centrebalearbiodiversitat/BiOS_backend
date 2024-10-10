@@ -258,8 +258,6 @@ class OccurrenceCountView(OccurrenceFilter):
 	def get(self, request):
 		return Response(super().get(request).count())
 
-
-# Añadir control de errores
 class OccurrenceCountBySource(APIView):
 	@swagger_auto_schema(
 		tags=["Occurrences"],

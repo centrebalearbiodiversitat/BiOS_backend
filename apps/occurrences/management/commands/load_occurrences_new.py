@@ -135,7 +135,6 @@ class Command(BaseCommand):
 			line: dict
 			for line in data:
 				line = parse_line(line)
-				# print(line["sample_id"])
 				source, _ = Source.objects.get_or_create(
 					name__iexact=line["occurrenceSource"],
 					data_type=Source.TAXON,

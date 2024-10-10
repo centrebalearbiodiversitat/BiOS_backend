@@ -258,7 +258,7 @@ class OccurrenceCountView(OccurrenceFilter):
 	def get(self, request):
 		return Response(super().get(request).count())
 
-class OccurrenceCountBySource(APIView):
+class OccurrenceCountBySourceView(APIView):
 	@swagger_auto_schema(
 		tags=["Occurrences"],
 		operation_description="Get counts of occurrences grouped by Source name.",
@@ -294,7 +294,7 @@ class OccurrenceCountBySource(APIView):
 		return Response(serializer.data)
 
 
-class OccurrenceCountByTaxonAndChildren(APIView):
+class OccurrenceCountByTaxonAndChildrenView(APIView):
 	@swagger_auto_schema(
 		tags=["Occurrences"],
 		operation_description="Get count of occurrence grouped by the children of a taxon according to its ID.",
@@ -357,7 +357,7 @@ class OccurrenceCountByTaxonAndChildren(APIView):
 				return context
 
 
-class OccurrenceCountByTaxonMonth(APIView):
+class OccurrenceCountByTaxonMonthView(APIView):
 	@swagger_auto_schema(
 		tags=["Occurrences"],
 		operation_description="Get counts of occurrences grouped by month for a given Taxon ID.",
@@ -396,7 +396,7 @@ class OccurrenceCountByTaxonMonth(APIView):
 		return Response(serializer.data)
 
 
-class OccurrenceCountByTaxonYear(APIView):
+class OccurrenceCountByTaxonYearView(APIView):
 	@swagger_auto_schema(
 		tags=["Occurrences"],
 		operation_description="Get counts of occurrences grouped by year for a given Taxon ID.",

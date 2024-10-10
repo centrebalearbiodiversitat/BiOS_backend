@@ -1,8 +1,6 @@
 from rest_framework import serializers
 from common.utils.serializers import CaseModelSerializer
-from ..geography.models import GeographicLevel
 from .models import Occurrence
-from ..geography.serializers import GeographicLevelSerializer
 from ..taxonomy.serializers import BaseTaxonomicLevelSerializer
 from ..versioning.serializers import OriginSourceSerializer
 
@@ -57,7 +55,6 @@ class OccurrenceSerializer(BaseOccurrenceSerializer):
 	month = serializers.IntegerField(source="collection_date_month")
 	year = serializers.IntegerField(source="collection_date_year")
 
-	location = serializers.SerializerMethodField()
 	taxonomy = BaseTaxonomicLevelSerializer()
 	sources = OriginSourceSerializer(many=True)
 
@@ -73,7 +70,6 @@ class OccurrenceSerializer(BaseOccurrenceSerializer):
 			"depth",
 			"elevation",
 			"event_date",
-			"location",
 			"month",
 			"taxonomy",
 			"voucher",
@@ -81,8 +77,8 @@ class OccurrenceSerializer(BaseOccurrenceSerializer):
 			"sources",
 		)
 
-	def get_location(self, obj):
-		return GeographicLevelSerializer(GeographicLevel.objects.filter(area__intersects=obj.location).order_by("-rank").first()).data
+	# def get_location(self, obj):
+	# 	return GeographicLevelSerializer(GeographicLevel.objects.filter(area__intersects=obj.location).order_by("-rank").first()).data
 
 	def get_basis_of_record(self, obj):
 		return Occurrence.TRANSLATE_BASIS_OF_RECORD[obj.basis_of_record]
@@ -100,6 +96,10 @@ class OccurrenceSerializer(BaseOccurrenceSerializer):
 			return f"{year}"
 		else:
 			return None
+
+
+class DownloadOccurrenceSerializer(OccurrenceSerializer):
+	taxonomy = serializers.PrimaryKeyRelatedField(read_only=True)
 
 
 class DynamicSerializer(serializers.Serializer):

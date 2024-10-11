@@ -1,8 +1,10 @@
 import json
+import geopandas as gpd
+
 from django.core.management.base import BaseCommand
 from django.db import transaction
 from django.utils.dateparse import parse_datetime
-from django.contrib.gis.geos import Point
+from django.contrib.gis.geos import Point, GEOSGeometry
 from apps.genetics.models import Sequence, Marker
 from apps.occurrences.models import Occurrence
 from apps.taxonomy.models import TaxonomicLevel
@@ -120,8 +122,12 @@ class Command(BaseCommand):
 		file_name = options["file"]
 		with open(file_name, "r") as file:
 			data = json.load(file)
+			cbb_scope_geometry = gpd.read_file(
+				'data/GIS/CBB_Balearic_Sea/sea_uncertainess_no_holes/sea_uncertainess_no_holes.shp'
+			).loc[0].geometry
+			cbb_scope_geometry = GEOSGeometry(cbb_scope_geometry.wkt)
 			batch = Batch.objects.create()
-			biota = TaxonomicLevel.objects.get(rank=TaxonomicLevel.LIFE)
+
 			line: dict
 			for line in data:
 				line = parse_line(line)
@@ -183,21 +189,23 @@ class Command(BaseCommand):
 					},
 				)
 				if new:
+					location = (Point(list(reversed(line["lat_lon"])), srid=4326)) if line.get("lat_lon", None) else None
 					occ = Occurrence.objects.create(
 						taxonomy=taxonomy.first(),
 						batch=batch,
 						voucher=line["voucher"] if line["voucher"] else None,
-						basis_of_record=Occurrence.TRANSLATE_BASIS_OF_RECORD[line["basisOfRecord"] if line["basisOfRecord"] else "unknown"],
-						collection_date_year=(int(line["year"]) if line["year"] else None),
-						collection_date_month=(int(line["month"]) if line["month"] else None),
-						collection_date_day=int(line["day"]) if line["day"] else None,
-						location=(Point(list(reversed(line["lat_lon"])), srid=4326)) if line.get("lat_lon", None) else None,
+						basis_of_record=Occurrence.TRANSLATE_BASIS_OF_RECORD.get(line["basisOfRecord"].lower() if line["basisOfRecord"] else "unknown", Occurrence.INVALID),
+						collection_date_year=(int(line["year"]) if line["year"] and 1500 < line["year"] < 3000 else None),
+						collection_date_month=(int(line["month"]) if line["month"] and 0 < line["month"] <= 12 else None),
+						collection_date_day=int(line["day"]) if line["day"] and 0 < line["month"] <= 31 else None,
+						location=location,
 						coordinate_uncertainty_in_meters=(
 							int(line["coordinateUncertaintyInMeters"]) if line["coordinateUncertaintyInMeters"] else None
 						),
 						elevation=int(line["elevation"]) if line["elevation"] else None,
 						depth=int(line["depth"]) if line["depth"] else None,
 						recorded_by=line["recordedBy"],
+						in_cbb_scope=cbb_scope_geometry.intersects(location) if location else False
 					)
 					occ.sources.add(os)
 					occ.save()

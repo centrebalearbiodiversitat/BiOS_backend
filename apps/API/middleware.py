@@ -12,12 +12,12 @@ class DynamicSerializeMiddleware:
 			return [self._filter_fields(item, fields_to_exclude) for item in data]
 		else:
 			return data
-		
+
 	def process_template_response(self, request, response):
 		if (
-			hasattr(response, "accepted_media_type")
-			and response.accepted_media_type == "application/json"
-			and isinstance(response.data, (list, dict))
+			hasattr(response, "accepted_media_type") and
+			response.accepted_media_type == "application/json" and
+			isinstance(response.data, (list, dict))
 		):
 			choice = request.GET.get("choice")
 			exclude = request.GET.get("exclude")
@@ -25,19 +25,16 @@ class DynamicSerializeMiddleware:
 			if choice:
 				choice = choice.split(",")
 				filtered_data = []
-
 				if isinstance(response.data, dict):
 					filtered_data = {k: v for k, v in response.data.items() if k in choice}
-
 				else:
 					for item in response.data:
 						filtered_data.append({k: v for k, v in item.items() if k in choice})
 
 				response.data = filtered_data
-			
+
 			if exclude:
 				exclude = exclude.split(",")
 				response.data = self._filter_fields(response.data, exclude)
-
 
 		return response

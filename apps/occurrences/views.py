@@ -11,7 +11,8 @@ from apps.taxonomy.models import TaxonomicLevel
 from ..API.exceptions import CBBAPIException
 from .forms import OccurrenceForm
 from .models import Occurrence
-from .serializers import OccurrenceSerializer, BaseOccurrenceSerializer, DownloadOccurrenceSerializer, DynamicSerializer, DynamicSourceSerializer
+from .serializers import OccurrenceSerializer, BaseOccurrenceSerializer, DownloadOccurrenceSerializer, \
+	OccurrenceCountByDateSerializer, DynamicSourceSerializer
 from ..geography.models import GeographicLevel
 
 
@@ -60,7 +61,7 @@ class OccurrenceFilter(APIView):
 			filters &= Q(**{f"{field_name}__lte": max_value})
 		return filters
 
-	def get(self, request):
+	def calculate(self, request, in_cbb_scope=True):
 		occur_form = OccurrenceForm(data=request.GET)
 
 		if not occur_form.is_valid():
@@ -89,7 +90,8 @@ class OccurrenceFilter(APIView):
 		if voucher:
 			filters &= Q(voucher__icontains=voucher)
 
-		range_parameters = ["decimal_latitude", "decimal_longitude", "coordinate_uncertainty_in_meters", "elevation", "depth"]
+		range_parameters = ["decimal_latitude", "decimal_longitude", "coordinate_uncertainty_in_meters", "elevation",
+							"depth"]
 
 		for param in range_parameters:
 			filters = self.filter_by_range(
@@ -108,6 +110,9 @@ class OccurrenceFilter(APIView):
 				occurrences = Occurrence.objects.filter(id__in=occurrences.values("id"), location__within=gl.area)
 			except GeographicLevel.DoesNotExist:
 				raise CBBAPIException("Geographical location does not exist", 404)
+
+		if in_cbb_scope:
+			occurrences = occurrences.filter(in_cbb_scope=in_cbb_scope)
 
 		return occurrences
 
@@ -199,15 +204,17 @@ class OccurrenceListView(OccurrenceFilter):
 				description="Maximum coordinate uncertainty in meters",
 				type=openapi.TYPE_INTEGER,
 			),
-			openapi.Parameter("elevation_min", openapi.IN_QUERY, description="Minimum elevation", type=openapi.TYPE_INTEGER),
-			openapi.Parameter("elevation_max", openapi.IN_QUERY, description="Maximum elevation", type=openapi.TYPE_INTEGER),
+			openapi.Parameter("elevation_min", openapi.IN_QUERY, description="Minimum elevation",
+							  type=openapi.TYPE_INTEGER),
+			openapi.Parameter("elevation_max", openapi.IN_QUERY, description="Maximum elevation",
+							  type=openapi.TYPE_INTEGER),
 			openapi.Parameter("depth_min", openapi.IN_QUERY, description="Minimum depth", type=openapi.TYPE_INTEGER),
 			openapi.Parameter("depth_max", openapi.IN_QUERY, description="Maximum depth", type=openapi.TYPE_INTEGER),
 		],
 		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
 	)
 	def get(self, request):
-		return Response(BaseOccurrenceSerializer(super().get(request), many=True).data)
+		return Response(BaseOccurrenceSerializer(self.calculate(request), many=True).data)
 
 
 class OccurrenceListDownloadView(OccurrenceFilter):
@@ -228,7 +235,7 @@ class OccurrenceListDownloadView(OccurrenceFilter):
 		yield "]"  # End of the JSON array
 
 	def get(self, request):
-		occurrences = super().get(request).prefetch_related("sources__source")
+		occurrences = self.calculate(request).prefetch_related("sources__source")
 
 		return StreamingHttpResponse(
 			self.stream_json_response(occurrences),
@@ -248,49 +255,50 @@ class OccurrenceCountView(OccurrenceFilter):
 				"taxonomy",
 				openapi.IN_QUERY,
 				description="Filter occurrences by taxon id.",
-				type=openapi.TYPE_INTEGER,  # Ajusta el tipo de dato según el campo del modelo
+				type=openapi.TYPE_INTEGER,
 			),
 			openapi.Parameter(
 				"voucher",
 				openapi.IN_QUERY,
 				description="Filter occurrences by voucher field.",
-				type=openapi.TYPE_STRING,  # Ajusta el tipo de dato según el campo del modelo
+				type=openapi.TYPE_STRING,
 			),
 			openapi.Parameter(
 				"geographicalLocation",
 				openapi.IN_QUERY,
 				description="Filter occurrences by geographical location id.",
-				type=openapi.TYPE_INTEGER,  # Ajusta el tipo de dato según el campo del modelo
+				type=openapi.TYPE_INTEGER,
 			),
 			openapi.Parameter(
 				"year",
 				openapi.IN_QUERY,
 				description="Filter occurrences by year field.",
-				type=openapi.TYPE_INTEGER,  # Ajusta el tipo de dato según el campo del modelo
+				type=openapi.TYPE_INTEGER,
 			),
 			openapi.Parameter(
 				"month",
 				openapi.IN_QUERY,
 				description="Filter occurrences by month field.",
-				type=openapi.TYPE_INTEGER,  # Ajusta el tipo de dato según el campo del modelo
+				type=openapi.TYPE_INTEGER,
 			),
 			openapi.Parameter(
 				"day",
 				openapi.IN_QUERY,
 				description="Filter occurrences by day field.",
-				type=openapi.TYPE_INTEGER,  # Ajusta el tipo de dato según el campo del modelo
+				type=openapi.TYPE_INTEGER,
 			),
 			openapi.Parameter(
 				"basisOfRecord",
 				openapi.IN_QUERY,
 				description="Filter occurrences by basis of record field.",
-				type=openapi.TYPE_STRING,  # Ajusta el tipo de dato según el campo del modelo
+				type=openapi.TYPE_STRING,
 			),
 		],
 		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
 	)
 	def get(self, request):
-		return Response(super().get(request).count())
+		return Response(self.calculate(request).count())
+
 
 class OccurrenceCountBySourceView(APIView):
 	@swagger_auto_schema(
@@ -316,16 +324,20 @@ class OccurrenceCountBySourceView(APIView):
 		if not taxonomy:
 			raise CBBAPIException("Missing taxonomy id parameter", 400)
 
+		try:
+			taxonomy = TaxonomicLevel.objects.get(id=taxonomy).get_descendants(include_self=True)
+		except TaxonomicLevel.DoesNotExist:
+			raise CBBAPIException("Taxonomic level does not exist", 404)
+
 		occurrences = (
-			Occurrence.objects.filter(taxonomy__id=taxonomy)
-			.prefetch_related("sources")
-			.values("sources__source__name")
-			.annotate(count=Count("id"))
-			.order_by("sources__source__name")
+			Occurrence.objects.filter(taxonomy__in=taxonomy, in_cbb_scope=True)
+				.prefetch_related("sources")
+				.values("sources__source__name")
+				.annotate(count=Count("id"))
+				.order_by("sources__source__name")
 		)
 
-		serializer = DynamicSourceSerializer(occurrences, many=True)
-		return Response(serializer.data)
+		return Response(DynamicSourceSerializer(occurrences, many=True).data)
 
 
 class OccurrenceCountByTaxonAndChildrenView(APIView):
@@ -362,7 +374,8 @@ class OccurrenceCountByTaxonAndChildrenView(APIView):
 
 		annotated_occ = (
 			Occurrence.objects.annotate(
-				descendant_taxonomy=Case(When(taxonomy__in=descendants, then=F("taxonomy__name")), default=Value("Unknown")),
+				descendant_taxonomy=Case(When(taxonomy__in=descendants, then=F("taxonomy__name")),
+										 default=Value("Unknown")),
 				descendant_taxon_id=Case(When(taxonomy__in=descendants, then=F("taxonomy__id")), default=None),
 			)
 			.values("descendant_taxonomy", "descendant_taxon_id")
@@ -391,7 +404,36 @@ class OccurrenceCountByTaxonAndChildrenView(APIView):
 				return context
 
 
-class OccurrenceCountByTaxonMonthView(APIView):
+class OccurrenceCountByTaxonDateBaseView():
+	def calculate(self, request, date_key, view_class):
+		occur_form = OccurrenceForm(data=request.GET)
+
+		if not occur_form.is_valid():
+			raise CBBAPIException(occur_form.errors, 400)
+
+		taxonomy = occur_form.cleaned_data.get("taxonomy", None)
+		if not taxonomy:
+			raise CBBAPIException("Missing taxonomy id parameter", 400)
+
+		try:
+			taxonomy = TaxonomicLevel.objects.get(id=taxonomy).get_descendants(include_self=True)
+		except TaxonomicLevel.DoesNotExist:
+			raise CBBAPIException("Taxonomic level does not exist", 404)
+
+		occurrences = Occurrence.objects.filter(taxonomy__in=taxonomy, in_cbb_scope=True) \
+			.values(date_key) \
+			.annotate(count=Count("id")) \
+			.order_by(date_key)
+
+		return Response(OccurrenceCountByDateSerializer(
+				occurrences,
+				many=True,
+				view_class=view_class
+			).data
+		)
+
+
+class OccurrenceCountByTaxonMonthView(APIView, OccurrenceCountByTaxonDateBaseView):
 	@swagger_auto_schema(
 		tags=["Occurrences"],
 		operation_description="Get counts of occurrences grouped by month for a given Taxon ID.",
@@ -406,31 +448,14 @@ class OccurrenceCountByTaxonMonthView(APIView):
 		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
 	)
 	def get(self, request):
-		occur_form = OccurrenceForm(data=request.GET)
-
-		if not occur_form.is_valid():
-			raise CBBAPIException(occur_form.errors, 400)
-
-		taxonomy = occur_form.cleaned_data.get("taxonomy", None)
-		if not taxonomy:
-			raise CBBAPIException("Missing taxonomy id parameter", 400)
-
-		try:
-			taxonomy = TaxonomicLevel.objects.get(id=taxonomy)
-		except TaxonomicLevel.DoesNotExist:
-			raise CBBAPIException("Taxonomic level does not exist", 404)
-
-		occurrences = (
-			Occurrence.objects.filter(taxonomy__id=taxonomy.id)
-			.values("collection_date_month")
-			.annotate(count=Count("id"))
-			.order_by("collection_date_month")
+		return self.calculate(
+			request,
+			"collection_date_month",
+			self.__class__
 		)
-		serializer = DynamicSerializer(occurrences, many=True, view_class=self.__class__)
-		return Response(serializer.data)
 
 
-class OccurrenceCountByTaxonYearView(APIView):
+class OccurrenceCountByTaxonYearView(APIView, OccurrenceCountByTaxonDateBaseView):
 	@swagger_auto_schema(
 		tags=["Occurrences"],
 		operation_description="Get counts of occurrences grouped by year for a given Taxon ID.",
@@ -445,26 +470,9 @@ class OccurrenceCountByTaxonYearView(APIView):
 		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
 	)
 	def get(self, request):
-		occur_form = OccurrenceForm(data=request.GET)
 
-		if not occur_form.is_valid():
-			raise CBBAPIException(occur_form.errors, 400)
-
-		taxonomy = occur_form.cleaned_data.get("taxonomy", None)
-		if not taxonomy:
-			raise CBBAPIException("Missing taxonomy id parameter", 400)
-
-		try:
-			taxonomy = TaxonomicLevel.objects.get(id=taxonomy)
-		except TaxonomicLevel.DoesNotExist:
-			raise CBBAPIException("Taxonomic level does not exist", 404)
-
-		occurrences = (
-			Occurrence.objects.filter(taxonomy__id=taxonomy.id)
-			.values("collection_date_year")
-			.annotate(count=Count("id"))
-			.order_by("collection_date_year")
+		return self.calculate(
+			request,
+			"collection_date_year",
+			self.__class__
 		)
-		serializer = DynamicSerializer(occurrences, many=True, view_class=self.__class__)
-
-		return Response(serializer.data)

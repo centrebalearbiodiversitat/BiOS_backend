@@ -1,9 +1,9 @@
 import csv
 
+from django.db.models import Count
 from django.db.models.functions import Substr, Lower
-from django.http import StreamingHttpResponse, JsonResponse
+from django.http import StreamingHttpResponse
 from unidecode import unidecode
-from collections import defaultdict
 from apps.taxonomy.serializers import SearchTaxonomicLevelSerializer
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
@@ -374,16 +374,10 @@ class TaxonomicLevelDescendantsCountView(APIView):
 		except TaxonomicLevel.DoesNotExist:
 			return CBBAPIException("TaxonomicLevel not found", code=404)
 
-		descendants = TaxonomicLevel.objects.filter(
-			tree_id=taxon.tree_id,
-			lft__gt=taxon.lft,
-			rght__lt=taxon.rght
-		).values('rank', 'name').order_by('rank')
-
-		result = defaultdict(int)
+		result = {}
+		descendants = taxon.get_descendants(include_self=False).values('rank').order_by('rank').annotate(count=Count('rank'))
 		for descendant in descendants:
-			rank_name = TaxonomicLevel.TRANSLATE_RANK.get(descendant['rank'])
-			result[rank_name] += 1
+			result[TaxonomicLevel.TRANSLATE_RANK[descendant["rank"]]] = descendant["count"]
 
 		return Response(result)
 
@@ -618,7 +612,7 @@ class TaxonDataCRUDView(APIView):
 		taxon_id = taxon_form.cleaned_data.get("taxonomy")
 
 		if not taxon_id:
-			raise CBBAPIException("Missing id parameter", code=400)
+			raise CBBAPIException("Missing taxonomy id parameter", code=400)
 
 		try:
 			taxon = TaxonData.objects.get(taxonomy=taxon_id)

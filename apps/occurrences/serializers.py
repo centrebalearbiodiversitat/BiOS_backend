@@ -102,7 +102,7 @@ class DownloadOccurrenceSerializer(OccurrenceSerializer):
 	taxonomy = serializers.PrimaryKeyRelatedField(read_only=True)
 
 
-class DynamicSerializer(serializers.Serializer):
+class OccurrenceCountByDateSerializer(serializers.Serializer):
 	count = serializers.IntegerField()
 	date_field = serializers.SerializerMethodField()
 
@@ -114,42 +114,26 @@ class DynamicSerializer(serializers.Serializer):
 		"""
 		Returns the appropriate date field name based on the view class.
 		"""
-		if self.view_class.__name__ == "OccurrenceCountByTaxonMonth":
+		if self.view_class.__name__ == "OccurrenceCountByTaxonMonthView":
 			return "collection_date_month"
-		elif self.view_class.__name__ == "OccurrenceCountByTaxonYear":
+		elif self.view_class.__name__ == "OccurrenceCountByTaxonYearView":
 			return "collection_date_year"
 		else:
 			return "sources"
 
 	def get_date_field(self, obj):
-		date_field_name = self.get_date_field_name()
-		return obj[date_field_name]
+		return obj[self.get_date_field_name()]
 
 	def to_representation(self, instance):
 		data = super().to_representation(instance)
-		if self.view_class.__name__ == "OccurrenceCountByTaxonMonth":
+		if self.view_class.__name__ == "OccurrenceCountByTaxonMonthView":
 			data["month"] = data.pop("date_field")
-		elif self.view_class.__name__ == "OccurrenceCountByTaxonMonth":
+		elif self.view_class.__name__ == "OccurrenceCountByTaxonYearView":
 			data["year"] = data.pop("date_field")
 		else:
 			data["source"] = data.pop("date_field")
+
 		return data
-
-
-# class DynamicSourceSerializer(serializers.Serializer):
-# 	count = serializers.IntegerField()
-# 	sources__source__name = serializers.CharField()
-
-# 	def to_representation(self, instance):
-# 		print(instance)
-# 		# origin_sources = instance.sources.all()
-
-# 		if instance.name:
-# 			origin_source = instance.name[0]
-# 			source = origin_source.source
-# 			return {'count': instance.id, 'source': source.name}
-# 		else:
-# 			return {'count': instance.id, 'source': None}
 
 
 class DynamicSourceSerializer(serializers.Serializer):

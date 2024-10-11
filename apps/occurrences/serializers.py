@@ -1,8 +1,6 @@
 from rest_framework import serializers
 from common.utils.serializers import CaseModelSerializer
-from ..geography.models import GeographicLevel
 from .models import Occurrence
-from ..geography.serializers import GeographicLevelSerializer
 from ..taxonomy.serializers import BaseTaxonomicLevelSerializer
 from ..versioning.serializers import OriginSourceSerializer
 
@@ -72,7 +70,6 @@ class OccurrenceSerializer(BaseOccurrenceSerializer):
 			"depth",
 			"elevation",
 			"event_date",
-			# "location",
 			"month",
 			"taxonomy",
 			"voucher",
@@ -103,3 +100,45 @@ class OccurrenceSerializer(BaseOccurrenceSerializer):
 
 class DownloadOccurrenceSerializer(OccurrenceSerializer):
 	taxonomy = serializers.PrimaryKeyRelatedField(read_only=True)
+
+
+class OccurrenceCountByDateSerializer(serializers.Serializer):
+	count = serializers.IntegerField()
+	date_field = serializers.SerializerMethodField()
+
+	def __init__(self, *args, view_class, **kwargs):
+		self.view_class = view_class
+		super().__init__(*args, **kwargs)
+
+	def get_date_field_name(self):
+		"""
+		Returns the appropriate date field name based on the view class.
+		"""
+		if self.view_class.__name__ == "OccurrenceCountByTaxonMonthView":
+			return "collection_date_month"
+		elif self.view_class.__name__ == "OccurrenceCountByTaxonYearView":
+			return "collection_date_year"
+		else:
+			return "sources"
+
+	def get_date_field(self, obj):
+		return obj[self.get_date_field_name()]
+
+	def to_representation(self, instance):
+		data = super().to_representation(instance)
+		if self.view_class.__name__ == "OccurrenceCountByTaxonMonthView":
+			data["month"] = data.pop("date_field")
+		elif self.view_class.__name__ == "OccurrenceCountByTaxonYearView":
+			data["year"] = data.pop("date_field")
+		else:
+			data["source"] = data.pop("date_field")
+
+		return data
+
+
+class DynamicSourceSerializer(serializers.Serializer):
+	count = serializers.IntegerField()
+	source = serializers.CharField()  # Renamed for clarity
+
+	def to_representation(self, instance):
+		return {"source": instance["sources__source__name"], "count": instance["count"]}

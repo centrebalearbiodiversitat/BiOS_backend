@@ -1,21 +1,25 @@
 import csv
 
+from django.db.models import Count
 from django.db.models.functions import Substr, Lower
 from django.http import StreamingHttpResponse
-from rest_framework_tracking.mixins import LoggingMixin
 from unidecode import unidecode
-
 from apps.taxonomy.serializers import SearchTaxonomicLevelSerializer
-
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.generics import ListAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
-
+from rest_framework_tracking.mixins import LoggingMixin
 from apps.API.exceptions import CBBAPIException
-from apps.taxonomy.models import Authorship, TaxonData, TaxonomicLevel
-from apps.taxonomy.serializers import AuthorshipSerializer, BaseTaxonomicLevelSerializer, TaxonCompositionSerializer, TaxonDataSerializer
+from apps.taxonomy.models import Authorship, TaxonData, TaxonomicLevel, Habitat
+from apps.taxonomy.serializers import (
+	AuthorshipSerializer,
+	BaseTaxonomicLevelSerializer,
+	TaxonCompositionSerializer,
+	TaxonDataSerializer,
+	HabitatSerializer,
+)
 
 from ..versioning.serializers import OriginSourceSerializer
 from .forms import IdFieldForm, TaxonDataForm, TaxonomicLevelChildrenForm, TaxonomicLevelForm
@@ -340,6 +344,41 @@ class TaxonChildrenCountView(LoggingMixin, TaxonChildrenBaseView):
 		return Response(super().get(request).count())
 
 
+class TaxonomicLevelDescendantsCountView(APIView):
+	@swagger_auto_schema(
+		tags=["Taxonomy"],
+		operation_description="Get the count of descendants of a taxonomic level by it's ID.",
+		manual_parameters=[
+			openapi.Parameter(
+				name="id",
+				in_=openapi.IN_QUERY,
+				description="ID of the taxon to retrieve it's descendants",
+				type=openapi.TYPE_INTEGER,
+				required=True,
+			),
+		],
+		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
+	)
+	def get(self, request):
+		taxon_data_form = TaxonomicLevelForm(data=request.GET)
+
+		if not taxon_data_form.is_valid():
+			raise CBBAPIException(taxon_data_form.errors, code=400)
+
+		taxonomy = taxon_data_form.cleaned_data.get("id", None)
+		try:
+			taxon = TaxonomicLevel.objects.get(id=taxonomy)
+		except TaxonomicLevel.DoesNotExist:
+			return CBBAPIException("TaxonomicLevel not found", code=404)
+
+		result = {}
+		descendants = taxon.get_descendants(include_self=False).values("rank").order_by("rank").annotate(count=Count("rank"))
+		for descendant in descendants:
+			result[TaxonomicLevel.TRANSLATE_RANK[descendant["rank"]]] = descendant["count"]
+
+		return Response(result)
+
+
 class TaxonSynonymView(ListAPIView):
 	@swagger_auto_schema(
 		tags=["Taxonomy"],
@@ -545,47 +584,13 @@ class TaxonChecklistView(APIView):
 		)
 
 
-class AuthorshipCRUDView(APIView):
-	@swagger_auto_schema(
-		tags=["Authorship"],
-		operation_description="Get authorship info by ID",
-		manual_parameters=[
-			openapi.Parameter(
-				name="id",
-				in_=openapi.IN_QUERY,
-				type=openapi.TYPE_INTEGER,
-				description="ID of the authorship",
-				required=True,
-			)
-		],
-		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
-	)
-	def get(self, request):
-		authorship_form = IdFieldForm(self.request.GET)
-
-		if not authorship_form.is_valid():
-			raise CBBAPIException(authorship_form.errors, code=400)
-
-		authorship_id = authorship_form.cleaned_data.get("id")
-
-		if not authorship_id:
-			raise CBBAPIException("Missing id parameter", code=400)
-
-		try:
-			authorship = Authorship.objects.get(id=authorship_id)
-		except Authorship.DoesNotExist:
-			raise CBBAPIException("Authorship does not exist.", code=404)
-
-		return Response(AuthorshipSerializer(authorship).data)
-
-
 class TaxonDataCRUDView(APIView):
 	@swagger_auto_schema(
-		tags=["Taxonomy"],
+		tags=["Taxon Data"],
 		operation_description="Retrieve a specific taxonomic data instance by its id",
 		manual_parameters=[
 			openapi.Parameter(
-				"id",
+				"taxonomy",
 				openapi.IN_QUERY,
 				description="ID of the taxon data to retrieve",
 				type=openapi.TYPE_INTEGER,
@@ -600,10 +605,10 @@ class TaxonDataCRUDView(APIView):
 		if not taxon_form.is_valid():
 			raise CBBAPIException(taxon_form.errors, code=400)
 
-		taxon_id = taxon_form.cleaned_data.get("id")
+		taxon_id = taxon_form.cleaned_data.get("taxonomy")
 
 		if not taxon_id:
-			raise CBBAPIException("Missing id parameter", code=400)
+			raise CBBAPIException("Missing taxonomy id parameter", code=400)
 
 		try:
 			taxon = TaxonData.objects.get(taxonomy=taxon_id)
@@ -619,6 +624,10 @@ class TaxonDataFilter:
 
 		if not taxon_data_form.is_valid():
 			raise CBBAPIException(taxon_data_form.errors, code=400)
+
+		taxonomy = taxon_data_form.cleaned_data.get("taxonomy", None)
+		if not taxonomy:
+			raise CBBAPIException("Missing taxonomy id parameter", 400)
 
 		exact = taxon_data_form.cleaned_data.get("exact", False)
 		str_fields = ["habitat"]
@@ -647,10 +656,10 @@ class TaxonDataFilter:
 
 class TaxonDataListView(TaxonDataFilter, ListAPIView):
 	@swagger_auto_schema(
-		tags=["Taxonomy"],
+		tags=["Taxon Data"],
 		operation_description="Get a list of taxon data with filtering.",
 		manual_parameters=[
-			openapi.Parameter("taxonomy_id", openapi.IN_QUERY, description="ID of the taxon", type=openapi.TYPE_INTEGER),
+			openapi.Parameter("taxonomy", openapi.IN_QUERY, description="ID of the taxon", type=openapi.TYPE_INTEGER),
 			openapi.Parameter(
 				"iucn_global",
 				openapi.IN_QUERY,
@@ -686,7 +695,7 @@ class TaxonDataListView(TaxonDataFilter, ListAPIView):
 
 class TaxonDataCountView(TaxonDataFilter, ListAPIView):
 	@swagger_auto_schema(
-		tags=["Taxonomy"],
+		tags=["Taxon Data"],
 		operation_description="Get a list of taxon data with filtering.",
 		manual_parameters=[
 			openapi.Parameter("taxonomy_id", openapi.IN_QUERY, description="ID of the taxon", type=openapi.TYPE_INTEGER),
@@ -721,3 +730,79 @@ class TaxonDataCountView(TaxonDataFilter, ListAPIView):
 	)
 	def get(self, request):
 		return Response(super().get(request).count())
+
+
+class TaxonDataHabitatsView(APIView):
+	@swagger_auto_schema(
+		tags=["Taxon Data"],
+		operation_description="Obtains the habitats in which a taxonomic level is found by its ID.",
+		manual_parameters=[
+			openapi.Parameter(
+				name="taxonomy",
+				in_=openapi.IN_QUERY,
+				description="ID of the taxon to retrieve it's habitats",
+				type=openapi.TYPE_INTEGER,
+				required=True,
+			),
+		],
+		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
+	)
+	def get(self, request):
+		taxon_form = TaxonDataForm(data=request.GET)
+
+		if not taxon_form.is_valid():
+			raise CBBAPIException(taxon_form.errors, 400)
+
+		taxonomy = taxon_form.cleaned_data.get("taxonomy", None)
+
+		if not taxonomy:
+			raise CBBAPIException("Missing taxonomy id parameter", 400)
+
+		try:
+			taxon_parent = TaxonomicLevel.objects.get(id=taxonomy)
+		except TaxonomicLevel.DoesNotExist:
+			raise CBBAPIException("Taxonomic level does not exist", 404)
+
+		descendants = taxon_parent.get_descendants(include_self=True)
+
+		taxon_datas = TaxonData.objects.filter(taxonomy__in=descendants)
+		habitats = Habitat.objects.filter(taxondata__in=taxon_datas).distinct().order_by("name")
+
+		serializer = HabitatSerializer(habitats, many=True)
+		for i in serializer.data:
+			del i["sources"]
+		return Response(serializer.data)
+
+
+class AuthorshipCRUDView(APIView):
+	@swagger_auto_schema(
+		tags=["Authorship"],
+		operation_description="Get authorship info by ID",
+		manual_parameters=[
+			openapi.Parameter(
+				name="id",
+				in_=openapi.IN_QUERY,
+				type=openapi.TYPE_INTEGER,
+				description="ID of the authorship",
+				required=True,
+			)
+		],
+		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
+	)
+	def get(self, request):
+		authorship_form = IdFieldForm(self.request.GET)
+
+		if not authorship_form.is_valid():
+			raise CBBAPIException(authorship_form.errors, code=400)
+
+		authorship_id = authorship_form.cleaned_data.get("id")
+
+		if not authorship_id:
+			raise CBBAPIException("Missing id parameter", code=400)
+
+		try:
+			authorship = Authorship.objects.get(id=authorship_id)
+		except Authorship.DoesNotExist:
+			raise CBBAPIException("Authorship does not exist.", code=404)
+
+		return Response(AuthorshipSerializer(authorship).data)

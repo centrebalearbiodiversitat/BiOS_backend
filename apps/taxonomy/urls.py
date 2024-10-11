@@ -1,23 +1,23 @@
 from django.urls import path
 
 from apps.taxonomy.views import (
-    TaxonSearchView,
-    TaxonListView,
+	TaxonSearchView,
+	TaxonListView,
 	TaxonCountView,
-    TaxonCRUDView,
-    TaxonParentView,
-    TaxonChildrenView,
-    TaxonChildrenCountView,
-    TaxonomicLevelDescendantsCountView,
-    TaxonCompositionView,
-    TaxonSynonymView,
-    TaxonSourceView,
-    TaxonChecklistView,
-    TaxonDataCRUDView,
-    TaxonDataListView,
+	TaxonCRUDView,
+	TaxonParentView,
+	TaxonChildrenView,
+	TaxonChildrenCountView,
+	TaxonomicLevelDescendantsCountView,
+	TaxonCompositionView,
+	TaxonSynonymView,
+	TaxonSourceView,
+	TaxonChecklistView,
+	TaxonDataCRUDView,
+	TaxonDataListView,
 	TaxonDataCountView,
-    TaxonDataHabitatsView,
-	AuthorshipCRUDView
+	TaxonDataHabitatsView,
+	AuthorshipCRUDView,
 )
 
 app_name = "taxonomy"
@@ -30,7 +30,7 @@ urlpatterns = [
 	path("/taxon/children", TaxonChildrenView.as_view(), name="taxon_children"),
 	path("/taxon/children/count", TaxonChildrenCountView.as_view(), name="taxon_children_count"),
 	path("/taxon/composition", TaxonCompositionView.as_view(), name="taxon_composition"),
-    path("/taxon/descendants/count", TaxonomicLevelDescendantsCountView.as_view(), name="taxon_descendants_count"),
+	path("/taxon/descendants/count", TaxonomicLevelDescendantsCountView.as_view(), name="taxon_descendants_count"),
 	path("/taxon/synonyms", TaxonSynonymView.as_view(), name="taxon_synonyms"),
 	path("/taxon/sources", TaxonSourceView.as_view(), name="taxon_sources"),
 	path("/taxon/checklist", TaxonChecklistView.as_view(), name="taxon_checklist"),

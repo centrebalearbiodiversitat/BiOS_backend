@@ -8,7 +8,7 @@ from apps.occurrences.views import (
 	OccurrenceCountByTaxonYearView,
 	OccurrenceCountBySourceView,
 	OccurrenceCountByTaxonAndChildrenView,
-	OccurrenceListDownloadView
+	OccurrenceListDownloadView,
 )
 
 app_name = "occurrences"

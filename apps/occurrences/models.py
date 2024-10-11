@@ -60,22 +60,18 @@ class Occurrence(ReferencedModel, LatLonModel):
 		if any([self.collection_date_year, self.collection_date_month, self.collection_date_day]):
 			# If any of year, month, or day is missing, raise an error
 			if not all([self.collection_date_year, self.collection_date_month, self.collection_date_day]):
-				raise ValidationError('If specifying collection date, you must provide year, month, and day.')
+				raise ValidationError("If specifying collection date, you must provide year, month, and day.")
 
 			# Check if the year, month, and day form a valid date
 			try:
-				datetime.date(
-					self.collection_date_year,
-					self.collection_date_month,
-					self.collection_date_day
-				)
+				datetime.date(self.collection_date_year, self.collection_date_month, self.collection_date_day)
 			except ValueError:
-				raise ValidationError('The collection date you entered is not valid.')
+				raise ValidationError("The collection date you entered is not valid.")
 
 	def __str__(self):
 		return f"{self.taxonomy} ({self.voucher})"
 
 	class Meta:
 		indexes = [
-			models.Index(fields=['in_cbb_scope']),
+			models.Index(fields=["in_cbb_scope"]),
 		]

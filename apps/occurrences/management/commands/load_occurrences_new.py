@@ -122,9 +122,9 @@ class Command(BaseCommand):
 		file_name = options["file"]
 		with open(file_name, "r") as file:
 			data = json.load(file)
-			cbb_scope_geometry = gpd.read_file(
-				'data/GIS/CBB_Balearic_Sea/sea_uncertainess_no_holes/sea_uncertainess_no_holes.shp'
-			).loc[0].geometry
+			cbb_scope_geometry = (
+				gpd.read_file("data/GIS/CBB_Balearic_Sea/sea_uncertainess_no_holes/sea_uncertainess_no_holes.shp").loc[0].geometry
+			)
 			cbb_scope_geometry = GEOSGeometry(cbb_scope_geometry.wkt)
 			batch = Batch.objects.create()
 
@@ -194,7 +194,9 @@ class Command(BaseCommand):
 						taxonomy=taxonomy.first(),
 						batch=batch,
 						voucher=line["voucher"] if line["voucher"] else None,
-						basis_of_record=Occurrence.TRANSLATE_BASIS_OF_RECORD.get(line["basisOfRecord"].lower() if line["basisOfRecord"] else "unknown", Occurrence.INVALID),
+						basis_of_record=Occurrence.TRANSLATE_BASIS_OF_RECORD.get(
+							line["basisOfRecord"].lower() if line["basisOfRecord"] else "unknown", Occurrence.INVALID
+						),
 						collection_date_year=(int(line["year"]) if line["year"] and 1500 < line["year"] < 3000 else None),
 						collection_date_month=(int(line["month"]) if line["month"] and 0 < line["month"] <= 12 else None),
 						collection_date_day=int(line["day"]) if line["day"] and 0 < line["month"] <= 31 else None,
@@ -205,7 +207,7 @@ class Command(BaseCommand):
 						elevation=int(line["elevation"]) if line["elevation"] else None,
 						depth=int(line["depth"]) if line["depth"] else None,
 						recorded_by=line["recordedBy"],
-						in_cbb_scope=cbb_scope_geometry.intersects(location) if location else False
+						in_cbb_scope=cbb_scope_geometry.intersects(location) if location else False,
 					)
 					occ.sources.add(os)
 					occ.save()

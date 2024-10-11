@@ -11,8 +11,13 @@ from apps.taxonomy.models import TaxonomicLevel
 from ..API.exceptions import CBBAPIException
 from .forms import OccurrenceForm
 from .models import Occurrence
-from .serializers import OccurrenceSerializer, BaseOccurrenceSerializer, DownloadOccurrenceSerializer, \
-	OccurrenceCountByDateSerializer, DynamicSourceSerializer
+from .serializers import (
+	OccurrenceSerializer,
+	BaseOccurrenceSerializer,
+	DownloadOccurrenceSerializer,
+	OccurrenceCountByDateSerializer,
+	DynamicSourceSerializer,
+)
 from ..geography.models import GeographicLevel
 
 
@@ -90,8 +95,7 @@ class OccurrenceFilter(APIView):
 		if voucher:
 			filters &= Q(voucher__icontains=voucher)
 
-		range_parameters = ["decimal_latitude", "decimal_longitude", "coordinate_uncertainty_in_meters", "elevation",
-							"depth"]
+		range_parameters = ["decimal_latitude", "decimal_longitude", "coordinate_uncertainty_in_meters", "elevation", "depth"]
 
 		for param in range_parameters:
 			filters = self.filter_by_range(
@@ -204,10 +208,8 @@ class OccurrenceListView(OccurrenceFilter):
 				description="Maximum coordinate uncertainty in meters",
 				type=openapi.TYPE_INTEGER,
 			),
-			openapi.Parameter("elevation_min", openapi.IN_QUERY, description="Minimum elevation",
-							  type=openapi.TYPE_INTEGER),
-			openapi.Parameter("elevation_max", openapi.IN_QUERY, description="Maximum elevation",
-							  type=openapi.TYPE_INTEGER),
+			openapi.Parameter("elevation_min", openapi.IN_QUERY, description="Minimum elevation", type=openapi.TYPE_INTEGER),
+			openapi.Parameter("elevation_max", openapi.IN_QUERY, description="Maximum elevation", type=openapi.TYPE_INTEGER),
 			openapi.Parameter("depth_min", openapi.IN_QUERY, description="Minimum depth", type=openapi.TYPE_INTEGER),
 			openapi.Parameter("depth_max", openapi.IN_QUERY, description="Maximum depth", type=openapi.TYPE_INTEGER),
 		],
@@ -331,10 +333,10 @@ class OccurrenceCountBySourceView(APIView):
 
 		occurrences = (
 			Occurrence.objects.filter(taxonomy__in=taxonomy, in_cbb_scope=True)
-				.prefetch_related("sources")
-				.values("sources__source__name")
-				.annotate(count=Count("id"))
-				.order_by("sources__source__name")
+			.prefetch_related("sources")
+			.values("sources__source__name")
+			.annotate(count=Count("id"))
+			.order_by("sources__source__name")
 		)
 
 		return Response(DynamicSourceSerializer(occurrences, many=True).data)
@@ -374,8 +376,7 @@ class OccurrenceCountByTaxonAndChildrenView(APIView):
 
 		annotated_occ = (
 			Occurrence.objects.annotate(
-				descendant_taxonomy=Case(When(taxonomy__in=descendants, then=F("taxonomy__name")),
-										 default=Value("Unknown")),
+				descendant_taxonomy=Case(When(taxonomy__in=descendants, then=F("taxonomy__name")), default=Value("Unknown")),
 				descendant_taxon_id=Case(When(taxonomy__in=descendants, then=F("taxonomy__id")), default=None),
 			)
 			.values("descendant_taxonomy", "descendant_taxon_id")
@@ -404,7 +405,7 @@ class OccurrenceCountByTaxonAndChildrenView(APIView):
 				return context
 
 
-class OccurrenceCountByTaxonDateBaseView():
+class OccurrenceCountByTaxonDateBaseView:
 	def calculate(self, request, date_key, view_class):
 		occur_form = OccurrenceForm(data=request.GET)
 
@@ -420,17 +421,14 @@ class OccurrenceCountByTaxonDateBaseView():
 		except TaxonomicLevel.DoesNotExist:
 			raise CBBAPIException("Taxonomic level does not exist", 404)
 
-		occurrences = Occurrence.objects.filter(taxonomy__in=taxonomy, in_cbb_scope=True) \
-			.values(date_key) \
-			.annotate(count=Count("id")) \
+		occurrences = (
+			Occurrence.objects.filter(taxonomy__in=taxonomy, in_cbb_scope=True)
+			.values(date_key)
+			.annotate(count=Count("id"))
 			.order_by(date_key)
-
-		return Response(OccurrenceCountByDateSerializer(
-				occurrences,
-				many=True,
-				view_class=view_class
-			).data
 		)
+
+		return Response(OccurrenceCountByDateSerializer(occurrences, many=True, view_class=view_class).data)
 
 
 class OccurrenceCountByTaxonMonthView(APIView, OccurrenceCountByTaxonDateBaseView):
@@ -448,11 +446,7 @@ class OccurrenceCountByTaxonMonthView(APIView, OccurrenceCountByTaxonDateBaseVie
 		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
 	)
 	def get(self, request):
-		return self.calculate(
-			request,
-			"collection_date_month",
-			self.__class__
-		)
+		return self.calculate(request, "collection_date_month", self.__class__)
 
 
 class OccurrenceCountByTaxonYearView(APIView, OccurrenceCountByTaxonDateBaseView):
@@ -470,9 +464,4 @@ class OccurrenceCountByTaxonYearView(APIView, OccurrenceCountByTaxonDateBaseView
 		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
 	)
 	def get(self, request):
-
-		return self.calculate(
-			request,
-			"collection_date_year",
-			self.__class__
-		)
+		return self.calculate(request, "collection_date_year", self.__class__)

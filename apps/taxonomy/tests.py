@@ -204,11 +204,7 @@ class TaxonomyTest(TestResultHandler):
 		url = self._generate_url("taxonomy:taxon_descendants_count", id=5)
 		response = self.client.get(url)
 		self.assertEqual(response.status_code, status.HTTP_200_OK)
-		expected_data = {
-			"family": 4,
-			"genus": 4,
-			"species": 5
-		}
+		expected_data = {"family": 4, "genus": 4, "species": 5}
 		self.assert_and_log(self.assertJSONEqual, response.content, expected_data)
 
 	def test_taxon_descendants_count_400(self):
@@ -364,13 +360,13 @@ class TaxonomyTest(TestResultHandler):
 								"url": None,
 								"dataType": 0,
 								"batch": None,
-								"synonyms": []
+								"synonyms": [],
 							},
 							"originId": "5",
-							"attribution": None
+							"attribution": None,
 						}
 					],
-					"name": "wetlands (inland)"
+					"name": "wetlands (inland)",
 				},
 				{
 					"sources": [
@@ -384,13 +380,13 @@ class TaxonomyTest(TestResultHandler):
 								"url": None,
 								"dataType": 0,
 								"batch": None,
-								"synonyms": []
+								"synonyms": [],
 							},
 							"originId": "14",
-							"attribution": None
+							"attribution": None,
 						}
 					],
-					"name": "artificial/terrestrial"
+					"name": "artificial/terrestrial",
 				},
 				{
 					"sources": [
@@ -404,20 +400,20 @@ class TaxonomyTest(TestResultHandler):
 								"url": None,
 								"dataType": 0,
 								"batch": None,
-								"synonyms": []
+								"synonyms": [],
 							},
 							"originId": "15",
-							"attribution": None
+							"attribution": None,
 						}
 					],
-					"name": "artificial/aquatic"
-				}
+					"name": "artificial/aquatic",
+				},
 			],
 			"invasive": False,
 			"domesticated": False,
 			"freshwater": True,
 			"marine": False,
-			"terrestrial": True
+			"terrestrial": True,
 		}
 		self.assert_and_log(self.assertJSONEqual, response.content, expected_data)
 
@@ -457,13 +453,13 @@ class TaxonomyTest(TestResultHandler):
 									"url": None,
 									"dataType": 0,
 									"batch": None,
-									"synonyms": []
+									"synonyms": [],
 								},
 								"originId": "5",
-								"attribution": None
+								"attribution": None,
 							}
 						],
-						"name": "wetlands (inland)"
+						"name": "wetlands (inland)",
 					},
 					{
 						"sources": [
@@ -477,13 +473,13 @@ class TaxonomyTest(TestResultHandler):
 									"url": None,
 									"dataType": 0,
 									"batch": None,
-									"synonyms": []
+									"synonyms": [],
 								},
 								"originId": "14",
-								"attribution": None
+								"attribution": None,
 							}
 						],
-						"name": "artificial/terrestrial"
+						"name": "artificial/terrestrial",
 					},
 					{
 						"sources": [
@@ -497,20 +493,20 @@ class TaxonomyTest(TestResultHandler):
 									"url": None,
 									"dataType": 0,
 									"batch": None,
-									"synonyms": []
+									"synonyms": [],
 								},
 								"originId": "15",
-								"attribution": None
+								"attribution": None,
 							}
 						],
-						"name": "artificial/aquatic"
-					}
+						"name": "artificial/aquatic",
+					},
 				],
 				"invasive": False,
 				"domesticated": False,
 				"freshwater": True,
 				"marine": False,
-				"terrestrial": True
+				"terrestrial": True,
 			}
 		]
 		self.assert_and_log(self.assertJSONEqual, response.content, expected_data)
@@ -541,30 +537,14 @@ class TaxonomyTest(TestResultHandler):
 		response = self.client.get(url)
 		self.assertEqual(response.status_code, status.HTTP_200_OK)
 		expected_data = [
-			{
-				"name": "artificial/aquatic"
-			},
-			{
-				"name": "artificial/terrestrial"
-			},
-			{
-				"name": "desert"
-			},
-			{
-				"name": "forest"
-			},
-			{
-				"name": "grassland"
-			},
-			{
-				"name": "marine coastal/supratidal"
-			},
-			{
-				"name": "shrubland"
-			},
-			{
-				"name": "wetlands (inland)"
-			}
+			{"name": "artificial/aquatic"},
+			{"name": "artificial/terrestrial"},
+			{"name": "desert"},
+			{"name": "forest"},
+			{"name": "grassland"},
+			{"name": "marine coastal/supratidal"},
+			{"name": "shrubland"},
+			{"name": "wetlands (inland)"},
 		]
 		self.assert_and_log(self.assertJSONEqual, response.content, expected_data)
 

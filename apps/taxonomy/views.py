@@ -18,7 +18,7 @@ from apps.taxonomy.serializers import (
 	BaseTaxonomicLevelSerializer,
 	TaxonCompositionSerializer,
 	TaxonDataSerializer,
-	HabitatSerializer
+	HabitatSerializer,
 )
 
 from ..versioning.serializers import OriginSourceSerializer
@@ -71,8 +71,7 @@ class TaxonSearchView(APIView):
 					TaxonomicLevel.objects.annotate(prefix=Lower(Substr("unidecode_name", 1, min(3, len(query)))))
 					.filter(prefix=query[:3].lower())
 					.filter(
-						**filters, rank__in=[TaxonomicLevel.SPECIES, TaxonomicLevel.SUBSPECIES, TaxonomicLevel.VARIETY],
-						parent__in=queryset
+						**filters, rank__in=[TaxonomicLevel.SPECIES, TaxonomicLevel.SUBSPECIES, TaxonomicLevel.VARIETY], parent__in=queryset
 					)
 				)
 			else:
@@ -128,8 +127,7 @@ class TaxonListView(APIView, TaxonFilter):
 		tags=["Taxonomy"],
 		operation_description="Get a list of taxa, with optional filtering.",
 		manual_parameters=[
-			openapi.Parameter("name", openapi.IN_QUERY, description="Name of the taxon to search for.",
-							  type=openapi.TYPE_STRING),
+			openapi.Parameter("name", openapi.IN_QUERY, description="Name of the taxon to search for.", type=openapi.TYPE_STRING),
 			openapi.Parameter(
 				"taxonRank",
 				openapi.IN_QUERY,
@@ -166,8 +164,7 @@ class TaxonCountView(LoggingMixin, APIView, TaxonFilter):
 		tags=["Taxonomy"],
 		operation_description="Get a list of taxa, with optional filtering.",
 		manual_parameters=[
-			openapi.Parameter("name", openapi.IN_QUERY, description="Name of the taxon to search for.",
-							  type=openapi.TYPE_STRING),
+			openapi.Parameter("name", openapi.IN_QUERY, description="Name of the taxon to search for.", type=openapi.TYPE_STRING),
 			openapi.Parameter(
 				"taxonRank",
 				openapi.IN_QUERY,
@@ -238,8 +235,7 @@ class TaxonParentView(APIView):
 		tags=["Taxonomy"],
 		operation_description="Get the parents of the taxon given its ID",
 		manual_parameters=[
-			openapi.Parameter(name="id", in_=openapi.IN_QUERY, description="ID of the taxon", type=openapi.TYPE_INTEGER,
-							  required=True),
+			openapi.Parameter(name="id", in_=openapi.IN_QUERY, description="ID of the taxon", type=openapi.TYPE_INTEGER, required=True),
 		],
 		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
 	)
@@ -351,13 +347,14 @@ class TaxonChildrenCountView(LoggingMixin, TaxonChildrenBaseView):
 class TaxonomicLevelDescendantsCountView(APIView):
 	@swagger_auto_schema(
 		tags=["Taxonomy"],
-		operation_description="Get the count of descendants of a taxonomic level by it's ID.", manual_parameters=[
+		operation_description="Get the count of descendants of a taxonomic level by it's ID.",
+		manual_parameters=[
 			openapi.Parameter(
 				name="id",
 				in_=openapi.IN_QUERY,
 				description="ID of the taxon to retrieve it's descendants",
 				type=openapi.TYPE_INTEGER,
-				required=True
+				required=True,
 			),
 		],
 		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
@@ -375,7 +372,7 @@ class TaxonomicLevelDescendantsCountView(APIView):
 			return CBBAPIException("TaxonomicLevel not found", code=404)
 
 		result = {}
-		descendants = taxon.get_descendants(include_self=False).values('rank').order_by('rank').annotate(count=Count('rank'))
+		descendants = taxon.get_descendants(include_self=False).values("rank").order_by("rank").annotate(count=Count("rank"))
 		for descendant in descendants:
 			result[TaxonomicLevel.TRANSLATE_RANK[descendant["rank"]]] = descendant["count"]
 
@@ -446,8 +443,7 @@ class TaxonCompositionView(ListAPIView):
 			raise CBBAPIException("Taxonomic level does not exist.", code=404)
 
 		for child in children:
-			child.total_species = child.get_descendants(include_self=True).filter(rank=TaxonomicLevel.SPECIES,
-																				  accepted=True).count()
+			child.total_species = child.get_descendants(include_self=True).filter(rank=TaxonomicLevel.SPECIES, accepted=True).count()
 
 		# species = TaxonomicLevel.objects.none()
 		# species = children.annotate(
@@ -686,13 +682,10 @@ class TaxonDataListView(TaxonDataFilter, ListAPIView):
 				enum=[str(c[0]) for c in TaxonData.CS_CHOICES],
 			),
 			openapi.Parameter("invasive", openapi.IN_QUERY, description="Is invasive?", type=openapi.TYPE_BOOLEAN),
-			openapi.Parameter("domesticated", openapi.IN_QUERY, description="Is domesticated?",
-							  type=openapi.TYPE_BOOLEAN),
-			openapi.Parameter("freshwater", openapi.IN_QUERY, description="Inhabit freshwater?",
-							  type=openapi.TYPE_BOOLEAN),
+			openapi.Parameter("domesticated", openapi.IN_QUERY, description="Is domesticated?", type=openapi.TYPE_BOOLEAN),
+			openapi.Parameter("freshwater", openapi.IN_QUERY, description="Inhabit freshwater?", type=openapi.TYPE_BOOLEAN),
 			openapi.Parameter("marine", openapi.IN_QUERY, description="Inhabit marine?", type=openapi.TYPE_BOOLEAN),
-			openapi.Parameter("terrestrial", openapi.IN_QUERY, description="Inhabit terrestrial?",
-							  type=openapi.TYPE_BOOLEAN),
+			openapi.Parameter("terrestrial", openapi.IN_QUERY, description="Inhabit terrestrial?", type=openapi.TYPE_BOOLEAN),
 		],
 		responses={200: "Success", 400: "Bad Request"},
 	)
@@ -705,8 +698,7 @@ class TaxonDataCountView(TaxonDataFilter, ListAPIView):
 		tags=["Taxon Data"],
 		operation_description="Get a list of taxon data with filtering.",
 		manual_parameters=[
-			openapi.Parameter("taxonomy_id", openapi.IN_QUERY, description="ID of the taxon",
-							  type=openapi.TYPE_INTEGER),
+			openapi.Parameter("taxonomy_id", openapi.IN_QUERY, description="ID of the taxon", type=openapi.TYPE_INTEGER),
 			openapi.Parameter(
 				"iucn_global",
 				openapi.IN_QUERY,
@@ -729,13 +721,10 @@ class TaxonDataCountView(TaxonDataFilter, ListAPIView):
 				enum=[str(c[0]) for c in TaxonData.CS_CHOICES],
 			),
 			openapi.Parameter("invasive", openapi.IN_QUERY, description="Is invasive?", type=openapi.TYPE_BOOLEAN),
-			openapi.Parameter("domesticated", openapi.IN_QUERY, description="Is domesticated?",
-							  type=openapi.TYPE_BOOLEAN),
-			openapi.Parameter("freshwater", openapi.IN_QUERY, description="Inhabit freshwater?",
-							  type=openapi.TYPE_BOOLEAN),
+			openapi.Parameter("domesticated", openapi.IN_QUERY, description="Is domesticated?", type=openapi.TYPE_BOOLEAN),
+			openapi.Parameter("freshwater", openapi.IN_QUERY, description="Inhabit freshwater?", type=openapi.TYPE_BOOLEAN),
 			openapi.Parameter("marine", openapi.IN_QUERY, description="Inhabit marine?", type=openapi.TYPE_BOOLEAN),
-			openapi.Parameter("terrestrial", openapi.IN_QUERY, description="Inhabit terrestrial?",
-							  type=openapi.TYPE_BOOLEAN),
+			openapi.Parameter("terrestrial", openapi.IN_QUERY, description="Inhabit terrestrial?", type=openapi.TYPE_BOOLEAN),
 		],
 		responses={200: "Success", 400: "Bad Request"},
 	)
@@ -746,13 +735,14 @@ class TaxonDataCountView(TaxonDataFilter, ListAPIView):
 class TaxonDataHabitatsView(APIView):
 	@swagger_auto_schema(
 		tags=["Taxon Data"],
-		operation_description="Obtains the habitats in which a taxonomic level is found by its ID.", manual_parameters=[
+		operation_description="Obtains the habitats in which a taxonomic level is found by its ID.",
+		manual_parameters=[
 			openapi.Parameter(
 				name="taxonomy",
 				in_=openapi.IN_QUERY,
 				description="ID of the taxon to retrieve it's habitats",
 				type=openapi.TYPE_INTEGER,
-				required=True
+				required=True,
 			),
 		],
 		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
@@ -776,7 +766,7 @@ class TaxonDataHabitatsView(APIView):
 		descendants = taxon_parent.get_descendants(include_self=True)
 
 		taxon_datas = TaxonData.objects.filter(taxonomy__in=descendants)
-		habitats = Habitat.objects.filter(taxondata__in=taxon_datas).distinct().order_by('name')
+		habitats = Habitat.objects.filter(taxondata__in=taxon_datas).distinct().order_by("name")
 
 		serializer = HabitatSerializer(habitats, many=True)
 		for i in serializer.data:

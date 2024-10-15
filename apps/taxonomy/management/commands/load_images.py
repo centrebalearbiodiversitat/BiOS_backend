@@ -16,8 +16,11 @@ def add_taxonomic_image(line, batch):
 	if line["image_id"]:
 		taxon = TaxonomicLevel.objects.find(line["taxon"])
 
-		if not taxon.exists():
+		taxon_count = taxon.count()
+		if taxon_count == 0:
 			raise Exception("Taxon not found")
+		elif taxon_count > 1:
+			raise Exception("Multiple taxa found")
 
 		taxon = taxon.first()
 

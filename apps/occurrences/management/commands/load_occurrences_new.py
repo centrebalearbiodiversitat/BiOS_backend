@@ -123,7 +123,7 @@ class Command(BaseCommand):
 		with open(file_name, "r") as file:
 			data = json.load(file)
 			cbb_scope_geometry = (
-				gpd.read_file("data/GIS/CBB_Balearic_Sea/sea_uncertainess_no_holes/sea_uncertainess_no_holes.shp").loc[0].geometry
+				gpd.read_file("apps/occurrences/management/commands/geometry/sea_uncertainess_no_holes/sea_uncertainess_no_holes.shp").loc[0].geometry
 			)
 			cbb_scope_geometry = GEOSGeometry(cbb_scope_geometry.wkt)
 			batch = Batch.objects.create()

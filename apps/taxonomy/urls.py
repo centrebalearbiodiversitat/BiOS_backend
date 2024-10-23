@@ -17,6 +17,7 @@ from apps.taxonomy.views import (
 	TaxonDataListView,
 	TaxonDataCountView,
 	TaxonDataHabitatsView,
+    TagCRUDView,
 	AuthorshipCRUDView,
 )
 
@@ -38,5 +39,6 @@ urlpatterns = [
 	path("/taxon/data/list", TaxonDataListView.as_view(), name="data_list"),
 	path("/taxon/data/list/count", TaxonDataCountView.as_view(), name="data_count"),
 	path("/taxon/data/habitats", TaxonDataHabitatsView.as_view(), name="data_habitats"),
+	path("/taxon/tag", TagCRUDView.as_view(), name="tag_crud"),
 	path("/authorship", AuthorshipCRUDView.as_view(), name="authorship_crud"),
 ]

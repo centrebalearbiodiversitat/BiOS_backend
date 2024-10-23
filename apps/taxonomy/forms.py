@@ -43,3 +43,7 @@ class TaxonDataForm(IdFieldForm, TranslateForm):
 
 	def __init__(self, *args, **kwargs):
 		super().__init__(*args, **kwargs)
+
+class TagForm(IdFieldForm, TranslateForm):
+	def __init__(self, *args, **kwargs):
+		super().__init__(*args, **kwargs)

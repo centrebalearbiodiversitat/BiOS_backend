@@ -171,8 +171,32 @@ class Habitat(ReferencedModel):
 	def __str__(self):
 		return self.name
 
+class Tag(models.Model):
+	ECOLOGICAL = 0
+	DIRECTIVE = 1
 
-class TaxonData(models.Model):
+	TAG_TYPE_CHOICES = (
+		(ECOLOGICAL, "ecological"),
+		(DIRECTIVE, "directive"),
+	)
+
+	TRANSLATE_TYPE = {
+		"ecological": ECOLOGICAL,
+		ECOLOGICAL: "ecological",
+		"directive": DIRECTIVE,
+		DIRECTIVE: "directive"
+	}
+
+	name = models.CharField(max_length=255)
+	tag_type = models.PositiveSmallIntegerField(choices=TAG_TYPE_CHOICES)
+
+	class Meta:
+		unique_together = ('name', 'tag_type')
+
+	def __str__(self):
+		return f"{self.name}"
+
+class TaxonData(ReferencedModel):
 	NE = 0
 	DD = 1
 	LC = 2
@@ -229,8 +253,7 @@ class TaxonData(models.Model):
 	iucn_europe = models.PositiveSmallIntegerField(choices=CS_CHOICES, default=NE)
 	iucn_mediterranean = models.PositiveSmallIntegerField(choices=CS_CHOICES, default=NE)
 	habitat = models.ManyToManyField(Habitat, blank=True)  # global scale
-	invasive = models.BooleanField(default=False)  # degreeOfEstablishment:
-	domesticated = models.BooleanField(default=False)
+	tags = models.ManyToManyField(Tag, blank=True)
 	freshwater = models.BooleanField(default=False)
 	marine = models.BooleanField(default=False)
 	terrestrial = models.BooleanField(default=False)

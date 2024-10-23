@@ -28,13 +28,14 @@ class TestResultHandler(TestCase):
 		)
 		call_command("load_taxonomy_new", "fixtures/taxonomy/new_Amphibia_cbbdatabase.csv")
 		call_command("load_occurrences_new", "fixtures/occurrences/Alytes muletensis (Sanchíz & Adrover, 1979).json")
-		# call_command(
-		# 	"load_occurrences_new",
-		# 	"fixtures/genetics/Alytes_muletensis.csv",
-		# )
-		# call_command("populate_habitats")
-		# call_command("load_taxon_data", "fixtures/iucn/Amphibia.json")
-		# print("Finished loading fixtures...")
+		call_command(
+			"load_occurrences_new",
+			"fixtures/genetics/Alytes_muletensis.csv",
+		)
+		call_command("populate_habitats")
+		call_command("populate_tags")
+		call_command("load_taxon_data", "fixtures/iucn/Amphibia_IUCN_2024_07_30.json")
+		print("Finished loading fixtures...")
 
 	def assert_and_log(self, assertion_function, *args, **kwargs):
 		# current_function_name = inspect.stack()[1].function

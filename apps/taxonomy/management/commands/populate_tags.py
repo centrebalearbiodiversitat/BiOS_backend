@@ -4,11 +4,18 @@ from django.db import transaction
 from apps.taxonomy.models import Tag
 
 TAGS = [
-    ("invasive", Tag.ECOLOGICAL),
-    ("endemic", Tag.ECOLOGICAL),
+    ("native", Tag.DOE),
+    ("captive", Tag.DOE),
+    ("cultivated", Tag.DOE),
+    ("released", Tag.DOE),
+    ("failing", Tag.DOE),
+    ("casual", Tag.DOE),
+    ("reproducing", Tag.DOE),
+    ("established", Tag.DOE),
+    ("colonising", Tag.DOE),
+    ("invasive", Tag.DOE),
+    ("widespreadInvasive", Tag.DOE),
     ("doubtful occurrence", Tag.ECOLOGICAL),
-    ("wild", Tag.ECOLOGICAL),
-    ("domestic", Tag.ECOLOGICAL),
     ("CITES", Tag.DIRECTIVE),
     ("directiva aves", Tag.DIRECTIVE),
 ]

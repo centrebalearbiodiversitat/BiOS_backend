@@ -6,6 +6,7 @@ from django.db import transaction
 from django.db.models import Q
 from apps.taxonomy.models import Habitat, Tag, TaxonData, TaxonomicLevel
 from apps.versioning.models import Batch, Source, OriginSource
+from apps.taxonomy.management.commands.populate_tags import TAGS
 
 
 def check_taxon(line):
@@ -59,22 +60,25 @@ def create_taxon_data(line, taxonomy, batch):
 
 	existing_tags = Tag.objects.all()
 
+
 	for tag in existing_tags:
 		if line.get(tag.name) is True:
+			if tag.tag_type == Tag.DOE:
+				if taxon_data.tags.filter(tag_type=Tag.DOE, name__in=[t[0] for t in TAGS if t[1] == Tag.DOE]).exists():
+					raise Exception(f"Cannot add DOE tag '{tag.name}' to taxon_data {taxon_data.id} as another DOE tag already exists.")
 			taxon_data.tags.add(tag)
 
 	source, _ = Source.objects.get_or_create(
-		name__iexact=line['source'],
+		name__iexact=line["source"],
 		data_type=Source.TAXON,
 		defaults={
-			"name": line['source'],
+			"name": line["source"],
 			"accepted": True,
-			"origin": Source.TRANSLATE_CHOICES[line['origin']],
+			"origin": Source.TRANSLATE_CHOICES[line["origin"]],
 			"data_type": Source.TAXON,
 			"url": None,
 		},
 	)
-
 
 	os, new_source = OriginSource.objects.get_or_create(origin_id="unknown", source=source)
 

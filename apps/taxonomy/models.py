@@ -172,15 +172,19 @@ class Habitat(ReferencedModel):
 		return self.name
 
 class Tag(models.Model):
-	ECOLOGICAL = 0
-	DIRECTIVE = 1
+	DOE = 0
+	ECOLOGICAL = 1
+	DIRECTIVE = 2
 
 	TAG_TYPE_CHOICES = (
+		(DOE, "degreeOfEstablishment"),
 		(ECOLOGICAL, "ecological"),
 		(DIRECTIVE, "directive"),
 	)
 
 	TRANSLATE_TYPE = {
+		"degreeOfEstablishment": DOE,
+		DOE: "degreeOfEstablishment",
 		"ecological": ECOLOGICAL,
 		ECOLOGICAL: "ecological",
 		"directive": DIRECTIVE,

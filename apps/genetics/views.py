@@ -111,9 +111,7 @@ class MarkerFilter(APIView):
 			raise CBBAPIException("Taxonomic level does not exist", 404)
 
 		# Filter all markers by taxon
-		queryset = Marker.objects.filter(
-			sequence__occurrence__taxonomy__in=taxon.get_descendants(include_self=True)
-		)
+		queryset = Marker.objects.filter(sequence__occurrence__taxonomy__in=taxon.get_descendants(include_self=True))
 
 		# Annotate with the accepted id
 		# accepted_marker = Marker.objects.filter(Q(accepted=True, id=OuterRef("id")) | Q(synonyms=OuterRef("id"), accepted=True))
@@ -127,7 +125,7 @@ class MarkerFilter(APIView):
 		# 	.values("total")[:1]
 		# )
 
-		queryset = queryset.annotate(total=Count('name'))
+		queryset = queryset.annotate(total=Count("name"))
 
 		queryset = queryset.filter(total__gte=0).order_by("-total")
 
@@ -266,4 +264,4 @@ class SequenceCountView(SequenceFilter):
 	)
 	def get(self, request):
 		sequences = super().get(request)
-		return Response(f'{sequences.filter(occurrence__in_cbb_scope=True).count()} / {sequences.count()}')
+		return Response(f"{sequences.filter(occurrence__in_cbb_scope=True).count()} / {sequences.count()}")

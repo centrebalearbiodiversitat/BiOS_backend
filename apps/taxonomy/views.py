@@ -373,7 +373,9 @@ class TaxonomicLevelDescendantsCountView(APIView):
 			raise CBBAPIException("TaxonomicLevel not found", code=404)
 
 		result = {}
-		descendants = taxon.get_descendants(include_self=False).filter(accepted=True).values("rank").order_by("rank").annotate(count=Count("rank"))
+		descendants = (
+			taxon.get_descendants(include_self=False).filter(accepted=True).values("rank").order_by("rank").annotate(count=Count("rank"))
+		)
 		for descendant in descendants:
 			result[TaxonomicLevel.TRANSLATE_RANK[descendant["rank"]]] = descendant["count"]
 

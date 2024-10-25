@@ -23,7 +23,51 @@ TAXON_KEYS = [
 	("variety", "varietyKey", TaxonomicLevel.SUBSPECIES),
 ]
 
-BIO_MARKERS = {'12s rrna', '16s rrna', '18s rrna', 'cyt-b', 'rubisco', 'cytb', 'coi', 'cox2', 'its', 'rbcl', 'cytochrome-b', 'co1', 'coii', 'its1', 'cox', 'co2', 'cox1', 'coxii', 'its2', '5.8s rrna', 'coxi', '5,8s rrna', 'matk', 'atp6', 'atp8', 'nad1', 'nad2', 'nad3', 'nad4', 'nad5', 'nadh1', 'nadh2', 'nadh3', 'nadh4', 'nadh5', 'nd1', 'nd2', 'nd3', 'nd4', 'nd5', 'histone3', 'h3', 'hist3'}
+BIO_MARKERS = {
+	"12s rrna",
+	"16s rrna",
+	"18s rrna",
+	"cyt-b",
+	"rubisco",
+	"cytb",
+	"coi",
+	"cox2",
+	"its",
+	"rbcl",
+	"cytochrome-b",
+	"co1",
+	"coii",
+	"its1",
+	"cox",
+	"co2",
+	"cox1",
+	"coxii",
+	"its2",
+	"5.8s rrna",
+	"coxi",
+	"5,8s rrna",
+	"matk",
+	"atp6",
+	"atp8",
+	"nad1",
+	"nad2",
+	"nad3",
+	"nad4",
+	"nad5",
+	"nadh1",
+	"nadh2",
+	"nadh3",
+	"nadh4",
+	"nadh5",
+	"nd1",
+	"nd2",
+	"nd3",
+	"nd4",
+	"nd5",
+	"histone3",
+	"h3",
+	"hist3",
+}
 
 
 def parse_line(line: dict):
@@ -75,14 +119,14 @@ def genetic_sources(line: dict, batch, occ):
 
 	for production in line["genetic_features"]:
 		if production["gene"]:
-		# if production["gene"] and production["gene"].lower() in BIO_MARKERS:
+			# if production["gene"] and production["gene"].lower() in BIO_MARKERS:
 			product = None
 			if production["product"]:
 				product, _ = Product.objects.get_or_create(
 					name__iexact=production["product"],
 					defaults={
 						"name": production["product"],
-					}
+					},
 				)
 
 			marker, is_new = Marker.objects.get_or_create(

@@ -81,7 +81,7 @@ def genetic_sources(line: dict, batch, occ):
 					name__icontains=production["product"],
 					defaults={
 						"name": production["product"],
-					}
+					},
 				)
 
 			marker, is_new = Marker.objects.get_or_create(

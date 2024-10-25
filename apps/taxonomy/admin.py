@@ -75,13 +75,13 @@ class TaxonDataAdmin(admin.ModelAdmin):
 		("System", {"fields": ("freshwater", "marine", "terrestrial")}),
 		("IUCN Status", {"fields": ("iucn_global", "iucn_europe", "iucn_mediterranean")}),
 		("Other Information", {"fields": ("habitat", "tags")}),
-		
 	)
 
 	def formfield_for_manytomany(self, db_field, request, **kwargs):
 		if db_field.name == "tags":
-			kwargs["queryset"] = Tag.objects.all().order_by('name')
+			kwargs["queryset"] = Tag.objects.all().order_by("name")
 		return super().formfield_for_manytomany(db_field, request, **kwargs)
+
 
 admin.site.register(TaxonData, TaxonDataAdmin)
 
@@ -96,10 +96,12 @@ class HabitatAdmin(admin.ModelAdmin):
 
 admin.site.register(Habitat, HabitatAdmin)
 
+
 class TagAdmin(admin.ModelAdmin):
 	search_fields = ["name", "tag_type"]
 	list_display = ["name", "tag_type"]
 	fields = ["name", "tag_type"]
+
 
 admin.site.register(Tag, TagAdmin)
 

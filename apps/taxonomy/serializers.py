@@ -79,12 +79,13 @@ class HabitatSerializer(serializers.ModelSerializer):
 class TagSerializer(serializers.ModelSerializer):
 	tag_type = serializers.SerializerMethodField()
 
-	def get_tag_type(self, obj):	
+	def get_tag_type(self, obj):
 		return Tag.TRANSLATE_TYPE[obj.tag_type]
-	
+
 	class Meta:
 		model = Tag
 		fields = ["name", "tag_type"]
+
 
 class BaseTaxonDataSerializer(CaseModelSerializer):
 	iucn_global = serializers.SerializerMethodField()

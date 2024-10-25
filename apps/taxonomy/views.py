@@ -19,7 +19,7 @@ from apps.taxonomy.serializers import (
 	TaxonCompositionSerializer,
 	TaxonDataSerializer,
 	HabitatSerializer,
-	TagSerializer
+	TagSerializer,
 )
 
 from ..versioning.serializers import OriginSourceSerializer
@@ -584,6 +584,7 @@ class TaxonChecklistView(APIView):
 			headers={"Content-Disposition": f'attachment; filename="{head_taxon}_checklist.csv"'},
 		)
 
+
 class TaxonDataCRUDView(APIView):
 	@swagger_auto_schema(
 		tags=["Taxon Data"],
@@ -772,7 +773,7 @@ class TaxonDataHabitatsView(APIView):
 		for i in serializer.data:
 			del i["sources"]
 		return Response(serializer.data)
-	
+
 
 class TagCRUDView(APIView):
 	@swagger_auto_schema(
@@ -794,7 +795,7 @@ class TagCRUDView(APIView):
 
 		if not tag_form.is_valid():
 			raise CBBAPIException(tag_form.errors, code=400)
-		
+
 		tag_id = tag_form.cleaned_data.get("id")
 		if not tag_id:
 			raise CBBAPIException("Missing id parameter", code=400)

@@ -171,6 +171,7 @@ class Habitat(ReferencedModel):
 	def __str__(self):
 		return self.name
 
+
 class Tag(models.Model):
 	DOE = 0
 	ECOLOGICAL = 1
@@ -188,17 +189,18 @@ class Tag(models.Model):
 		"ecological": ECOLOGICAL,
 		ECOLOGICAL: "ecological",
 		"directive": DIRECTIVE,
-		DIRECTIVE: "directive"
+		DIRECTIVE: "directive",
 	}
 
 	name = models.CharField(max_length=255)
 	tag_type = models.PositiveSmallIntegerField(choices=TAG_TYPE_CHOICES)
 
 	class Meta:
-		unique_together = ('name', 'tag_type')
+		unique_together = ("name", "tag_type")
 
 	def __str__(self):
 		return f"{self.name}"
+
 
 class TaxonData(ReferencedModel):
 	NE = 0

@@ -52,14 +52,13 @@ def create_taxon_data(line, taxonomy, batch):
 			"freshwater": line["freshwater"],
 			"marine": line["marine"],
 			"terrestrial": line["terrestrial"],
-			"batch": batch
+			"batch": batch,
 		},
 	)
 
 	taxon_data.habitat.set(valid_habitats)
 
 	existing_tags = Tag.objects.all()
-
 
 	for tag in existing_tags:
 		if line.get(tag.name) is True:

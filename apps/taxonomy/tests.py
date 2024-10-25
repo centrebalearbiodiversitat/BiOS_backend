@@ -271,25 +271,11 @@ class TaxonomyTest(TestResultHandler):
 
 		expected_data = [
 			{
-				"source": {
-					"name": "Catalogue of Life",
-					"url": None,
-					"origin": "database",
-					"dataType": "taxon"
-				},
+				"source": {"name": "Catalogue of Life", "url": None, "origin": "database", "dataType": "taxon"},
 				"originId": "N",
-				"attribution": None
+				"attribution": None,
 			},
-			{
-				"source": {
-					"name": "GBIF",
-					"url": None,
-					"origin": "database",
-					"dataType": "taxon"
-				},
-				"originId": "1",
-				"attribution": None
-			}
+			{"source": {"name": "GBIF", "url": None, "origin": "database", "dataType": "taxon"}, "originId": "1", "attribution": None},
 		]
 		self.assert_and_log(self.assertJSONEqual, response.content, expected_data)
 
@@ -338,62 +324,38 @@ class TaxonomyTest(TestResultHandler):
 				{
 					"sources": [
 						{
-							"source": {
-								"name": "IUCN",
-								"url": None,
-								"origin": "database",
-								"dataType": "taxon"
-							},
+							"source": {"name": "IUCN", "url": None, "origin": "database", "dataType": "taxon"},
 							"originId": "5",
-							"attribution": None
+							"attribution": None,
 						}
 					],
-					"name": "wetlands (inland)"
+					"name": "wetlands (inland)",
 				},
 				{
 					"sources": [
 						{
-							"source": {
-								"name": "IUCN",
-								"url": None,
-								"origin": "database",
-								"dataType": "taxon"
-							},
+							"source": {"name": "IUCN", "url": None, "origin": "database", "dataType": "taxon"},
 							"originId": "14",
-							"attribution": None
+							"attribution": None,
 						}
 					],
-					"name": "artificial/terrestrial"
+					"name": "artificial/terrestrial",
 				},
 				{
 					"sources": [
 						{
-							"source": {
-								"name": "IUCN",
-								"url": None,
-								"origin": "database",
-								"dataType": "taxon"
-							},
+							"source": {"name": "IUCN", "url": None, "origin": "database", "dataType": "taxon"},
 							"originId": "15",
-							"attribution": None
+							"attribution": None,
 						}
 					],
-					"name": "artificial/aquatic"
-				}
-			],
-			"tags": [
-				{
-					"name": "endemic",
-					"tagType": "ecological"
+					"name": "artificial/aquatic",
 				},
-				{
-					"name": "wild",
-					"tagType": "ecological"
-				}
 			],
+			"tags": [{"name": "endemic", "tagType": "ecological"}, {"name": "wild", "tagType": "ecological"}],
 			"freshwater": True,
 			"marine": False,
-			"terrestrial": True
+			"terrestrial": True,
 		}
 		self.assert_and_log(self.assertJSONEqual, response.content, expected_data)
 
@@ -424,62 +386,38 @@ class TaxonomyTest(TestResultHandler):
 					{
 						"sources": [
 							{
-								"source": {
-									"name": "IUCN",
-									"url": None,
-									"origin": "database",
-									"dataType": "taxon"
-								},
+								"source": {"name": "IUCN", "url": None, "origin": "database", "dataType": "taxon"},
 								"originId": "5",
-								"attribution": None
+								"attribution": None,
 							}
 						],
-						"name": "wetlands (inland)"
+						"name": "wetlands (inland)",
 					},
 					{
 						"sources": [
 							{
-								"source": {
-									"name": "IUCN",
-									"url": None,
-									"origin": "database",
-									"dataType": "taxon"
-								},
+								"source": {"name": "IUCN", "url": None, "origin": "database", "dataType": "taxon"},
 								"originId": "14",
-								"attribution": None
+								"attribution": None,
 							}
 						],
-						"name": "artificial/terrestrial"
+						"name": "artificial/terrestrial",
 					},
 					{
 						"sources": [
 							{
-								"source": {
-									"name": "IUCN",
-									"url": None,
-									"origin": "database",
-									"dataType": "taxon"
-								},
+								"source": {"name": "IUCN", "url": None, "origin": "database", "dataType": "taxon"},
 								"originId": "15",
-								"attribution": None
+								"attribution": None,
 							}
 						],
-						"name": "artificial/aquatic"
-					}
-				],
-				"tags": [
-					{
-						"name": "endemic",
-						"tagType": "ecological"
+						"name": "artificial/aquatic",
 					},
-					{
-						"name": "wild",
-						"tagType": "ecological"
-					}
 				],
+				"tags": [{"name": "endemic", "tagType": "ecological"}, {"name": "wild", "tagType": "ecological"}],
 				"freshwater": True,
 				"marine": False,
-				"terrestrial": True
+				"terrestrial": True,
 			}
 		]
 		self.assert_and_log(self.assertJSONEqual, response.content, expected_data)
@@ -530,17 +468,14 @@ class TaxonomyTest(TestResultHandler):
 		url = self._generate_url("taxonomy:data_habitats", taxonomy=99999)
 		response = self.client.get(url)
 		self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
-	
+
 	def test_tag_crud_200(self):
 		taxon_id = 1
 		url = self._generate_url("taxonomy:tag_crud", id=taxon_id)
 		response = self.client.get(url)
 		self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-		expected_data = {
-			"name": "invasive",
-			"tag_type": "ecological"
-		}
+		expected_data = {"name": "invasive", "tag_type": "ecological"}
 		self.assert_and_log(self.assertJSONEqual, response.content, expected_data)
 
 	def test_tag_crud_400(self):
@@ -554,7 +489,6 @@ class TaxonomyTest(TestResultHandler):
 		url = self._generate_url("taxonomy:tag_crud", id=taxon_id)
 		response = self.client.get(url)
 		self.assert_and_log(self.assertEqual, response.status_code, status.HTTP_404_NOT_FOUND)
-
 
 	def test_authorship_crud_200(self):
 		taxon_id = 1

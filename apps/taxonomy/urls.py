@@ -17,7 +17,7 @@ from apps.taxonomy.views import (
 	TaxonDataListView,
 	TaxonDataCountView,
 	TaxonDataHabitatsView,
-    TagCRUDView,
+	TagCRUDView,
 	AuthorshipCRUDView,
 )
 

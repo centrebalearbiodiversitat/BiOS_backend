@@ -373,7 +373,7 @@ class TaxonomicLevelDescendantsCountView(APIView):
 			raise CBBAPIException("TaxonomicLevel not found", code=404)
 
 		result = {}
-		descendants = taxon.get_descendants(include_self=False).values("rank").order_by("rank").annotate(count=Count("rank"))
+		descendants = taxon.get_descendants(include_self=False).filter(accepted=True).values("rank").order_by("rank").annotate(count=Count("rank"))
 		for descendant in descendants:
 			result[TaxonomicLevel.TRANSLATE_RANK[descendant["rank"]]] = descendant["count"]
 
@@ -770,8 +770,8 @@ class TaxonDataHabitatsView(APIView):
 		habitats = Habitat.objects.filter(taxondata__in=taxon_datas).distinct().order_by("name")
 
 		serializer = HabitatSerializer(habitats, many=True)
-		for i in serializer.data:
-			del i["sources"]
+		# for i in serializer.data:
+		# 	del i["sources"]
 		return Response(serializer.data)
 
 

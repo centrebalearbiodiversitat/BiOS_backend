@@ -112,23 +112,24 @@ class MarkerFilter(APIView):
 
 		# Filter all markers by taxon
 		queryset = Marker.objects.filter(
-			Q(sequence__occurrence__taxonomy=taxon)
-			| Q(sequence__occurrence__taxonomy__lft__gte=taxon.lft, sequence__occurrence__taxonomy__rght__lte=taxon.rght),
+			sequence__occurrence__taxonomy__in=taxon.get_descendants(include_self=True)
 		)
 
 		# Annotate with the accepted id
-		accepted_marker = Marker.objects.filter(Q(accepted=True, id=OuterRef("id")) | Q(synonyms=OuterRef("id"), accepted=True))
+		# accepted_marker = Marker.objects.filter(Q(accepted=True, id=OuterRef("id")) | Q(synonyms=OuterRef("id"), accepted=True))
+		#
+		# queryset = queryset.annotate(accepted_marker=accepted_marker.values("id")[:1])
+		#
+		# queryset = Marker.objects.filter(id__in=queryset.values("accepted_marker")).annotate(
+		# 	total=queryset.filter(accepted_marker=OuterRef("id"))
+		# 	.values("accepted_marker")
+		# 	.annotate(total=Count("accepted_marker"))
+		# 	.values("total")[:1]
+		# )
 
-		queryset = queryset.annotate(accepted_marker=accepted_marker.values("id")[:1])
+		queryset = queryset.annotate(total=Count('name'))
 
-		queryset = Marker.objects.filter(id__in=queryset.values("accepted_marker")).annotate(
-			total=queryset.filter(accepted_marker=OuterRef("id"))
-			.values("accepted_marker")
-			.annotate(total=Count("accepted_marker"))
-			.values("total")[:1]
-		)
-
-		queryset = queryset.filter(total__gte=1).order_by("-total")
+		queryset = queryset.filter(total__gte=0).order_by("-total")
 
 		return queryset
 
@@ -264,4 +265,5 @@ class SequenceCountView(SequenceFilter):
 		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
 	)
 	def get(self, request):
-		return Response(super().get(request).count())
+		sequences = super().get(request)
+		return Response(f'{sequences.filter(occurrence__in_cbb_scope=True).count()} / {sequences.count()}')

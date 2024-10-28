@@ -3,7 +3,6 @@ import traceback
 import re
 from django.core.management.base import BaseCommand
 from django.db import transaction
-from django.db.models import Q
 from apps.taxonomy.models import Habitat, Tag, TaxonData, TaxonomicLevel
 from apps.versioning.models import Batch, Source, OriginSource
 from apps.taxonomy.management.commands.populate_tags import TAGS

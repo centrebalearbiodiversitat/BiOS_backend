@@ -179,15 +179,12 @@ class Tag(models.Model):
 
 	TAG_TYPE_CHOICES = (
 		(DOE, "degreeOfEstablishment"),
-		(ECOLOGICAL, "ecological"),
 		(DIRECTIVE, "directive"),
 	)
 
 	TRANSLATE_TYPE = {
 		"degreeOfEstablishment": DOE,
 		DOE: "degreeOfEstablishment",
-		"ecological": ECOLOGICAL,
-		ECOLOGICAL: "ecological",
 		"directive": DIRECTIVE,
 		DIRECTIVE: "directive",
 	}
@@ -259,10 +256,10 @@ class TaxonData(ReferencedModel):
 	iucn_europe = models.PositiveSmallIntegerField(choices=CS_CHOICES, default=NE)
 	iucn_mediterranean = models.PositiveSmallIntegerField(choices=CS_CHOICES, default=NE)
 	habitat = models.ManyToManyField(Habitat, blank=True)  # global scale
-	tags = models.ManyToManyField(Tag, blank=True, db_index=True)
-	freshwater = models.BooleanField(default=False, db_index=True)
-	marine = models.BooleanField(default=False, db_index=True)
-	terrestrial = models.BooleanField(default=False, db_index=True)
+	tags = models.ManyToManyField(Tag, blank=True)
+	freshwater = models.BooleanField(default=None, null=True)
+	marine = models.BooleanField(default=None, null=True)
+	terrestrial = models.BooleanField(default=None, null=True)
 
 	class Meta:
 		verbose_name_plural = "Taxon data"

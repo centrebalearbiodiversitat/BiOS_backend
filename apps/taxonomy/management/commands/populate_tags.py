@@ -15,9 +15,11 @@ TAGS = [
 	("colonising", Tag.DOE),
 	("invasive", Tag.DOE),
 	("widespreadInvasive", Tag.DOE),
-	("doubtful occurrence", Tag.ECOLOGICAL),
 	("CITES", Tag.DIRECTIVE),
-	("directiva aves", Tag.DIRECTIVE),
+	("directiva_aves", Tag.DIRECTIVE),
+	("lespre", Tag.DIRECTIVE),
+	("CEEA", Tag.DIRECTIVE),
+	("directiva_habitat", Tag.DIRECTIVE)
 ]
 
 

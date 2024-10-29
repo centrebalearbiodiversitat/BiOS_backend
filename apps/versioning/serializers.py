@@ -12,7 +12,7 @@ class SourceSerializer(CaseModelSerializer):
 		return Source.TRANSLATE_CHOICES[obj.origin]
 
 	def get_data_type(self, obj):
-		return Source.TRANSLATE_DATA_TYPE[obj.origin]
+		return Source.TRANSLATE_DATA_TYPE[obj.data_type]
 
 	class Meta:
 		model = Source

@@ -9,7 +9,7 @@ class SuperMarkerSerializer(CaseModelSerializer):
 
 	class Meta:
 		model = Marker
-		fields = ["id", "name", "product", "total"]
+		fields = ["id", "name", "total"]
 
 
 class MarkerSerializer(CaseModelSerializer):

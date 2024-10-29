@@ -1,3 +1,4 @@
+import datetime
 import json
 import geopandas as gpd
 
@@ -21,6 +22,52 @@ TAXON_KEYS = [
 	("subspecies", "subspeciesKey", TaxonomicLevel.SUBSPECIES),
 	("variety", "varietyKey", TaxonomicLevel.SUBSPECIES),
 ]
+
+BIO_MARKERS = {
+	"12s rrna",
+	"16s rrna",
+	"18s rrna",
+	"cyt-b",
+	"rubisco",
+	"cytb",
+	"coi",
+	"cox2",
+	"its",
+	"rbcl",
+	"cytochrome-b",
+	"co1",
+	"coii",
+	"its1",
+	"cox",
+	"co2",
+	"cox1",
+	"coxii",
+	"its2",
+	"5.8s rrna",
+	"coxi",
+	"5,8s rrna",
+	"matk",
+	"atp6",
+	"atp8",
+	"nad1",
+	"nad2",
+	"nad3",
+	"nad4",
+	"nad5",
+	"nadh1",
+	"nadh2",
+	"nadh3",
+	"nadh4",
+	"nadh5",
+	"nd1",
+	"nd2",
+	"nd3",
+	"nd4",
+	"nd5",
+	"histone3",
+	"h3",
+	"hist3",
+}
 
 
 def parse_line(line: dict):
@@ -55,30 +102,28 @@ def genetic_sources(line: dict, batch, occ):
 	if not new and not Sequence.objects.filter(sources=os, occurrence=occ).exists():
 		raise Exception(f"OriginSource already exists\n{line}")
 
-	seq, _ = Sequence.objects.get_or_create(
-		occurrence=occ,
-		sources=os,
-		defaults={
-			"batch": batch,
-			"isolate": line["isolate"],
-			"bp": line["bp"],
-			"definition": line["definition"],
-			"data_file_division": line["data_file_division"],
-			"published_date": parse_datetime(line["date"]) if line["date"] else None,
-			"molecule_type": line["molecule_type"],
-			"sequence_version": line["sequence_version"],
-		},
-	)
-
-	if not seq.sources.filter(id=os.id).exists():
+	seq = Sequence.objects.filter(sources=os, occurrence=occ)
+	if seq.exists():
+		if seq.count() > 1:
+			raise Exception(f"Found more than one sequence\n{line}")
+		seq = seq.first()
+	else:
+		seq = Sequence.objects.create(
+			occurrence=occ,
+			batch=batch,
+			isolate=line["isolate"],
+			definition=line["definition"],
+			published_date=parse_datetime(line["date"]) if line["date"] else None,
+		)
 		seq.sources.add(os)
 
 	for production in line["genetic_features"]:
-		if production["gene"] and not production["gene"].startswith("LOC"):
+		if production["gene"]:
+			# if production["gene"] and production["gene"].lower() in BIO_MARKERS:
 			product = None
 			if production["product"]:
 				product, _ = Product.objects.get_or_create(
-					name__icontains=production["product"],
+					name__iexact=production["product"],
 					defaults={
 						"name": production["product"],
 					},
@@ -93,18 +138,12 @@ def genetic_sources(line: dict, batch, occ):
 				},
 			)
 
-			if product and not marker.products.all().filter(name=product).exists():
-				marker.products.add(product)
+			# if product and not marker.products.all().filter(name=product).exists():
+			# 	marker.products.add(product)
 
-			if not marker.sources.filter(id=os.id).exists():
-				marker.sources.add(os)
+			# if not marker.sources.filter(id=os.id).exists():
+			# 	marker.sources.add(os)
 
-			# if not is_new and production["product"]:
-			# 	if marker.product:
-			# 		if len(production["product"]) > len(marker.product):
-			# 			marker.product = production["product"]
-			# 	else:
-			# 		marker.product = production["product"]
 			marker.save()
 			seq.markers.add(marker)
 	seq.save()
@@ -143,6 +182,11 @@ class Command(BaseCommand):
 			line: dict
 			for line in data:
 				line = parse_line(line)
+
+				if OriginSource.objects.filter(origin_id=line["sample_id"], source__name__icontains="NCBI").exists():
+					# print(f"OriginSource already exists in NCBI\n{line['sample_id']}")
+					continue
+
 				source, _ = Source.objects.get_or_create(
 					name__iexact=line["occurrenceSource"],
 					data_type=Source.TAXON,

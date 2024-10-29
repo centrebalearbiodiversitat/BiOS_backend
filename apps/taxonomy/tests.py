@@ -264,45 +264,18 @@ class TaxonomyTest(TestResultHandler):
 
 	def test_taxon_source_200(self):
 		taxon_id = 2
-		url = self._generate_url("taxonomy:taxon_sources", id=taxon_id)
+		exclude = "id"
+		url = self._generate_url("taxonomy:taxon_sources", id=taxon_id, exclude=exclude)
 		response = self.client.get(url)
 		self.assertEqual(response.status_code, status.HTTP_200_OK)
 
 		expected_data = [
 			{
-				"id": 1,
-				"source": {
-					"id": 1,
-					"name": "Catalogue of Life",
-					"unidecodeName": "Catalogue of Life",
-					"accepted": True,
-					"acceptedModifier": None,
-					"origin": 0,
-					"url": None,
-					"dataType": 0,
-					"batch": None,
-					"synonyms": [],
-				},
+				"source": {"name": "Catalogue of Life", "url": None, "origin": "database", "dataType": "taxon"},
 				"originId": "N",
 				"attribution": None,
 			},
-			{
-				"id": 18,
-				"source": {
-					"id": 2,
-					"name": "GBIF",
-					"unidecodeName": "GBIF",
-					"accepted": True,
-					"acceptedModifier": None,
-					"origin": 0,
-					"url": None,
-					"dataType": 0,
-					"batch": None,
-					"synonyms": [],
-				},
-				"originId": "1",
-				"attribution": None,
-			},
+			{"source": {"name": "GBIF", "url": None, "origin": "database", "dataType": "taxon"}, "originId": "1", "attribution": None},
 		]
 		self.assert_and_log(self.assertJSONEqual, response.content, expected_data)
 
@@ -351,17 +324,7 @@ class TaxonomyTest(TestResultHandler):
 				{
 					"sources": [
 						{
-							"source": {
-								"name": "IUCN",
-								"unidecodeName": "IUCN",
-								"accepted": True,
-								"acceptedModifier": None,
-								"origin": 0,
-								"url": None,
-								"dataType": 0,
-								"batch": None,
-								"synonyms": [],
-							},
+							"source": {"name": "IUCN", "url": None, "origin": "database", "dataType": "taxon"},
 							"originId": "5",
 							"attribution": None,
 						}
@@ -371,17 +334,7 @@ class TaxonomyTest(TestResultHandler):
 				{
 					"sources": [
 						{
-							"source": {
-								"name": "IUCN",
-								"unidecodeName": "IUCN",
-								"accepted": True,
-								"acceptedModifier": None,
-								"origin": 0,
-								"url": None,
-								"dataType": 0,
-								"batch": None,
-								"synonyms": [],
-							},
+							"source": {"name": "IUCN", "url": None, "origin": "database", "dataType": "taxon"},
 							"originId": "14",
 							"attribution": None,
 						}
@@ -391,17 +344,7 @@ class TaxonomyTest(TestResultHandler):
 				{
 					"sources": [
 						{
-							"source": {
-								"name": "IUCN",
-								"unidecodeName": "IUCN",
-								"accepted": True,
-								"acceptedModifier": None,
-								"origin": 0,
-								"url": None,
-								"dataType": 0,
-								"batch": None,
-								"synonyms": [],
-							},
+							"source": {"name": "IUCN", "url": None, "origin": "database", "dataType": "taxon"},
 							"originId": "15",
 							"attribution": None,
 						}
@@ -409,8 +352,7 @@ class TaxonomyTest(TestResultHandler):
 					"name": "artificial/aquatic",
 				},
 			],
-			"invasive": False,
-			"domesticated": False,
+			"tags": [{"name": "endemic", "tagType": "ecological"}, {"name": "wild", "tagType": "ecological"}],
 			"freshwater": True,
 			"marine": False,
 			"terrestrial": True,
@@ -444,17 +386,7 @@ class TaxonomyTest(TestResultHandler):
 					{
 						"sources": [
 							{
-								"source": {
-									"name": "IUCN",
-									"unidecodeName": "IUCN",
-									"accepted": True,
-									"acceptedModifier": None,
-									"origin": 0,
-									"url": None,
-									"dataType": 0,
-									"batch": None,
-									"synonyms": [],
-								},
+								"source": {"name": "IUCN", "url": None, "origin": "database", "dataType": "taxon"},
 								"originId": "5",
 								"attribution": None,
 							}
@@ -464,17 +396,7 @@ class TaxonomyTest(TestResultHandler):
 					{
 						"sources": [
 							{
-								"source": {
-									"name": "IUCN",
-									"unidecodeName": "IUCN",
-									"accepted": True,
-									"acceptedModifier": None,
-									"origin": 0,
-									"url": None,
-									"dataType": 0,
-									"batch": None,
-									"synonyms": [],
-								},
+								"source": {"name": "IUCN", "url": None, "origin": "database", "dataType": "taxon"},
 								"originId": "14",
 								"attribution": None,
 							}
@@ -484,17 +406,7 @@ class TaxonomyTest(TestResultHandler):
 					{
 						"sources": [
 							{
-								"source": {
-									"name": "IUCN",
-									"unidecodeName": "IUCN",
-									"accepted": True,
-									"acceptedModifier": None,
-									"origin": 0,
-									"url": None,
-									"dataType": 0,
-									"batch": None,
-									"synonyms": [],
-								},
+								"source": {"name": "IUCN", "url": None, "origin": "database", "dataType": "taxon"},
 								"originId": "15",
 								"attribution": None,
 							}
@@ -502,8 +414,7 @@ class TaxonomyTest(TestResultHandler):
 						"name": "artificial/aquatic",
 					},
 				],
-				"invasive": False,
-				"domesticated": False,
+				"tags": [{"name": "endemic", "tagType": "ecological"}, {"name": "wild", "tagType": "ecological"}],
 				"freshwater": True,
 				"marine": False,
 				"terrestrial": True,
@@ -557,6 +468,27 @@ class TaxonomyTest(TestResultHandler):
 		url = self._generate_url("taxonomy:data_habitats", taxonomy=99999)
 		response = self.client.get(url)
 		self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+	def test_tag_crud_200(self):
+		taxon_id = 1
+		url = self._generate_url("taxonomy:tag_crud", id=taxon_id)
+		response = self.client.get(url)
+		self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+		expected_data = {"name": "invasive", "tag_type": "ecological"}
+		self.assert_and_log(self.assertJSONEqual, response.content, expected_data)
+
+	def test_tag_crud_400(self):
+		taxon_id = "dos"
+		url = self._generate_url("taxonomy:tag_crud", id=taxon_id)
+		response = self.client.get(url)
+		self.assert_and_log(self.assertEqual, response.status_code, status.HTTP_400_BAD_REQUEST)
+
+	def test_tag_crud_404(self):
+		taxon_id = 99999
+		url = self._generate_url("taxonomy:tag_crud", id=taxon_id)
+		response = self.client.get(url)
+		self.assert_and_log(self.assertEqual, response.status_code, status.HTTP_404_NOT_FOUND)
 
 	def test_authorship_crud_200(self):
 		taxon_id = 1

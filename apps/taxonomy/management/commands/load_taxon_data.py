@@ -1,11 +1,11 @@
 import json
 import traceback
 import re
-
 from django.core.management.base import BaseCommand
 from django.db import transaction
-
-from apps.taxonomy.models import Habitat, TaxonData, TaxonomicLevel
+from apps.taxonomy.models import Habitat, Tag, TaxonData, TaxonomicLevel
+from apps.versioning.models import Batch, Source, OriginSource
+from apps.taxonomy.management.commands.populate_tags import TAGS
 
 
 def check_taxon(line):
@@ -30,7 +30,7 @@ def transform_iucn_status(line):
 				line[field] = line[field][-2:].upper()
 
 
-def create_taxon_data(line, taxonomy):
+def create_taxon_data(line, taxonomy, batch):
 	habitat_ids = set(line["habitat"] or [])
 
 	valid_habitats = Habitat.objects.filter(sources__origin_id__in=habitat_ids)
@@ -48,21 +48,46 @@ def create_taxon_data(line, taxonomy):
 			"iucn_mediterranean": TaxonData.TRANSLATE_CS[line["iucn_mediterranean"].lower()]
 			if line["iucn_mediterranean"]
 			else TaxonData.NE,
-			"invasive": False,
-			"domesticated": False,
 			"freshwater": line["freshwater"],
 			"marine": line["marine"],
 			"terrestrial": line["terrestrial"],
+			"batch": batch,
 		},
 	)
 
 	taxon_data.habitat.set(valid_habitats)
+
+	existing_tags = Tag.objects.all()
+
+	for tag in existing_tags:
+		if line.get(tag.name) is True:
+			if tag.tag_type == Tag.DOE:
+				if taxon_data.tags.filter(tag_type=Tag.DOE, name__in=[t[0] for t in TAGS if t[1] == Tag.DOE]).exists():
+					raise Exception(f"Cannot add DOE tag '{tag.name}' to taxon_data {taxon_data.id} as another DOE tag already exists.")
+			taxon_data.tags.add(tag)
+
+	source, _ = Source.objects.get_or_create(
+		name__iexact=line["source"],
+		data_type=Source.TAXON,
+		defaults={
+			"name": line["source"],
+			"accepted": True,
+			"origin": Source.TRANSLATE_CHOICES[line["origin"]],
+			"data_type": Source.TAXON,
+			"url": None,
+		},
+	)
+
+	os, new_source = OriginSource.objects.get_or_create(origin_id="unknown", source=source)
+
+	taxon_data.sources.add(os)
+
 	taxon_data.save()
 
 
-def add_taxon_data(line):
+def add_taxon_data(line, batch):
 	taxonomy = check_taxon(line)
-	create_taxon_data(line, taxonomy)
+	create_taxon_data(line, taxonomy, batch)
 
 
 class Command(BaseCommand):
@@ -73,13 +98,14 @@ class Command(BaseCommand):
 	def handle(self, *args, **options):
 		file_name = options["file"]
 		exception = False
+		batch = Batch.objects.create()
 
 		with open(file_name, "r") as file:
 			json_data = json.load(file)
 
 			for line in json_data:
 				try:
-					add_taxon_data(line)
+					add_taxon_data(line, batch)
 				except:
 					exception = True
 					print(traceback.format_exc(), line)

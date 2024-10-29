@@ -172,7 +172,34 @@ class Habitat(ReferencedModel):
 		return self.name
 
 
-class TaxonData(models.Model):
+class Tag(models.Model):
+	DOE = 0
+	ECOLOGICAL = 1
+	DIRECTIVE = 2
+
+	TAG_TYPE_CHOICES = (
+		(DOE, "degreeOfEstablishment"),
+		(DIRECTIVE, "directive"),
+	)
+
+	TRANSLATE_TYPE = {
+		"degreeOfEstablishment": DOE,
+		DOE: "degreeOfEstablishment",
+		"directive": DIRECTIVE,
+		DIRECTIVE: "directive",
+	}
+
+	name = models.CharField(max_length=255)
+	tag_type = models.PositiveSmallIntegerField(choices=TAG_TYPE_CHOICES)
+
+	class Meta:
+		unique_together = ("name", "tag_type")
+
+	def __str__(self):
+		return f"{self.name}"
+
+
+class TaxonData(ReferencedModel):
 	NE = 0
 	DD = 1
 	LC = 2
@@ -229,11 +256,11 @@ class TaxonData(models.Model):
 	iucn_europe = models.PositiveSmallIntegerField(choices=CS_CHOICES, default=NE)
 	iucn_mediterranean = models.PositiveSmallIntegerField(choices=CS_CHOICES, default=NE)
 	habitat = models.ManyToManyField(Habitat, blank=True)  # global scale
-	invasive = models.BooleanField(default=False)  # degreeOfEstablishment:
-	domesticated = models.BooleanField(default=False)
-	freshwater = models.BooleanField(default=False)
-	marine = models.BooleanField(default=False)
-	terrestrial = models.BooleanField(default=False)
+	tags = models.ManyToManyField(Tag, blank=True)
+	freshwater = models.BooleanField(default=None, null=True)
+	marine = models.BooleanField(default=None, null=True)
+	terrestrial = models.BooleanField(default=None, null=True)
 
 	class Meta:
 		verbose_name_plural = "Taxon data"
+		unique_together = ["taxonomy"]

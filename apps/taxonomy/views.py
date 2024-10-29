@@ -12,17 +12,18 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_tracking.mixins import LoggingMixin
 from apps.API.exceptions import CBBAPIException
-from apps.taxonomy.models import Authorship, TaxonData, TaxonomicLevel, Habitat
+from apps.taxonomy.models import Authorship, TaxonData, TaxonomicLevel, Habitat, Tag
 from apps.taxonomy.serializers import (
 	AuthorshipSerializer,
 	BaseTaxonomicLevelSerializer,
 	TaxonCompositionSerializer,
 	TaxonDataSerializer,
 	HabitatSerializer,
+	TagSerializer,
 )
 
 from ..versioning.serializers import OriginSourceSerializer
-from .forms import IdFieldForm, TaxonDataForm, TaxonomicLevelChildrenForm, TaxonomicLevelForm
+from .forms import IdFieldForm, TaxonDataForm, TaxonomicLevelChildrenForm, TaxonomicLevelForm, TagForm
 from common.utils.utils import EchoWriter, PUNCTUATION_TRANSLATE, str_clean_up
 
 
@@ -369,10 +370,12 @@ class TaxonomicLevelDescendantsCountView(APIView):
 		try:
 			taxon = TaxonomicLevel.objects.get(id=taxonomy)
 		except TaxonomicLevel.DoesNotExist:
-			return CBBAPIException("TaxonomicLevel not found", code=404)
+			raise CBBAPIException("TaxonomicLevel not found", code=404)
 
 		result = {}
-		descendants = taxon.get_descendants(include_self=False).values("rank").order_by("rank").annotate(count=Count("rank"))
+		descendants = (
+			taxon.get_descendants(include_self=False).filter(accepted=True).values("rank").order_by("rank").annotate(count=Count("rank"))
+		)
 		for descendant in descendants:
 			result[TaxonomicLevel.TRANSLATE_RANK[descendant["rank"]]] = descendant["count"]
 
@@ -587,7 +590,7 @@ class TaxonChecklistView(APIView):
 class TaxonDataCRUDView(APIView):
 	@swagger_auto_schema(
 		tags=["Taxon Data"],
-		operation_description="Retrieve a specific taxonomic data instance by its id",
+		operation_description="Retrieve a specific taxonomic data instance by its taxonomic level id",
 		manual_parameters=[
 			openapi.Parameter(
 				"taxonomy",
@@ -769,9 +772,42 @@ class TaxonDataHabitatsView(APIView):
 		habitats = Habitat.objects.filter(taxondata__in=taxon_datas).distinct().order_by("name")
 
 		serializer = HabitatSerializer(habitats, many=True)
-		for i in serializer.data:
-			del i["sources"]
+		# for i in serializer.data:
+		# 	del i["sources"]
 		return Response(serializer.data)
+
+
+class TagCRUDView(APIView):
+	@swagger_auto_schema(
+		tags=["Tag"],
+		operation_description="Retrieve a specific tag instance by its id",
+		manual_parameters=[
+			openapi.Parameter(
+				"id",
+				openapi.IN_QUERY,
+				description="ID of the tag to retrieve",
+				type=openapi.TYPE_INTEGER,
+				required=True,
+			)
+		],
+		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
+	)
+	def get(self, request):
+		tag_form = TagForm(self.request.GET)
+
+		if not tag_form.is_valid():
+			raise CBBAPIException(tag_form.errors, code=400)
+
+		tag_id = tag_form.cleaned_data.get("id")
+		if not tag_id:
+			raise CBBAPIException("Missing id parameter", code=400)
+
+		try:
+			tag = Tag.objects.get(id=tag_id)
+		except Tag.DoesNotExist:
+			raise CBBAPIException("Tag does not exist", code=404)
+
+		return Response(TagSerializer(tag).data)
 
 
 class AuthorshipCRUDView(APIView):

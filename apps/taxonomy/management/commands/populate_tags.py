@@ -19,7 +19,7 @@ TAGS = [
 	("directiva_aves", Tag.DIRECTIVE),
 	("lespre", Tag.DIRECTIVE),
 	("CEEA", Tag.DIRECTIVE),
-	("directiva_habitat", Tag.DIRECTIVE)
+	("directiva_habitat", Tag.DIRECTIVE),
 ]
 
 

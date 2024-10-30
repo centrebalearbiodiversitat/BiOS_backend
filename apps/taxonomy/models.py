@@ -3,6 +3,8 @@ import re
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models.functions import Substr, Lower, Upper
+from django.db.models.signals import m2m_changed
+from django.dispatch import receiver
 
 from mptt.fields import TreeForeignKey
 from mptt.models import MPTTModel, TreeManager
@@ -264,3 +266,12 @@ class TaxonData(ReferencedModel):
 	class Meta:
 		verbose_name_plural = "Taxon data"
 		unique_together = ["taxonomy"]
+
+@receiver(m2m_changed, sender=TaxonData.tags.through)
+def validate_doe_tag(instance, action, **kwargs):
+
+	if action == 'post_add':
+		if instance.tags.filter(tag_type=Tag.DOE).count() > 1:
+			raise ValueError(
+				"You cannot add another DOE Tag. There is already one associated with it."
+			)

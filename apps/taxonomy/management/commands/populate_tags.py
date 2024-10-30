@@ -4,6 +4,9 @@ from django.db import transaction
 from apps.taxonomy.models import Tag
 
 TAGS = [
+	("unknown", Tag.DOE),
+	("doubt", Tag.DOE),
+	("absent", Tag.DOE),
 	("native", Tag.DOE),
 	("captive", Tag.DOE),
 	("cultivated", Tag.DOE),

@@ -127,7 +127,6 @@ class Command(BaseCommand):
 			for line in csv_file:
 				line = parse_line(line)
 				# print(line["sample_id"])
-				print(line)
 				source, _ = Source.objects.get_or_create(
 					name__iexact=line["occurrenceSource"],
 					data_type=Source.TAXON,

@@ -1,6 +1,8 @@
+import csv
 import json
 import traceback
 import re
+from django.core.management import CommandError
 from django.core.management.base import BaseCommand
 from django.db import transaction
 from apps.taxonomy.models import Habitat, Tag, TaxonData, TaxonomicLevel
@@ -9,7 +11,7 @@ from apps.taxonomy.management.commands.populate_tags import TAGS
 
 
 def check_taxon(line):
-	taxonomy = TaxonomicLevel.objects.find(taxon=line["taxonomy"])
+	taxonomy = TaxonomicLevel.objects.find(taxon=line["origin_taxon"])
 
 	if taxonomy.count() == 0:
 		raise Exception(f"Taxonomy not found.\n{line}")
@@ -30,7 +32,7 @@ def transform_iucn_status(line):
 				line[field] = line[field][-2:].upper()
 
 
-def create_taxon_data(line, taxonomy, batch):
+def create_taxon_data_from_json(line, taxonomy, batch):
 	habitat_ids = set(line["habitat"] or [])
 
 	valid_habitats = Habitat.objects.filter(sources__origin_id__in=habitat_ids)
@@ -48,23 +50,11 @@ def create_taxon_data(line, taxonomy, batch):
 			"iucn_mediterranean": TaxonData.TRANSLATE_CS[line["iucn_mediterranean"].lower()]
 			if line["iucn_mediterranean"]
 			else TaxonData.NE,
-			"freshwater": line["freshwater"],
-			"marine": line["marine"],
-			"terrestrial": line["terrestrial"],
 			"batch": batch,
 		},
 	)
 
 	taxon_data.habitat.set(valid_habitats)
-
-	existing_tags = Tag.objects.all()
-
-	for tag in existing_tags:
-		if line.get(tag.name) is True:
-			if tag.tag_type == Tag.DOE:
-				if taxon_data.tags.filter(tag_type=Tag.DOE, name__in=[t[0] for t in TAGS if t[1] == Tag.DOE]).exists():
-					raise Exception(f"Cannot add DOE tag '{tag.name}' to taxon_data {taxon_data.id} as another DOE tag already exists.")
-			taxon_data.tags.add(tag)
 
 	source, _ = Source.objects.get_or_create(
 		name__iexact=line["source"],
@@ -85,30 +75,65 @@ def create_taxon_data(line, taxonomy, batch):
 	taxon_data.save()
 
 
-def add_taxon_data(line, batch):
-	taxonomy = check_taxon(line)
-	create_taxon_data(line, taxonomy, batch)
+def update_taxon_data_from_csv(line, taxonomy, batch):
+	taxon_data, _ = TaxonData.objects.get_or_create(
+		taxonomy=taxonomy.first(),
+		defaults={"batch": batch},
+	)
+
+	doe_value = line.get('degreeOfEstablishment')  
+
+	try:
+		doe_tag = next(tag for tag in TAGS if tag[0] == doe_value and tag[1] == Tag.DOE)
+		taxon_data.tags.add(Tag.objects.get(name=doe_tag[0], tag_type=doe_tag[1]))
+	except StopIteration:
+		raise Exception(f"No Tag.DOE was found with the value '{doe_value}'")
 
 
+	taxon_data.freshwater = line["freshwater"].capitalize()
+	taxon_data.marine = line["marine"].capitalize()
+	taxon_data.terrestrial = line["terrestrial"].capitalize()
+
+	taxon_data.save()
+
+		
 class Command(BaseCommand):
 	def add_arguments(self, parser):
-		parser.add_argument("file", type=str)
+		parser.add_argument("file", type=str, help="Path to the data file")  
+		parser.add_argument("--format", choices=["json", "csv"], help="File format (json or csv)") 
 
 	@transaction.atomic
 	def handle(self, *args, **options):
 		file_name = options["file"]
+		file_format = options.get("format")
 		exception = False
 		batch = Batch.objects.create()
 
-		with open(file_name, "r") as file:
-			json_data = json.load(file)
+		if file_format == "json":
+			with open(file_name, "r") as json_file:
+				json_data = json.load(json_file)
 
-			for line in json_data:
-				try:
-					add_taxon_data(line, batch)
-				except:
-					exception = True
-					print(traceback.format_exc(), line)
+				for line in json_data:
+					try:
+						taxonomy = check_taxon(line)
+						create_taxon_data_from_json(line, taxonomy, batch)
+					except:
+						exception = True
+						print(traceback.format_exc(), line)
+		elif file_format == "csv":
+			with open(file_name, "r") as csv_file:
+				reader = csv.DictReader(csv_file)
+
+				for line in reader:
+					try:
+						taxonomy = check_taxon(line)
+						update_taxon_data_from_csv(line, taxonomy, batch)
+					except Exception as e:
+						exception = True
+						print(traceback.format_exc(), line)
+						error_message = str(e)
+		else:
+			raise CommandError("You must specify the file format using --format=json or --format=csv")
 
 		if exception:
-			raise Exception("Errors found: Rollback control")
+			raise Exception(f"Errors found: Rollback control\n{error_message}")

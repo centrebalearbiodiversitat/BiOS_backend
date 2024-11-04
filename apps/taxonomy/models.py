@@ -257,7 +257,7 @@ class TaxonData(ReferencedModel):
 	iucn_global = models.PositiveSmallIntegerField(choices=CS_CHOICES, default=NE)
 	iucn_europe = models.PositiveSmallIntegerField(choices=CS_CHOICES, default=NE)
 	iucn_mediterranean = models.PositiveSmallIntegerField(choices=CS_CHOICES, default=NE)
-	habitat = models.ManyToManyField(Habitat, blank=True)  # global scale
+	habitat = models.ManyToManyField(Habitat, blank=True)
 	tags = models.ManyToManyField(Tag, blank=True)
 	freshwater = models.BooleanField(default=None, null=True)
 	marine = models.BooleanField(default=None, null=True)

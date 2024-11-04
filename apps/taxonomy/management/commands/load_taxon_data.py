@@ -47,9 +47,7 @@ def create_taxon_data_from_json(line, taxonomy, batch):
 		defaults={
 			"iucn_global": TaxonData.TRANSLATE_CS[line["iucn_global"].lower()] if line["iucn_global"] else TaxonData.NE,
 			"iucn_europe": TaxonData.TRANSLATE_CS[line["iucn_europe"].lower()] if line["iucn_europe"] else TaxonData.NE,
-			"iucn_mediterranean": TaxonData.TRANSLATE_CS[line["iucn_mediterranean"].lower()]
-			if line["iucn_mediterranean"]
-			else TaxonData.NE,
+			"iucn_mediterranean": TaxonData.TRANSLATE_CS[line["iucn_mediterranean"].lower()] if line["iucn_mediterranean"] else TaxonData.NE,
 			"batch": batch,
 		},
 	)
@@ -100,12 +98,11 @@ def update_taxon_data_from_csv(line, taxonomy, batch):
 class Command(BaseCommand):
 	def add_arguments(self, parser):
 		parser.add_argument("file", type=str, help="Path to the data file")  
-		parser.add_argument("--format", choices=["json", "csv"], help="File format (json or csv)") 
 
 	@transaction.atomic
 	def handle(self, *args, **options):
 		file_name = options["file"]
-		file_format = options.get("format")
+		file_format = file_name
 		exception = False
 		batch = Batch.objects.create()
 

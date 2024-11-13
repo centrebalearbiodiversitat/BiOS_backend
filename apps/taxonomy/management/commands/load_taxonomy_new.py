@@ -5,7 +5,7 @@ import traceback
 from django.core.management.base import BaseCommand
 from django.db import transaction
 
-from apps.taxonomy.models import Authorship, TaxonomicLevel, TaxonData, Habitat
+from apps.taxonomy.models import Authorship, TaxonomicLevel, Directive
 from apps.versioning.models import Batch, Source, OriginSource
 from common.utils.utils import str_clean_up
 
@@ -87,6 +87,14 @@ def create_taxonomic_level(line, parent, batch, idx_name, rank):
 				"batch": batch,
 			},
 		)
+
+		try:
+			directive = Directive.objects.get(taxon_name=line["origin_taxon"])
+			directive.taxonomy = child
+			directive.save()
+		except Directive.DoesNotExist:
+			pass
+
 
 		os, new_source = OriginSource.objects.get_or_create(origin_id=line[TAXON_ID], source=source)
 		if new_source:

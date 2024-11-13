@@ -79,7 +79,7 @@ def update_taxon_data_from_csv(line, taxonomy, batch):
 		defaults={"batch": batch},
 	)
 
-	doe_value = line.get('degreeOfEstablishment')  
+	doe_value = line.get("degreeOfEstablishment")
 
 	try:
 		doe_tag = next(tag for tag in TAGS if tag[0] == doe_value and tag[1] == Tag.DOE)
@@ -87,17 +87,16 @@ def update_taxon_data_from_csv(line, taxonomy, batch):
 	except StopIteration:
 		raise Exception(f"No Tag.DOE was found with the value '{doe_value}'")
 
-
 	taxon_data.freshwater = line["freshwater"].capitalize()
 	taxon_data.marine = line["marine"].capitalize()
 	taxon_data.terrestrial = line["terrestrial"].capitalize()
 
 	taxon_data.save()
 
-		
+
 class Command(BaseCommand):
 	def add_arguments(self, parser):
-		parser.add_argument("file", type=str, help="Path to the data file")  
+		parser.add_argument("file", type=str, help="Path to the data file")
 
 	@transaction.atomic
 	def handle(self, *args, **options):

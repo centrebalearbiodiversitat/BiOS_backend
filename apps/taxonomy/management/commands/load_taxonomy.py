@@ -67,9 +67,7 @@ def create_taxonomic_level(line, parent, batch, idx_name, rank, idx_author, idx_
 			accepted = False
 			accepted_modifier = TaxonomicLevel.MISAPPLIED
 		else:
-			raise Exception(
-				f'{ORIGINAL_STATUS} must be either "accepted", "misapplied" or "synonym" but was "{line[ORIGINAL_STATUS]}"\n{line}'
-			)
+			raise Exception(f'{ORIGINAL_STATUS} must be either "accepted", "misapplied" or "synonym" but was "{line[ORIGINAL_STATUS]}"\n{line}')
 
 		if line[idx_name][0].isupper() and rank in [TaxonomicLevel.SPECIES, TaxonomicLevel.SUBSPECIES, TaxonomicLevel.VARIETY]:
 			raise Exception(f"Epithet cant be upper cased.\n{line}")
@@ -114,9 +112,7 @@ def create_taxonomic_level(line, parent, batch, idx_name, rank, idx_author, idx_
 			accepted_tl = accepted_candidates.first()
 
 			if not accepted_tl:
-				raise Exception(
-					f"{parent} {rank} Accepted taxonomic level not found for {line[COL_NAME_ACCEPTED]}. Accepted taxon must be inserted first.\n{line}"
-				)
+				raise Exception(f"{parent} {rank} Accepted taxonomic level not found for {line[COL_NAME_ACCEPTED]}. Accepted taxon must be inserted first.\n{line}")
 
 			accepted_tl.synonyms.add(child)
 			accepted_tl.save()
@@ -124,9 +120,7 @@ def create_taxonomic_level(line, parent, batch, idx_name, rank, idx_author, idx_
 		child = TaxonomicLevel.objects.filter(parent=parent, rank=rank, name__iexact=line[idx_name])
 
 		if child.count() == 0:
-			raise Exception(
-				f"Higher taxonomy must exist before loading a new taxon parent={parent} rank={TaxonomicLevel.TRANSLATE_RANK[rank]} name={line[idx_name]}\n{line}"
-			)
+			raise Exception(f"Higher taxonomy must exist before loading a new taxon parent={parent} rank={TaxonomicLevel.TRANSLATE_RANK[rank]} name={line[idx_name]}\n{line}")
 		elif child.count() > 1:
 			raise Exception(f"Found {child.count()} possible parent nodes {child} when loading a new taxon\n{line}")
 

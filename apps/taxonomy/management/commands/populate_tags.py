@@ -17,7 +17,7 @@ TAGS = [
 	("established", Tag.DOE),
 	("colonising", Tag.DOE),
 	("invasive", Tag.DOE),
-	("widespreadInvasive", Tag.DOE)
+	("widespreadInvasive", Tag.DOE),
 ]
 
 

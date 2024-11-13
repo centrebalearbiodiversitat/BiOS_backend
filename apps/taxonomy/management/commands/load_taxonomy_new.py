@@ -95,7 +95,6 @@ def create_taxonomic_level(line, parent, batch, idx_name, rank):
 		except Directive.DoesNotExist:
 			pass
 
-
 		os, new_source = OriginSource.objects.get_or_create(origin_id=line[TAXON_ID], source=source)
 		if new_source:
 			if child.sources.filter(source=os.source, origin_id=os.origin_id).exists():
@@ -122,9 +121,7 @@ def create_taxonomic_level(line, parent, batch, idx_name, rank):
 			accepted_tl = accepted_candidates.first()
 
 			if not accepted_tl:
-				raise Exception(
-					f"{parent} {rank} Accepted taxonomic level not found for {line[ACCEPTED_TAXON]}. Accepted taxon must be inserted first.\n{line}"
-				)
+				raise Exception(f"{parent} {rank} Accepted taxonomic level not found for {line[ACCEPTED_TAXON]}. Accepted taxon must be inserted first.\n{line}")
 
 			accepted_tl.synonyms.add(child)
 			accepted_tl.save()
@@ -132,9 +129,7 @@ def create_taxonomic_level(line, parent, batch, idx_name, rank):
 		child = TaxonomicLevel.objects.filter(parent=parent, rank=rank, name__iexact=line[idx_name])
 
 		if child.count() == 0:
-			raise Exception(
-				f"Higher taxonomy must exist before loading a new taxon parent={parent} rank={TaxonomicLevel.TRANSLATE_RANK[rank]} name={line[idx_name]}\n{line}"
-			)
+			raise Exception(f"Higher taxonomy must exist before loading a new taxon parent={parent} rank={TaxonomicLevel.TRANSLATE_RANK[rank]} name={line[idx_name]}\n{line}")
 		elif child.count() > 1:
 			raise Exception(f"Found {child.count()} possible parent nodes {child} when loading a new taxon\n{line}")
 

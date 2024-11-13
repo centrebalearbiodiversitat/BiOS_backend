@@ -105,7 +105,7 @@ class TaxonomicLevel(SynonymModel, MPTTModel, ReferencedModel):
 	authorship = models.ManyToManyField(Authorship, blank=True, symmetrical=False)
 	parent = TreeForeignKey("self", on_delete=models.CASCADE, null=True, default=None, blank=True)
 	images = models.ManyToManyField(OriginSource, blank=True, symmetrical=False, related_name="images_os")
-	
+
 	def clean(self):
 		if self.verbatim_authorship:
 			self.verbatim_authorship = str_clean_up(self.verbatim_authorship)
@@ -204,7 +204,7 @@ class Tag(models.Model):
 
 	def __str__(self):
 		return f"{self.name}"
-	
+
 
 class TaxonTag(ReferencedModel):
 	taxonomy = models.ForeignKey(TaxonomicLevel, on_delete=models.CASCADE, db_index=True)
@@ -214,14 +214,12 @@ class TaxonTag(ReferencedModel):
 		verbose_name_plural = "Taxon tags"
 		unique_together = ["taxonomy"]
 
+
 @receiver(m2m_changed, sender=TaxonTag.tags.through)
 def validate_doe_tag(instance, action, **kwargs):
-
-	if action == 'post_add':
+	if action == "post_add":
 		if instance.tags.filter(tag_type=Tag.DOE).count() > 1:
-			raise ValueError(
-				"You cannot add another DOE Tag. There is already one associated with it."
-			)
+			raise ValueError("You cannot add another DOE Tag. There is already one associated with it.")
 
 
 class Habitat(ReferencedModel):
@@ -229,7 +227,7 @@ class Habitat(ReferencedModel):
 
 	def __str__(self):
 		return self.name
-	
+
 
 class IUCNData(ReferencedModel):
 	NE = 0
@@ -293,6 +291,7 @@ class IUCNData(ReferencedModel):
 		verbose_name_plural = "IUCN data"
 		unique_together = ["taxonomy"]
 
+
 class Directive(ReferencedModel):
 	taxon_name = models.CharField(max_length=50, unique=True)
 	taxonomy = models.ForeignKey(TaxonomicLevel, on_delete=models.CASCADE, db_index=True, null=True)
@@ -304,6 +303,6 @@ class Directive(ReferencedModel):
 
 	def __str__(self):
 		return self.taxon_name
-	
+
 	class Meta:
 		unique_together = ["taxon_name"]

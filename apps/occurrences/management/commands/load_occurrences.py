@@ -182,9 +182,7 @@ class Command(BaseCommand):
 						collection_date_month=(int(line["month"]) if line["month"] else None),
 						collection_date_day=int(line["day"]) if line["day"] else None,
 						location=(Point(list(reversed(line.get("lat_lon", []))))),
-						coordinate_uncertainty_in_meters=(
-							int(line["coordinateUncertaintyInMeters"]) if line["coordinateUncertaintyInMeters"] else None
-						),
+						coordinate_uncertainty_in_meters=(int(line["coordinateUncertaintyInMeters"]) if line["coordinateUncertaintyInMeters"] else None),
 						elevation=int(line["elevation"]) if line["elevation"] else None,
 						depth=int(line["depth"]) if line["depth"] else None,
 					)

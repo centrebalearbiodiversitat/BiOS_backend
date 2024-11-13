@@ -71,16 +71,10 @@ class TaxonSearchView(APIView):
 				queryset = (
 					TaxonomicLevel.objects.annotate(prefix=Lower(Substr("unidecode_name", 1, min(3, len(query)))))
 					.filter(prefix=query[:3].lower())
-					.filter(
-						**filters, rank__in=[TaxonomicLevel.SPECIES, TaxonomicLevel.SUBSPECIES, TaxonomicLevel.VARIETY], parent__in=queryset
-					)
+					.filter(**filters, rank__in=[TaxonomicLevel.SPECIES, TaxonomicLevel.SUBSPECIES, TaxonomicLevel.VARIETY], parent__in=queryset)
 				)
 			else:
-				queryset = (
-					TaxonomicLevel.objects.annotate(prefix=Lower(Substr("unidecode_name", 1, min(3, len(query)))))
-					.filter(prefix=query[:3].lower())
-					.filter(**filters)
-				)
+				queryset = TaxonomicLevel.objects.annotate(prefix=Lower(Substr("unidecode_name", 1, min(3, len(query))))).filter(prefix=query[:3].lower()).filter(**filters)
 
 		if not exact and queryset.count() < limit:
 			for instance in queryset.filter(rank__in=[TaxonomicLevel.GENUS, TaxonomicLevel.SPECIES])[:limit]:
@@ -373,9 +367,7 @@ class TaxonomicLevelDescendantsCountView(APIView):
 			raise CBBAPIException("TaxonomicLevel not found", code=404)
 
 		result = {}
-		descendants = (
-			taxon.get_descendants(include_self=False).filter(accepted=True).values("rank").order_by("rank").annotate(count=Count("rank"))
-		)
+		descendants = taxon.get_descendants(include_self=False).filter(accepted=True).values("rank").order_by("rank").annotate(count=Count("rank"))
 		for descendant in descendants:
 			result[TaxonomicLevel.TRANSLATE_RANK[descendant["rank"]]] = descendant["count"]
 

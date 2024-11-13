@@ -25,9 +25,7 @@ def add_taxonomic_image(line, batch):
 
 		source = get_or_create_source("iNaturalist", "database", batch)
 		# source = get_or_create_source(line["source"], line["origin"], batch)
-		os, new_os = OriginSource.objects.get_or_create(
-			origin_id=line["image_id"], source=source, defaults={"attribution": line["attribution"]}
-		)
+		os, new_os = OriginSource.objects.get_or_create(origin_id=line["image_id"], source=source, defaults={"attribution": line["attribution"]})
 
 		if not taxon.images.filter(id=os.id):
 			taxon.images.clear()

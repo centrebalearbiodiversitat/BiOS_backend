@@ -421,12 +421,7 @@ class OccurrenceCountByTaxonDateBaseView:
 		except TaxonomicLevel.DoesNotExist:
 			raise CBBAPIException("Taxonomic level does not exist", 404)
 
-		occurrences = (
-			Occurrence.objects.filter(taxonomy__in=taxonomy, in_cbb_scope=True)
-			.values(date_key)
-			.annotate(count=Count("id"))
-			.order_by(date_key)
-		)
+		occurrences = Occurrence.objects.filter(taxonomy__in=taxonomy, in_cbb_scope=True).values(date_key).annotate(count=Count("id")).order_by(date_key)
 
 		return Response(OccurrenceCountByDateSerializer(occurrences, many=True, view_class=view_class).data)
 

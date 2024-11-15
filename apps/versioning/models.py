@@ -63,8 +63,10 @@ class Source(SynonymModel):
 	OCCURRENCE = 1
 	SEQUENCE = 2
 	IMAGE = 3
+	TAXON_DATA = 4
 	DATA_TYPE_CHOICES = (
 		(TAXON, "taxon"),
+		(TAXON_DATA, "taxon_data"),
 		(OCCURRENCE, "occurrence"),
 		(SEQUENCE, "sequence"),
 		(IMAGE, "image"),
@@ -74,10 +76,12 @@ class Source(SynonymModel):
 		OCCURRENCE: "occurrence",
 		SEQUENCE: "sequence",
 		IMAGE: "image",
+		TAXON_DATA: "taxon_data",
 		"taxon": TAXON,
 		"occurrence": OCCURRENCE,
 		"sequence": SEQUENCE,
 		"image": IMAGE,
+		"taxon_data": TAXON_DATA,
 	}
 
 	origin = models.PositiveSmallIntegerField(choices=ORIGIN_CHOICES)
@@ -91,7 +95,7 @@ class Source(SynonymModel):
 
 class OriginSource(models.Model):
 	origin_id = models.CharField(max_length=255, blank=False, null=False)
-	source = models.ForeignKey(Source, on_delete=models.CASCADE)
+	source = models.ForeignKey(Source, on_delete=models.CASCADE, db_index=True)
 	attribution = models.CharField(max_length=512, null=True, default=None, blank=True)
 
 	def save(self, force_insert=False, force_update=False, using=None, update_fields=None):
@@ -104,3 +108,6 @@ class OriginSource(models.Model):
 
 	class Meta:
 		unique_together = ("origin_id", "source")
+		indexes = [
+			models.Index(fields=["id", "source"]),
+		]

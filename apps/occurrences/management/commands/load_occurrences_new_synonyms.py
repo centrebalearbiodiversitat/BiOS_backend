@@ -194,11 +194,16 @@ class Command(BaseCommand):
 					},
 				)
 
+				parent_level = ''
 				for taxon_key, taxon_id_key, taxon_rank in TAXON_KEYS:
 					if line[taxon_key] and line[taxon_id_key]:
 						taxon = TaxonomicLevel.objects.find(taxon=line[taxon_key]).filter(rank=taxon_rank)
 
 						taxon_count = taxon.count()
+						if taxon_count > 1:
+							taxon = TaxonomicLevel.objects.find(taxon=f"{parent_level} {line[taxon_key]}").filter(rank=taxon_rank)
+							taxon_count = taxon.count()
+
 						if taxon_count > 1:
 							raise Exception(f"Found multiple taxa for {taxon_key}:{taxon_id_key}.\n{line}")
 						elif taxon_count == 0:
@@ -206,9 +211,16 @@ class Command(BaseCommand):
 
 						taxon = taxon.first()
 						create_origin_source(taxon, line[taxon_id_key], source)
+						parent_level = line[taxon_key]
 
 				taxonomy = TaxonomicLevel.objects.find(taxon=line["originalName"]).filter(rank=TaxonomicLevel.TRANSLATE_RANK[line["taxonRank"].lower()])
 				taxon_count = taxonomy.count()
+				if taxon_count > 1:
+					taxonomy = TaxonomicLevel.objects.find(taxon=f'{parent_level} {line["originalName"]}').filter(
+						rank=TaxonomicLevel.TRANSLATE_RANK[line["taxonRank"].lower()]
+					)
+					taxon_count = taxon.count()
+
 				if taxon_count == 0:
 					raise Exception(f"Taxonomy not found.\n{line}")
 				elif taxon_count > 1:

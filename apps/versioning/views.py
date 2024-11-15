@@ -1,3 +1,5 @@
+from django.db.models import OuterRef, Subquery, Count
+from django.db.models.functions import Coalesce
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.response import Response
@@ -6,7 +8,7 @@ from rest_framework.views import APIView
 from ..API.exceptions import CBBAPIException
 from .forms import OriginSourceForm, SourceForm
 from .models import OriginSource, Source
-from .serializers import OriginSourceSerializer, SourceSerializer
+from .serializers import OriginSourceSerializer, SourceSerializer, SourceCountSerializer
 
 
 class SourceSearchView(APIView):
@@ -103,15 +105,17 @@ class SourceFilter(APIView):
 			value = source_form.cleaned_data.get(param)
 			if value or isinstance(value, int):
 				filters[param] = value
-		if filters:
-			queryset = Source.objects.filter(**filters)
-		else:
-			queryset = Source.objects.none()
 
-		if not queryset.exists():
-			raise CBBAPIException("No taxonomic levels found for the given filters.", 404)
+		oq = OriginSource.objects.filter(source=OuterRef("id"))\
+								 .exclude(source__data_type=Source.OCCURRENCE, occurrence__in_cbb_scope=False)\
+								 .values('source')\
+								 .annotate(ent_count=Count('id'))\
+								 .values('ent_count')
 
-		return queryset
+		sources = Source.objects.filter(**filters)\
+								.annotate(count=Coalesce(Subquery(oq[:1]), 0))
+
+		return sources
 
 
 class SourceListView(SourceFilter):
@@ -145,7 +149,7 @@ class SourceListView(SourceFilter):
 		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
 	)
 	def get(self, request):
-		return Response(SourceSerializer(super().get(request), many=True).data)
+		return Response(SourceCountSerializer(super().get(request).order_by('-count'), many=True).data)
 
 
 class SourceCountView(SourceFilter):

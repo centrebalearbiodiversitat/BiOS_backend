@@ -1,5 +1,6 @@
 import csv
 import json
+import os.path
 import traceback
 import re
 from django.core.management import CommandError
@@ -11,7 +12,7 @@ from apps.taxonomy.management.commands.populate_tags import TAGS
 
 
 def check_taxon(line):
-	taxonomy = TaxonomicLevel.objects.find(taxon=line["origin_taxon"])
+	taxonomy = TaxonomicLevel.objects.find(taxon=line["taxonomy"]).filter(rank=TaxonomicLevel.TRANSLATE_RANK[line["taxonRank"].lower()])
 
 	if taxonomy.count() == 0:
 		raise Exception(f"Taxonomy not found.\n{line}")
@@ -55,18 +56,20 @@ def create_taxon_data_from_json(line, taxonomy, batch):
 	taxon_data.habitat.set(valid_habitats)
 
 	source, _ = Source.objects.get_or_create(
-		name__iexact=line["source"],
-		data_type=Source.TAXON,
+		name__iexact="IUCN",
+		data_type=Source.TAXON_DATA,
 		defaults={
-			"name": line["source"],
+			"name": "IUCN",
 			"accepted": True,
-			"origin": Source.TRANSLATE_CHOICES[line["origin"]],
-			"data_type": Source.TAXON,
+			"origin": Source.DATABASE,
+			"data_type": Source.TAXON_DATA,
 			"url": None,
 		},
 	)
 
-	os, new_source = OriginSource.objects.get_or_create(origin_id="unknown", source=source)
+	os, new_source = OriginSource.objects.get_or_create(
+		origin_id=line["taxonid"], source=source
+	)
 
 	taxon_data.sources.add(os)
 
@@ -101,25 +104,26 @@ class Command(BaseCommand):
 	@transaction.atomic
 	def handle(self, *args, **options):
 		file_name = options["file"]
-		file_format = file_name
+		_, file_format = os.path.splitext(file_name)
 		exception = False
+		file_format = file_format.lower()
 		batch = Batch.objects.create()
 
-		if file_format == "json":
+		if file_format == ".json":
 			with open(file_name, "r") as json_file:
 				json_data = json.load(json_file)
-
 				for line in json_data:
+					if not line["taxonid"]:
+						continue
 					try:
 						taxonomy = check_taxon(line)
 						create_taxon_data_from_json(line, taxonomy, batch)
 					except:
 						exception = True
 						print(traceback.format_exc(), line)
-		elif file_format == "csv":
+		elif file_format == ".csv":
 			with open(file_name, "r") as csv_file:
 				reader = csv.DictReader(csv_file)
-
 				for line in reader:
 					try:
 						taxonomy = check_taxon(line)
@@ -127,9 +131,8 @@ class Command(BaseCommand):
 					except Exception as e:
 						exception = True
 						print(traceback.format_exc(), line)
-						error_message = str(e)
 		else:
-			raise CommandError("You must specify the file format using --format=json or --format=csv")
+			raise CommandError(f"Unsupported file format {file_format}")
 
 		if exception:
-			raise Exception(f"Errors found: Rollback control\n{error_message}")
+			raise Exception(f"Errors found: Rollback control")

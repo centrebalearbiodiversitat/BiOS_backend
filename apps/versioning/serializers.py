@@ -1,3 +1,4 @@
+from rest_framework import serializers
 from rest_framework.fields import SerializerMethodField
 
 from apps.versioning.models import Source, Batch, OriginSource
@@ -24,6 +25,12 @@ class SourceSerializer(CaseModelSerializer):
 			"data_type",
 		]
 
+
+class SourceCountSerializer(SourceSerializer):
+	count = serializers.IntegerField()
+
+	class Meta(SourceSerializer.Meta):
+		fields = SourceSerializer.Meta.fields + ["count"]
 
 class OriginSourceSerializer(CaseModelSerializer):
 	source = SourceSerializer(read_only=True)

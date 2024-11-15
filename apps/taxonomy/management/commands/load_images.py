@@ -17,9 +17,9 @@ def add_taxonomic_image(line, batch):
 		taxon = TaxonomicLevel.objects.find(line["taxon"])
 		taxon_count = taxon.count()
 		if taxon_count == 0:
-			raise Exception("Taxon not found")
+			raise Exception(f"Taxon not found.\n{line}")
 		elif taxon_count > 1:
-			raise Exception("Multiple taxa found")
+			raise Exception(f"Multiple taxa found\n{line}")
 
 		taxon = taxon.first()
 
@@ -36,7 +36,7 @@ def add_taxonomic_image(line, batch):
 
 def get_or_create_source(source, origin, batch):
 	if not source:
-		raise Exception("All records must have a source")
+		raise Exception(f"All records must have a source\n{source} {origin} {batch}")
 
 	source, _ = Source.objects.get_or_create(
 		name__iexact=source,

@@ -67,9 +67,7 @@ def create_taxon_data_from_json(line, taxonomy, batch):
 		},
 	)
 
-	os, new_source = OriginSource.objects.get_or_create(
-		origin_id=line["taxonid"], source=source
-	)
+	os, new_source = OriginSource.objects.get_or_create(origin_id=line["taxonid"], source=source)
 
 	taxon_data.sources.add(os)
 

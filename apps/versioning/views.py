@@ -106,14 +106,15 @@ class SourceFilter(APIView):
 			if value or isinstance(value, int):
 				filters[param] = value
 
-		oq = OriginSource.objects.filter(source=OuterRef("id"))\
-								 .exclude(source__data_type=Source.OCCURRENCE, occurrence__in_cbb_scope=False)\
-								 .values('source')\
-								 .annotate(ent_count=Count('id'))\
-								 .values('ent_count')
+		oq = (
+			OriginSource.objects.filter(source=OuterRef("id"))
+			.exclude(source__data_type=Source.OCCURRENCE, occurrence__in_cbb_scope=False)
+			.values("source")
+			.annotate(ent_count=Count("id"))
+			.values("ent_count")
+		)
 
-		sources = Source.objects.filter(**filters)\
-								.annotate(count=Coalesce(Subquery(oq[:1]), 0))
+		sources = Source.objects.filter(**filters).annotate(count=Coalesce(Subquery(oq[:1]), 0))
 
 		return sources
 
@@ -149,7 +150,7 @@ class SourceListView(SourceFilter):
 		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
 	)
 	def get(self, request):
-		return Response(SourceCountSerializer(super().get(request).order_by('-count'), many=True).data)
+		return Response(SourceCountSerializer(super().get(request).order_by("-count"), many=True).data)
 
 
 class SourceCountView(SourceFilter):

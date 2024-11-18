@@ -102,11 +102,9 @@ class OriginSource(models.Model):
 		super().clean()
 		if self.origin_id:
 			if OriginSource.objects.filter(origin_id=self.origin_id, source=self.source).exists():
-				raise ValidationError('Origin id already exists for this source.')
+				raise ValidationError("Origin id already exists for this source.")
 		elif self.source.origin in {Source.DATABASE, Source.JOURNAL_ARTICLE, Source.WEB_PAGE}:
-			raise ValidationError(
-				f"Origin id is None and is not allowed with origin type '{Source.TRANSLATE_CHOICES[self.source.origin].upper()}'"
-			)
+			raise ValidationError(f"Origin id is None and is not allowed with origin type '{Source.TRANSLATE_CHOICES[self.source.origin].upper()}'")
 
 	def __str__(self):
 		return f"{self.source.name}:{self.origin_id}"

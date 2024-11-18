@@ -6,7 +6,7 @@ import re
 from django.core.management import CommandError
 from django.core.management.base import BaseCommand
 from django.db import transaction
-from apps.taxonomy.models import Habitat, Tag, TaxonData, TaxonomicLevel
+from apps.taxonomy.models import Habitat, Tag, TaxonomicLevel, IUCNData
 from apps.versioning.models import Batch, Source, OriginSource
 from apps.taxonomy.management.commands.populate_tags import TAGS
 
@@ -43,12 +43,12 @@ def create_taxon_data_from_json(line, taxonomy, batch):
 
 	transform_iucn_status(line)
 
-	taxon_data, _ = TaxonData.objects.get_or_create(
+	taxon_data, _ = IUCNData.objects.get_or_create(
 		taxonomy=taxonomy.first(),
 		defaults={
-			"iucn_global": TaxonData.TRANSLATE_CS[line["iucn_global"].lower()] if line["iucn_global"] else TaxonData.NE,
-			"iucn_europe": TaxonData.TRANSLATE_CS[line["iucn_europe"].lower()] if line["iucn_europe"] else TaxonData.NE,
-			"iucn_mediterranean": TaxonData.TRANSLATE_CS[line["iucn_mediterranean"].lower()] if line["iucn_mediterranean"] else TaxonData.NE,
+			"iucn_global": IUCNData.TRANSLATE_CS[line["iucn_global"].lower()] if line["iucn_global"] else IUCNData.NE,
+			"iucn_europe": IUCNData.TRANSLATE_CS[line["iucn_europe"].lower()] if line["iucn_europe"] else IUCNData.NE,
+			"iucn_mediterranean": IUCNData.TRANSLATE_CS[line["iucn_mediterranean"].lower()] if line["iucn_mediterranean"] else IUCNData.NE,
 			"batch": batch,
 		},
 	)
@@ -75,7 +75,7 @@ def create_taxon_data_from_json(line, taxonomy, batch):
 
 
 def update_taxon_data_from_csv(line, taxonomy, batch):
-	taxon_data, _ = TaxonData.objects.get_or_create(
+	taxon_data, _ = IUCNData.objects.get_or_create(
 		taxonomy=taxonomy.first(),
 		defaults={"batch": batch},
 	)

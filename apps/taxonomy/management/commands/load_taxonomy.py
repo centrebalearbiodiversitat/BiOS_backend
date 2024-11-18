@@ -5,7 +5,7 @@ import traceback
 from django.core.management.base import BaseCommand
 from django.db import transaction
 
-from apps.taxonomy.models import Authorship, TaxonomicLevel, TaxonData, Habitat
+from apps.taxonomy.models import Authorship, TaxonomicLevel
 from apps.versioning.models import Batch, Source, OriginSource
 from common.utils.utils import str_clean_up
 

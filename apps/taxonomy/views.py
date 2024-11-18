@@ -12,18 +12,18 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_tracking.mixins import LoggingMixin
 from apps.API.exceptions import CBBAPIException
-from apps.taxonomy.models import Authorship, TaxonData, TaxonomicLevel, Habitat, Tag
+from apps.taxonomy.models import Authorship, IUCNData, TaxonomicLevel, Habitat, Tag
 from apps.taxonomy.serializers import (
 	AuthorshipSerializer,
 	BaseTaxonomicLevelSerializer,
 	TaxonCompositionSerializer,
-	TaxonDataSerializer,
+	IUCNDataSerializer,
 	HabitatSerializer,
 	TagSerializer,
 )
 
 from ..versioning.serializers import OriginSourceSerializer
-from .forms import IdFieldForm, TaxonDataForm, TaxonomicLevelChildrenForm, TaxonomicLevelForm, TagForm
+from .forms import IdFieldForm, IUCNDataForm, TaxonomicLevelChildrenForm, TaxonomicLevelForm, TagForm
 from common.utils.utils import EchoWriter, PUNCTUATION_TRANSLATE, str_clean_up
 
 
@@ -579,7 +579,7 @@ class TaxonChecklistView(APIView):
 		)
 
 
-class TaxonDataCRUDView(APIView):
+class IUCNDataCRUDView(APIView):
 	@swagger_auto_schema(
 		tags=["Taxon Data"],
 		operation_description="Retrieve a specific taxonomic data instance by its taxonomic level id",
@@ -595,7 +595,7 @@ class TaxonDataCRUDView(APIView):
 		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
 	)
 	def get(self, request):
-		taxon_form = TaxonDataForm(self.request.GET)
+		taxon_form = IUCNDataForm(self.request.GET)
 
 		if not taxon_form.is_valid():
 			raise CBBAPIException(taxon_form.errors, code=400)
@@ -606,16 +606,16 @@ class TaxonDataCRUDView(APIView):
 			raise CBBAPIException("Missing taxonomy id parameter", code=400)
 
 		try:
-			taxon = TaxonData.objects.get(taxonomy=taxon_id)
-		except TaxonData.DoesNotExist:
+			taxon = IUCNData.objects.get(taxonomy=taxon_id)
+		except IUCNData.DoesNotExist:
 			raise CBBAPIException("Taxonomic data does not exist", code=404)
 
-		return Response(TaxonDataSerializer(taxon).data)
+		return Response(IUCNDataSerializer(taxon).data)
 
 
-class TaxonDataFilter:
+class IUCNDataFilter:
 	def get(self, request):
-		taxon_data_form = TaxonDataForm(data=request.GET)
+		taxon_data_form = IUCNDataForm(data=request.GET)
 
 		if not taxon_data_form.is_valid():
 			raise CBBAPIException(taxon_data_form.errors, code=400)
@@ -642,14 +642,14 @@ class TaxonDataFilter:
 						filters[param] = value
 
 		if filters:
-			query = TaxonData.objects.filter(**filters)
+			query = IUCNData.objects.filter(**filters)
 		else:
-			query = TaxonData.objects.none()
+			query = IUCNData.objects.none()
 
 		return query
 
 
-class TaxonDataListView(TaxonDataFilter, ListAPIView):
+class IUCNDataListView(IUCNDataFilter, ListAPIView):
 	@swagger_auto_schema(
 		tags=["Taxon Data"],
 		operation_description="Get a list of taxon data with filtering.",
@@ -660,21 +660,21 @@ class TaxonDataListView(TaxonDataFilter, ListAPIView):
 				openapi.IN_QUERY,
 				description="IUCN Global status",
 				type=openapi.TYPE_STRING,
-				enum=[str(c[0]) for c in TaxonData.CS_CHOICES],
+				enum=[str(c[0]) for c in IUCNData.CS_CHOICES],
 			),
 			openapi.Parameter(
 				"iucn_europe",
 				openapi.IN_QUERY,
 				description="IUCN Europe status",
 				type=openapi.TYPE_STRING,
-				enum=[str(c[0]) for c in TaxonData.CS_CHOICES],
+				enum=[str(c[0]) for c in IUCNData.CS_CHOICES],
 			),
 			openapi.Parameter(
 				"iucn_mediterranean",
 				openapi.IN_QUERY,
 				description="IUCN Mediterranean status",
 				type=openapi.TYPE_STRING,
-				enum=[str(c[0]) for c in TaxonData.CS_CHOICES],
+				enum=[str(c[0]) for c in IUCNData.CS_CHOICES],
 			),
 			openapi.Parameter("invasive", openapi.IN_QUERY, description="Is invasive?", type=openapi.TYPE_BOOLEAN),
 			openapi.Parameter("domesticated", openapi.IN_QUERY, description="Is domesticated?", type=openapi.TYPE_BOOLEAN),
@@ -685,10 +685,10 @@ class TaxonDataListView(TaxonDataFilter, ListAPIView):
 		responses={200: "Success", 400: "Bad Request"},
 	)
 	def get(self, request):
-		return Response(TaxonDataSerializer(super().get(request), many=True).data)
+		return Response(IUCNDataSerializer(super().get(request), many=True).data)
 
 
-class TaxonDataCountView(TaxonDataFilter, ListAPIView):
+class IUCNDataCountView(IUCNDataFilter, ListAPIView):
 	@swagger_auto_schema(
 		tags=["Taxon Data"],
 		operation_description="Get a list of taxon data with filtering.",
@@ -699,21 +699,21 @@ class TaxonDataCountView(TaxonDataFilter, ListAPIView):
 				openapi.IN_QUERY,
 				description="IUCN Global status",
 				type=openapi.TYPE_STRING,
-				enum=[str(c[0]) for c in TaxonData.CS_CHOICES],
+				enum=[str(c[0]) for c in IUCNData.CS_CHOICES],
 			),
 			openapi.Parameter(
 				"iucn_europe",
 				openapi.IN_QUERY,
 				description="IUCN Europe status",
 				type=openapi.TYPE_STRING,
-				enum=[str(c[0]) for c in TaxonData.CS_CHOICES],
+				enum=[str(c[0]) for c in IUCNData.CS_CHOICES],
 			),
 			openapi.Parameter(
 				"iucn_mediterranean",
 				openapi.IN_QUERY,
 				description="IUCN Mediterranean status",
 				type=openapi.TYPE_STRING,
-				enum=[str(c[0]) for c in TaxonData.CS_CHOICES],
+				enum=[str(c[0]) for c in IUCNData.CS_CHOICES],
 			),
 			openapi.Parameter("invasive", openapi.IN_QUERY, description="Is invasive?", type=openapi.TYPE_BOOLEAN),
 			openapi.Parameter("domesticated", openapi.IN_QUERY, description="Is domesticated?", type=openapi.TYPE_BOOLEAN),
@@ -727,7 +727,7 @@ class TaxonDataCountView(TaxonDataFilter, ListAPIView):
 		return Response(super().get(request).count())
 
 
-class TaxonDataHabitatsView(APIView):
+class HabitatsView(APIView):
 	@swagger_auto_schema(
 		tags=["Taxon Data"],
 		operation_description="Obtains the habitats in which a taxonomic level is found by its ID.",
@@ -743,7 +743,7 @@ class TaxonDataHabitatsView(APIView):
 		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
 	)
 	def get(self, request):
-		taxon_form = TaxonDataForm(data=request.GET)
+		taxon_form = IUCNDataForm(data=request.GET)
 
 		if not taxon_form.is_valid():
 			raise CBBAPIException(taxon_form.errors, 400)
@@ -760,13 +760,10 @@ class TaxonDataHabitatsView(APIView):
 
 		descendants = taxon_parent.get_descendants(include_self=True)
 
-		taxon_datas = TaxonData.objects.filter(taxonomy__in=descendants)
-		habitats = Habitat.objects.filter(taxondata__in=taxon_datas).distinct().order_by("name")
+		iucn_data = IUCNData.objects.filter(taxonomy__in=descendants)
+		habitats = Habitat.objects.filter(iucn_data__in=iucn_data).distinct().order_by("name")
 
-		serializer = HabitatSerializer(habitats, many=True)
-		# for i in serializer.data:
-		# 	del i["sources"]
-		return Response(serializer.data)
+		return Response(HabitatSerializer(habitats, many=True).data)
 
 
 class TagCRUDView(APIView):

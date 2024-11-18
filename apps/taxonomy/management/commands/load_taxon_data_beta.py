@@ -1,5 +1,6 @@
 import csv
 import json
+import os
 import traceback
 import re
 from django.core.management import CommandError
@@ -48,7 +49,7 @@ def load_taxon_data_from_json(line, taxonomy, batch):
 			"iucn_global": IUCNData.TRANSLATE_CS[line["iucn_global"].lower()] if line["iucn_global"] else IUCNData.NE,
 			"iucn_europe": IUCNData.TRANSLATE_CS[line["iucn_europe"].lower()] if line["iucn_europe"] else IUCNData.NE,
 			"iucn_mediterranean": IUCNData.TRANSLATE_CS[line["iucn_mediterranean"].lower()] if line["iucn_mediterranean"] else IUCNData.NE,
-			"habit" "batch": batch,
+			"batch": batch,
 		},
 	)
 
@@ -74,18 +75,14 @@ def load_taxon_data_from_csv(line, taxonomy, batch):
 		)
 
 		doe_value = line.get("degreeOfEstablishment")
-
 		try:
-			doe_tag = next(tag for tag in TAGS if tag[0] == doe_value and tag[1] == Tag.DOE)
-			taxon_tag.tags.add(Tag.objects.get(name=doe_tag[0], tag_type=doe_tag[1]))
-		except StopIteration:
+			doe_tag = Tag.objects.get(name=doe_value, tag_type=Tag.DOE)
+			taxon_tag.tags.add(doe_tag)
+		except Tag.DoesNotExist:
 			raise Exception(f"No Tag.DOE was found with the value '{doe_value}'")
 
-		system, created = System.objects.get_or_create(
+		system, _ = System.objects.get_or_create(
 			taxonomy=taxonomy.first(),
-			sources__source__name__iexact=line["source_1"],
-			sources__source__origin=Source.TRANSLATE_CHOICES[line["origin_1"]],
-			sources__source__data_type=Source.TAXON,
 			defaults={
 				"freshwater": BOOL_DICT.get(line["freshwater"].lower(), None),
 				"marine": BOOL_DICT.get(line["marine"].lower(), None),
@@ -94,41 +91,39 @@ def load_taxon_data_from_csv(line, taxonomy, batch):
 			},
 		)
 
-		if created:
+		source, _ = Source.objects.get_or_create(
+			name__iexact=line["source_1"],
+			data_type=Source.TAXON,
+			defaults={
+				"name": line["source_1"],
+				"accepted": True,
+				"origin": Source.TRANSLATE_CHOICES[line["origin_1"]],
+				"data_type": Source.TAXON,
+				"url": None,
+			},
+		)
+		os, new_source = OriginSource.objects.get_or_create(origin_id="unknown", source=source)
+		system.sources.add(os)
+
+		if system.freshwater is None and system.marine is None and system.terrestrial is None:
+			system.freshwater = BOOL_DICT.get(line["freshwater"].lower(), None)
+			system.marine = BOOL_DICT.get(line["marine"].lower(), None)
+			system.terrestrial = BOOL_DICT.get(line["terrestrial"].lower(), None)
 			source, _ = Source.objects.get_or_create(
-				name__iexact=line["source_1"],
+				name__iexact=line["source_2"],
 				data_type=Source.TAXON,
 				defaults={
-					"name": line["source_1"],
+					"name": line["source_2"],
 					"accepted": True,
-					"origin": Source.TRANSLATE_CHOICES[line["origin_1"]],
+					"origin": Source.TRANSLATE_CHOICES[line["origin_2"]],
 					"data_type": Source.TAXON,
 					"url": None,
 				},
 			)
+			system.sources.clear()
 			os, new_source = OriginSource.objects.get_or_create(origin_id="unknown", source=source)
 			system.sources.add(os)
-
-		else:
-			if system.freshwater is None and system.marine is None and system.terrestrial is None:
-				system.freshwater = BOOL_DICT.get(line["freshwater"].lower(), None)
-				system.marine = BOOL_DICT.get(line["marine"].lower(), None)
-				system.terrestrial = BOOL_DICT.get(line["terrestrial"].lower(), None)
-				source, _ = Source.objects.get_or_create(
-					name__iexact=line["source_2"],
-					data_type=Source.TAXON,
-					defaults={
-						"name": line["source_2"],
-						"accepted": True,
-						"origin": Source.TRANSLATE_CHOICES[line["origin_2"]],
-						"data_type": Source.TAXON,
-						"url": None,
-					},
-				)
-				system.sources.clear()
-				os, new_source = OriginSource.objects.get_or_create(origin_id="unknown", source=source)
-				system.sources.add(os)
-				system.save()
+			system.save()
 
 
 class Command(BaseCommand):
@@ -139,8 +134,9 @@ class Command(BaseCommand):
 	@transaction.atomic
 	def handle(self, *args, **options):
 		file_name = options["file"]
-		file_format = options.get("format")
+		_, file_format = os.path.splitext(file_name)
 		exception = False
+		file_format = file_format.lower()
 		batch = Batch.objects.create()
 
 		if file_format == "json":

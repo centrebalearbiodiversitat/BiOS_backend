@@ -2,7 +2,7 @@ from django import forms
 
 from common.utils.forms import CamelCaseForm, IdFieldForm, TranslateForm
 
-from .models import TaxonData, TaxonomicLevel
+from .models import IUCNData, TaxonomicLevel
 
 
 class TaxonomicLevelForm(IdFieldForm, TranslateForm):
@@ -24,7 +24,7 @@ class TaxonomicLevelChildrenForm(IdFieldForm, CamelCaseForm):
 	accepted_only = forms.NullBooleanField(required=False)
 
 
-class TaxonDataForm(IdFieldForm, TranslateForm):
+class IUCNDataForm(IdFieldForm, TranslateForm):
 	taxonomy = forms.IntegerField(required=False)
 	iucn_global = forms.CharField(max_length=100, required=False)
 	iucn_europe = forms.CharField(max_length=100, required=False)
@@ -36,9 +36,9 @@ class TaxonDataForm(IdFieldForm, TranslateForm):
 	terrestrial = forms.NullBooleanField(required=False)
 
 	CHOICES_FIELD = {
-		"iucn_global": TaxonData.TRANSLATE_CS,
-		"iucn_europe": TaxonData.TRANSLATE_CS,
-		"iucn_mediterranean": TaxonData.TRANSLATE_CS,
+		"iucn_global": IUCNData.TRANSLATE_CS,
+		"iucn_europe": IUCNData.TRANSLATE_CS,
+		"iucn_mediterranean": IUCNData.TRANSLATE_CS,
 	}
 
 	def __init__(self, *args, **kwargs):

@@ -94,20 +94,24 @@ class Source(SynonymModel):
 
 
 class OriginSource(models.Model):
-	origin_id = models.CharField(max_length=255, blank=False, null=False)
+	origin_id = models.CharField(max_length=255, blank=True, null=True)
 	source = models.ForeignKey(Source, on_delete=models.CASCADE, db_index=True)
 	attribution = models.CharField(max_length=512, null=True, default=None, blank=True)
 
-	def save(self, force_insert=False, force_update=False, using=None, update_fields=None):
-		super().save(force_insert, force_update, using, update_fields)
-		if not self.origin_id:
-			raise ValidationError('Blank "origin_id" field is not allowed.')
+	def clean(self):
+		super().clean()
+		if self.origin_id:
+			if OriginSource.objects.filter(origin_id=self.origin_id, source=self.source).exists():
+				raise ValidationError('Origin id already exists for this source.')
+		elif self.source.origin in {Source.DATABASE, Source.JOURNAL_ARTICLE, Source.WEB_PAGE}:
+			raise ValidationError(
+				f"Origin id is None and is not allowed with origin type '{Source.TRANSLATE_CHOICES[self.source.origin].upper()}'"
+			)
 
 	def __str__(self):
 		return f"{self.source.name}:{self.origin_id}"
 
 	class Meta:
-		unique_together = ("origin_id", "source")
 		indexes = [
-			models.Index(fields=["id", "source"]),
+			models.Index(fields=["origin_id", "source"]),
 		]

@@ -223,7 +223,7 @@ def validate_doe_tag(instance, action, **kwargs):
 
 
 class Habitat(ReferencedModel):
-	name = models.CharField(max_length=50, unique=True)
+	name = models.CharField(max_length=50, blank=False, unique=True)
 
 	def __str__(self):
 		return self.name
@@ -295,11 +295,11 @@ class IUCNData(ReferencedModel):
 class Directive(ReferencedModel):
 	taxon_name = models.CharField(max_length=50, unique=True)
 	taxonomy = models.ForeignKey(TaxonomicLevel, on_delete=models.CASCADE, db_index=True, null=True)
-	cites = models.BooleanField(default=False)
-	ceea = models.BooleanField(default=False)
-	lespre = models.BooleanField(default=False)
-	directiva_aves = models.BooleanField(default=False)
-	directiva_habitats = models.BooleanField(default=False)
+	cites = models.BooleanField(default=None, null=True)
+	ceea = models.BooleanField(default=None, null=True)
+	lespre = models.BooleanField(default=None, null=True)
+	directiva_aves = models.BooleanField(default=None, null=True)
+	directiva_habitats = models.BooleanField(default=None, null=True)
 
 	def __str__(self):
 		return self.taxon_name

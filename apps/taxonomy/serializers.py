@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from apps.taxonomy.models import Authorship, TaxonData, TaxonomicLevel, Habitat, Tag
+from apps.taxonomy.models import Authorship, IUCNData, TaxonomicLevel, Habitat, Tag
 from apps.versioning.serializers import OriginSourceSerializer
 from common.utils.serializers import CaseModelSerializer
 
@@ -87,7 +87,7 @@ class TagSerializer(serializers.ModelSerializer):
 		fields = ["name", "tag_type"]
 
 
-class BaseTaxonDataSerializer(CaseModelSerializer):
+class BaseIUCNDataSerializer(CaseModelSerializer):
 	iucn_global = serializers.SerializerMethodField()
 	iucn_europe = serializers.SerializerMethodField()
 	iucn_mediterranean = serializers.SerializerMethodField()
@@ -104,11 +104,11 @@ class BaseTaxonDataSerializer(CaseModelSerializer):
 		return obj.get_iucn_mediterranean_display()
 
 	class Meta:
-		model = TaxonData
+		model = IUCNData
 		# exclude = ["taxonomy"]
 
 
-class TaxonDataSerializer(BaseTaxonDataSerializer):
+class IUCNDataSerializer(BaseIUCNDataSerializer):
 	class Meta:
-		model = TaxonData
+		model = IUCNData
 		exclude = ["taxonomy"]

@@ -6,11 +6,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from apps.API.exceptions import CBBAPIException
 from apps.tags.models import IUCNData, TaxonomicLevel, Habitat, TaxonTag, System
-from apps.tags.serializers import (
-	HabitatSerializer,
-	IUCNDataSerializer,
-	TaxonTagSerializer
-)
+from apps.tags.serializers import HabitatSerializer, IUCNDataSerializer, TaxonTagSerializer
 
 from .forms import IUCNDataForm, TaxonTagForm
 
@@ -194,7 +190,7 @@ class TaxonTagCRUDView(APIView):
 # 	)
 # 	def get(self, request):
 # 		return Response(super().get(request).count())
-	
+
 
 # class TaxonTagInvasiveView(APIView):
 
@@ -251,6 +247,7 @@ class IUCNDataCRUDView(APIView):
 			raise CBBAPIException("Conservation  does not exist", code=404)
 
 		return Response(IUCNDataSerializer(taxon).data)
+
 
 # class IUCNDataFilter:
 # 	def get(self, request):
@@ -404,7 +401,7 @@ class HabitatsCRUDView(APIView):
 		habitats = Habitat.objects.filter(iucndata__in=iucn_data).distinct()
 
 		return Response(HabitatSerializer(habitats, many=True).data)
-	
+
 
 class SystemCRUDView(APIView):
 	@swagger_auto_schema(
@@ -444,7 +441,7 @@ class SystemCRUDView(APIView):
 
 		print(system)
 
-		return Response(SystemSerializer(system, many=True).data)	
+		return Response(SystemSerializer(system, many=True).data)
 
 
 # class SystemDetailView(APIView):

@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from apps.taxonomy.models import Authorship, IUCNData, TaxonomicLevel, Habitat, Tag
+from apps.taxonomy.models import Authorship, TaxonomicLevel
 from apps.versioning.serializers import OriginSourceSerializer
 from common.utils.serializers import CaseModelSerializer
 
@@ -66,49 +66,3 @@ class AuthorshipSerializer(serializers.ModelSerializer):
 	class Meta:
 		model = Authorship
 		fields = ["id", "name", "accepted"]
-
-
-class HabitatSerializer(serializers.ModelSerializer):
-	sources = OriginSourceSerializer(many=True)
-
-	class Meta:
-		model = Habitat
-		fields = ["sources", "name"]
-
-
-class TagSerializer(serializers.ModelSerializer):
-	tag_type = serializers.SerializerMethodField()
-
-	def get_tag_type(self, obj):
-		return Tag.TRANSLATE_TYPE[obj.tag_type]
-
-	class Meta:
-		model = Tag
-		fields = ["name", "tag_type"]
-
-
-class BaseIUCNDataSerializer(CaseModelSerializer):
-	iucn_global = serializers.SerializerMethodField()
-	iucn_europe = serializers.SerializerMethodField()
-	iucn_mediterranean = serializers.SerializerMethodField()
-	habitat = HabitatSerializer(many=True)
-	tags = TagSerializer(many=True)
-
-	def get_iucn_global(self, obj):
-		return obj.get_iucn_global_display()
-
-	def get_iucn_europe(self, obj):
-		return obj.get_iucn_europe_display()
-
-	def get_iucn_mediterranean(self, obj):
-		return obj.get_iucn_mediterranean_display()
-
-	class Meta:
-		model = IUCNData
-		# exclude = ["taxonomy"]
-
-
-class IUCNDataSerializer(BaseIUCNDataSerializer):
-	class Meta:
-		model = IUCNData
-		exclude = ["taxonomy"]

@@ -45,12 +45,13 @@ INSTALLED_APPS = [
 	"corsheaders",
 	"mptt",
 	# 'rest_framework_api_key',
+	"apps.API",
+	"apps.geography",
 	"apps.genetics",
 	"apps.occurrences",
+	"apps.tags",
 	"apps.taxonomy",
 	"apps.versioning",
-	"apps.geography",
-	"apps.API",
 ]
 
 REST_FRAMEWORK = {

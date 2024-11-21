@@ -13,11 +13,6 @@ from apps.taxonomy.views import (
 	TaxonSynonymView,
 	TaxonSourceView,
 	TaxonChecklistView,
-	IUCNDataCRUDView,
-	IUCNDataListView,
-	IUCNDataCountView,
-	HabitatsView,
-	TagCRUDView,
 	AuthorshipCRUDView,
 )
 
@@ -35,10 +30,5 @@ urlpatterns = [
 	path("/taxon/synonyms", TaxonSynonymView.as_view(), name="taxon_synonyms"),
 	path("/taxon/sources", TaxonSourceView.as_view(), name="taxon_sources"),
 	path("/taxon/checklist", TaxonChecklistView.as_view(), name="taxon_checklist"),
-	path("/taxon/data", IUCNDataCRUDView.as_view(), name="data_crud"),
-	path("/taxon/data/list", IUCNDataListView.as_view(), name="data_list"),
-	path("/taxon/data/list/count", IUCNDataCountView.as_view(), name="data_count"),
-	path("/taxon/data/habitats", HabitatsView.as_view(), name="data_habitats"),
-	path("/taxon/tag", TagCRUDView.as_view(), name="tag_crud"),
 	path("/authorship", AuthorshipCRUDView.as_view(), name="authorship_crud"),
 ]

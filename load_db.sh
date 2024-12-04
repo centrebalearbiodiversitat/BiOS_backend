@@ -8,6 +8,9 @@ python manage.py load_gadm data/GIS/IDEIB_municipalities/*uncertainess*/*.shp
 echo "Loading Populations..."
 python manage.py load_gadm data/GIS/CNIG_poblaciones/*uncertainess*/*.shp
 
+#Populate
+echo "Populating sources..."
+python manage.py populate_sources data/sources.csv
 echo "Populating tags..."
 python manage.py populate_tags
 echo "Populating habitats..."
@@ -26,7 +29,7 @@ do
 
   # IUCN
   echo "$folder/iucn.json"
-  python manage.py load_taxon_data "$folder/iucn.json"
+  python manage.py load_taxon_data_beta "$folder/iucn.json"
 
   # Occurrences
   for file in "$folder/occurrences/"*.json

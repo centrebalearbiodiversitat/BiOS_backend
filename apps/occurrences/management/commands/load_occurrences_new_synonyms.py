@@ -9,7 +9,16 @@ from django.contrib.gis.geos import Point, GEOSGeometry
 from apps.genetics.models import Sequence, Marker, Product
 from apps.occurrences.models import Occurrence
 from apps.taxonomy.models import TaxonomicLevel
-from apps.versioning.models import Batch, Source, OriginSource
+from apps.versioning.models import Batch, OriginId
+from common.utils.utils import get_or_create_module
+
+API = "api"
+EXTERNAL_ID = "sample_id"
+INTERNAL_NAME = "occurrenceSource"
+OCCURRENCE = "occurrence"
+SEQUENCE = "sequence"
+SOURCE_TYPE = "occurrenceOrigin"
+TAXON = "taxon"
 
 TAXON_KEYS = [
 	("kingdom", "kingdomKey", TaxonomicLevel.KINGDOM),
@@ -81,26 +90,24 @@ def parse_line(line: dict):
 
 
 def genetic_sources(line: dict, batch, occ):
-	source, _ = Source.objects.get_or_create(
-		name__icontains=line["occurrenceSource"],
-		data_type=Source.SEQUENCE,
-		defaults={
-			"name": line["occurrenceSource"],
-			"accepted": True,
-			"origin": Source.TRANSLATE_CHOICES[line["occurrenceOrigin"]],
-			"url": None,
-		},
-	)
 
-	os, new = OriginSource.objects.get_or_create(
-		origin_id=line["sample_id"],
-		source=source,
+	module = get_or_create_module(
+			source_type=line[SOURCE_TYPE],
+			extraction_method=API,
+			data_type=SEQUENCE,
+			batch=batch,
+			internal_name=line[INTERNAL_NAME],
+		)
+
+	os, new = OriginId.objects.get_or_create(
+		external_id=line[EXTERNAL_ID],
+		module=module,
 		defaults={
 			"attribution": line["attribution"],
 		},
 	)
 	if not new and not Sequence.objects.filter(sources=os, occurrence=occ).exists():
-		raise Exception(f"OriginSource already exists\n{line}")
+		raise Exception(f"OriginId already exists\n{line}")
 
 	seq = Sequence.objects.filter(sources=os, occurrence=occ)
 	if seq.exists():
@@ -116,6 +123,7 @@ def genetic_sources(line: dict, batch, occ):
 			published_date=parse_datetime(line["date"]) if line["date"] else None,
 		)
 		seq.sources.add(os)
+
 
 	for production in line["genetic_features"]:
 		if production["gene"]:
@@ -149,8 +157,8 @@ def genetic_sources(line: dict, batch, occ):
 	seq.save()
 
 
-def create_origin_source(ref_model_elem, origin_id, source):
-	os, new = OriginSource.objects.get_or_create(origin_id=origin_id, source=source)
+def create_origin_id(ref_model_elem, external_id, module):
+	os, new = OriginId.objects.get_or_create(external_id=external_id, module=module)
 	if new:
 		ref_model_elem.sources.add(os)
 		ref_model_elem.save()
@@ -179,19 +187,16 @@ class Command(BaseCommand):
 			for line in data:
 				line = parse_line(line)
 
-				if OriginSource.objects.filter(origin_id=line["sample_id"], source__name__icontains="NCBI").exists():
-					# print(f"OriginSource already exists in NCBI\n{line['sample_id']}")
+				if OriginId.objects.filter(external_id=line[EXTERNAL_ID], module__source__name__icontains="NCBI").exists():
+					# print(f"OriginId already exists in NCBI\n{line['sample_id']}")
 					continue
 
-				source, _ = Source.objects.get_or_create(
-					name__iexact=line["occurrenceSource"],
-					data_type=Source.TAXON,
-					defaults={
-						"name": line["occurrenceSource"],
-						"accepted": True,
-						"origin": Source.TRANSLATE_CHOICES[line["occurrenceOrigin"]],
-						"url": None,
-					},
+				module = get_or_create_module(
+					source_type=line[SOURCE_TYPE],
+					extraction_method=API,
+					data_type=TAXON,
+					batch=batch,
+					internal_name=line[INTERNAL_NAME],
 				)
 
 				parent_level = ""
@@ -210,7 +215,7 @@ class Command(BaseCommand):
 							continue
 
 						taxon = taxon.first()
-						create_origin_source(taxon, line[taxon_id_key], source)
+						create_origin_id(taxon, line[taxon_id_key], module)
 						parent_level = line[taxon_key]
 
 				taxonomy = TaxonomicLevel.objects.find(taxon=line["originalName"]).filter(rank=TaxonomicLevel.TRANSLATE_RANK[line["taxonRank"].lower()])
@@ -230,20 +235,17 @@ class Command(BaseCommand):
 				else:
 					del line["lat_lon"]
 
-				source, _ = Source.objects.get_or_create(
-					name__iexact=line["occurrenceSource"],
-					data_type=Source.OCCURRENCE,
-					defaults={
-						"name": line["occurrenceSource"],
-						"accepted": True,
-						"origin": Source.TRANSLATE_CHOICES[line["occurrenceOrigin"]],
-						"url": None,
-					},
+				module = get_or_create_module(
+					source_type=line[SOURCE_TYPE],
+					extraction_method=API,
+					data_type=OCCURRENCE,
+					batch=batch,
+					internal_name=line[INTERNAL_NAME],
 				)
 
-				os, new = OriginSource.objects.get_or_create(
-					origin_id=line["sample_id"],
-					source=source,
+				os, new = OriginId.objects.get_or_create(
+					external_id=line[EXTERNAL_ID],
+					module=module,
 					defaults={
 						"attribution": line["attribution"],
 					},

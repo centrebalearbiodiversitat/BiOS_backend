@@ -5,15 +5,21 @@ from django.core.management.base import BaseCommand
 from django.db import transaction
 
 from apps.taxonomy.models import TaxonomicLevel
-from apps.versioning.models import OriginSource, Source, Batch
+from apps.versioning.models import OriginId, Batch
+from common.utils.utils import get_or_create_module
 
+API = "api"
+DATABASE = "database"
+EXTERNAL_ID = "image_id"
+INATURALIST = "INaturalist"
+IMAGE = "image"
 
 def add_taxonomic_image(line, batch):
 	if not line["taxon"]:
 		print(f"Taxon does not exist\n{line}")
 		return
 
-	if line["image_id"]:
+	if line[EXTERNAL_ID]:
 		taxon = TaxonomicLevel.objects.find(line["taxon"])
 		taxon_count = taxon.count()
 		if taxon_count == 0:
@@ -23,35 +29,21 @@ def add_taxonomic_image(line, batch):
 
 		taxon = taxon.first()
 
-		source = get_or_create_source("iNaturalist", "database", batch)
-		# source = get_or_create_source(line["source"], line["origin"], batch)
-		os, new_os = OriginSource.objects.get_or_create(origin_id=line["image_id"], source=source, defaults={"attribution": line["attribution"]})
+		module = get_or_create_module(
+			source_type=DATABASE,
+			extraction_method=API,
+			data_type=IMAGE,
+			batch=batch,
+			internal_name=INATURALIST	
+		)
+
+		os, new_os = OriginId.objects.get_or_create(external_id=line[EXTERNAL_ID], module=module, defaults={"attribution": line["attribution"]})
 
 		if not taxon.images.filter(id=os.id):
 			taxon.images.clear()
 			taxon.images.add(os)
 
 		taxon.save()
-
-
-def get_or_create_source(source, origin, batch):
-	if not source:
-		raise Exception(f"All records must have a source\n{source} {origin} {batch}")
-
-	source, _ = Source.objects.get_or_create(
-		name__iexact=source,
-		data_type=Source.IMAGE,  # Filter out 2 sources with the same name and data_type
-		defaults={
-			"name": source,
-			"accepted": True,
-			"origin": Source.TRANSLATE_CHOICES[origin],
-			"data_type": Source.IMAGE,  # data_type equal to 3 (IMAGE)
-			"url": "https://inaturalist-open-data.s3.amazonaws.com/photos/{id}",
-			"batch": batch,
-		},
-	)
-
-	return source
 
 
 class Command(BaseCommand):
@@ -78,3 +70,5 @@ class Command(BaseCommand):
 
 			if exception:
 				raise Exception("Errors found: Rollback control")
+			else:
+				self.stdout.write(self.style.SUCCESS(f"Successfully added images"))

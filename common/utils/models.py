@@ -18,7 +18,7 @@ class LatLonModel(models.Model):
 
 class ReferencedModel(models.Model):
 	batch = models.ForeignKey("versioning.Batch", on_delete=models.CASCADE)
-	sources = models.ManyToManyField("versioning.OriginSource")
+	sources = models.ManyToManyField("versioning.OriginId")
 
 	@staticmethod
 	def clean_sources(**kwargs):
@@ -26,7 +26,7 @@ class ReferencedModel(models.Model):
 			obj = kwargs["instance"]
 
 			if hasattr(obj, "sources"):
-				sources = [(s.source.name, s.origin_id) for s in obj.sources.all()]
+				sources = [(s.module.source.name, s.external_id) for s in obj.sources.all()]
 
 				if len(sources) != len(set(sources)):
 					raise ValidationError(f"Sources must be unique.\n{obj}\n{sources}")

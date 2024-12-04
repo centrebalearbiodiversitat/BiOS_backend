@@ -1,8 +1,6 @@
 from django.core.exceptions import ValidationError
 from django.db import models
-
-from common.utils.models import SynonymModel
-
+import sys
 
 class Batch(models.Model):
 	PENDING = 0
@@ -21,40 +19,71 @@ class Batch(models.Model):
 		return f"{self.created_at.year}-{self.created_at.month}-{self.created_at.day}__{self.id}"
 
 	class Meta:
+		app_label = "versioning"
 		verbose_name_plural = "batches"
 
 
-class Source(SynonymModel):
+class Source(models.Model):
+	internal_name = models.CharField(max_length=255, unique=True)
+	name = models.CharField(max_length=255, blank=False)
+	acronym = models.CharField(max_length=50, null=True, blank=True)
+	url = models.URLField(null=True, blank=True)
+	description = models.TextField(null=True, blank=True)
+	authors = models.ManyToManyField("taxonomy.Authorship", blank=True)
+	citation = models.TextField(null=True, blank=True)
+	contact = models.CharField(max_length=255, null=True, blank=True)
+	batch = models.ForeignKey(Batch, on_delete=models.CASCADE, null=True, blank=True, default=None)
+
+
+	def __str__(self):
+		return f"Information for {self.name}"
+
+
+class Module(models.Model):
 	DATABASE = 0
 	JOURNAL_ARTICLE = 1
 	BOOK = 2
-	AI = 3
-	WEB_PAGE = 4
-	DOCUMENT = 5
-	EXPERT = 6
+	WEB_PAGE = 3
+	DOCUMENT = 4
+	EXPERT = 5
 
-	ORIGIN_CHOICES = (
+	SOURCE_TYPE_CHOICES = (
 		(DATABASE, "database"),
 		(JOURNAL_ARTICLE, "journal_article"),
 		(BOOK, "book"),
-		(AI, "ai"),
 		(WEB_PAGE, "web_page"),
 		(DOCUMENT, "document"),
 		(EXPERT, "expert"),
 	)
-	TRANSLATE_CHOICES = {
+	TRANSLATE_SOURCE_TYPE = {
 		DATABASE: "database",
 		"database": DATABASE,
 		JOURNAL_ARTICLE: "journal_article",
 		"journal_article": JOURNAL_ARTICLE,
 		BOOK: "book",
 		"book": BOOK,
-		AI: "ai",
-		"ai": AI,
 		WEB_PAGE: "web_page",
 		"web_page": WEB_PAGE,
 		DOCUMENT: "document",
 		"document": DOCUMENT,
+		EXPERT: "expert",
+		"expert": EXPERT,
+	}
+
+	API = 0
+	AI = 1
+	EXPERT = 2
+
+	EXTRACTION_METHOD_CHOICES = (
+		(API, "api"),
+		(AI, "ai"),
+		(EXPERT, "expert"),
+	)
+	TRANSLATE_EXTRACTION_METHOD = {
+		API: "api",
+		"api": API,
+		AI: "ai",
+		"ai": AI,
 		EXPERT: "expert",
 		"expert": EXPERT,
 	}
@@ -83,33 +112,36 @@ class Source(SynonymModel):
 		"image": IMAGE,
 		"taxon_data": TAXON_DATA,
 	}
-
-	origin = models.PositiveSmallIntegerField(choices=ORIGIN_CHOICES)
-	url = models.URLField(null=True, blank=True, default=None)
+	
+	source_type = models.PositiveSmallIntegerField(choices=SOURCE_TYPE_CHOICES)
+	extraction_method = models.PositiveSmallIntegerField(choices=EXTRACTION_METHOD_CHOICES)
 	data_type = models.PositiveSmallIntegerField(choices=DATA_TYPE_CHOICES)
+	url = models.URLField(null=True, blank=True, default=None) #revisar
 	batch = models.ForeignKey(Batch, on_delete=models.CASCADE, null=True, blank=True, default=None)
+	source = models.ForeignKey(Source, on_delete=models.CASCADE, related_name='module')
+
 
 	def __str__(self):
-		return self.name
+		return self.source.name
 
 
-class OriginSource(models.Model):
-	origin_id = models.CharField(max_length=255, blank=True, null=True)
-	source = models.ForeignKey(Source, on_delete=models.CASCADE, db_index=True)
+class OriginId(models.Model):
+	external_id = models.CharField(max_length=255, blank=True, null=True)
+	module = models.ForeignKey(Module, on_delete=models.CASCADE, db_index=True)
 	attribution = models.CharField(max_length=512, null=True, default=None, blank=True)
 
 	def clean(self):
 		super().clean()
-		if self.origin_id:
-			if OriginSource.objects.filter(origin_id=self.origin_id, source=self.source).exists():
-				raise ValidationError("Origin id already exists for this source.")
-		elif self.source.origin in {Source.DATABASE, Source.JOURNAL_ARTICLE, Source.WEB_PAGE}:
-			raise ValidationError(f"Origin id is None and is not allowed with origin type '{Source.TRANSLATE_CHOICES[self.source.origin].upper()}'")
+		if self.external_id:
+			if OriginId.objects.filter(external_id=self.external_id, module=self.module).exists():
+				raise ValidationError("External ID already exists for this source.")
+		elif self.module.external_id in {Module.DATABASE, Module.JOURNAL_ARTICLE, Module.WEB_PAGE}:
+			raise ValidationError(f"External ID is None and is not allowed with origin type '{Module.TRANSLATE_CHOICES[self.module.source_type].upper()}'")
 
 	def __str__(self):
-		return f"{self.source.name}:{self.origin_id}"
+		return f"{self.module.source.internal_name}:{self.external_id}"
 
 	class Meta:
 		indexes = [
-			models.Index(fields=["origin_id", "source"]),
+			models.Index(fields=["external_id", "module"]),
 		]

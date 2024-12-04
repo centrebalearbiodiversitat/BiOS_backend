@@ -5,9 +5,10 @@ import traceback
 from django.core.management.base import BaseCommand
 from django.db import transaction
 
-from apps.taxonomy.models import Authorship, TaxonomicLevel, Directive
-from apps.versioning.models import Batch, Source, OriginSource
-from common.utils.utils import str_clean_up
+from apps.taxonomy.models import Authorship, TaxonomicLevel
+from apps.versioning.models import Batch, OriginId
+from apps.tags.models import Directive
+from common.utils.utils import str_clean_up, get_or_create_module
 
 KINGDOM = "kingdom"
 PHYLUM = "phylum"
@@ -18,14 +19,7 @@ GENUS = "genus"
 SPECIES = "species"
 SUBSPECIES = "subspecies"
 VARIETY = "variety"
-RANK = "rank"
-ORIGIN_TAXON = "origin_taxon"
-ACCEPTED_TAXON = "accepted_taxon"
-AUTHOR_ACCEPTED = "author_accepted"
-STATUS = "status"
-TAXON_ID = "taxon_id"
-SOURCE = "source"
-ORIGIN = "origin"
+
 
 LEVELS = [KINGDOM, PHYLUM, CLASS, ORDER, FAMILY, GENUS, SPECIES, SUBSPECIES, VARIETY]
 
@@ -41,6 +35,16 @@ LEVELS_PARAMS = {
 	VARIETY: TaxonomicLevel.VARIETY,
 }
 
+ACCEPTED_TAXON = "accepted_taxon"
+API = "api"
+AUTHOR_ACCEPTED = "author_accepted"
+ORIGIN_TAXON = "origin_taxon"
+RANK = "rank"
+SOURCE = "source"
+SOURCE_TYPE = "origin"
+STATUS = "status"
+TAXON = "taxon"
+TAXON_ID = "taxon_id"
 
 @transaction.atomic
 def create_taxonomic_level(line, parent, batch, idx_name, rank):
@@ -71,7 +75,14 @@ def create_taxonomic_level(line, parent, batch, idx_name, rank):
 		if line[idx_name][0].isupper() and rank in [TaxonomicLevel.SPECIES, TaxonomicLevel.SUBSPECIES, TaxonomicLevel.VARIETY]:
 			raise Exception(f"Epithet cant be upper cased.\n{line}")
 
-		source = get_or_create_source(line)
+		module = get_or_create_module(
+			source_type=line[SOURCE_TYPE],
+			extraction_method=API,	
+			data_type=TAXON,
+			batch=batch,
+			internal_name=line[SOURCE],
+			
+		)
 		verb_auth, auths, parsed_year = get_or_create_authorship(line, batch)
 
 		child, new_taxon = TaxonomicLevel.objects.get_or_create(
@@ -89,20 +100,20 @@ def create_taxonomic_level(line, parent, batch, idx_name, rank):
 		)
 
 		try:
-			directive = Directive.objects.get(taxon_name=line["origin_taxon"])
+			directive = Directive.objects.get(taxon_name=line[ORIGIN_TAXON])
 			directive.taxonomy = child
 			directive.save()
 		except Directive.DoesNotExist:
 			pass
 
-		os, new_source = OriginSource.objects.get_or_create(origin_id=line[TAXON_ID], source=source)
+		os, new_source = OriginId.objects.get_or_create(external_id=line[TAXON_ID], module=module)
 		if new_source:
-			if child.sources.filter(source=os.source, origin_id=os.origin_id).exists():
-				raise Exception(f"Origin source id already existing. {os}\n{line}")
+			if child.sources.filter(module=os.module, external_id=os.external_id).exists():
+				raise Exception(f"Origin ID id already existing. {os}\n{line}")
 			child.sources.add(os)
 			child.save()
 		elif not child.sources.filter(id=os.id).exists():
-			raise Exception(f"Origin source id already existing. {os}\n{line}")
+			raise Exception(f"Origin ID id already existing. {os}\n{line}")
 
 		if auths:
 			child.authorship.add(*auths)
@@ -188,32 +199,13 @@ def get_or_create_authorship(line, batch):
 	return line[AUTHOR_ACCEPTED], auths, parsed_year
 
 
-def get_or_create_source(line):
-	if not line[SOURCE]:
-		raise Exception(f"All records must have a source\n{line}")
-
-	source, _ = Source.objects.get_or_create(
-		name__iexact=line[SOURCE],
-		data_type=Source.TAXON,  # Filter out 2 sources with the same name and data_type
-		defaults={
-			"name": line[SOURCE],
-			"accepted": True,
-			"origin": Source.TRANSLATE_CHOICES[line[ORIGIN]],
-			"data_type": Source.TAXON,
-			"url": None,
-		},
-	)
-
-	return source
-
-
 def clean_up_input_line(line):
 	for key in line.keys():
 		line[key] = str_clean_up(line[key])
 
 
 class Command(BaseCommand):
-	help = "Loads from taxonomy from csv"
+	help = "Loads taxonomy from csv"
 
 	def add_arguments(self, parser):
 		parser.add_argument("file", type=str)
@@ -237,6 +229,7 @@ class Command(BaseCommand):
 					"parent": None,
 				},
 			)
+
 			with TaxonomicLevel.objects.delay_mptt_updates():
 				for line in csv_file:
 					parent = biota

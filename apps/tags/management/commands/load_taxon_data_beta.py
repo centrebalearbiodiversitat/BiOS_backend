@@ -6,12 +6,21 @@ import re
 from django.core.management import CommandError
 from django.core.management.base import BaseCommand
 from django.db import transaction
-from apps.taxonomy.models import Habitat, Tag, TaxonTag, TaxonomicLevel, IUCNData, System
-from apps.versioning.models import Batch, Source, OriginSource
-from apps.taxonomy.management.commands.populate_tags import TAGS
+from apps.taxonomy.models import TaxonomicLevel
+from apps.tags.models import Habitat, Tag, TaxonTag, IUCNData, System, Directive
+from apps.versioning.models import Batch, OriginId
+from common.utils.utils import get_or_create_module
 
 BOOL_DICT = {"verdadero": True, "falso": False}
 
+API = "api"
+DATABASE = "database"
+EXTERNAL_ID = "origin_id"
+INTERNAL_NAME = "source"
+IUCN = "IUCN"
+SOURCE_TYPE = "origin"
+TAXON = "taxon"
+URL = "origin_url"
 
 def check_taxon(line):
 	taxonomy = TaxonomicLevel.objects.find(taxon=line["origin_taxon"])
@@ -36,11 +45,19 @@ def transform_iucn_status(line):
 
 
 def load_taxon_data_from_json(line, taxonomy, batch):
-	habitat_ids = set(line["habitat"] or [])
+	module = get_or_create_module(
+		source_type=DATABASE,
+		extraction_method=API,
+		data_type=TAXON,
+		batch=batch,
+		internal_name=IUCN,
+	)
+	os, new_source = OriginId.objects.get_or_create(external_id=line[EXTERNAL_ID], module=module)
 
-	valid_habitats = Habitat.objects.filter(sources__origin_id__in=habitat_ids)
+	habitat_ids = set(line["habitat"] or [])
+	valid_habitats = Habitat.objects.filter(sources__external_id__in=habitat_ids)
 	if len(valid_habitats) != len(habitat_ids):
-		invalid_ids = habitat_ids - set(valid_habitats.values_list("sources__origin_id", flat=True))
+		invalid_ids = habitat_ids - set(valid_habitats.values_list("sources__external_id", flat=True))
 		raise Exception(f"Invalid habitat IDs: {invalid_ids}")
 
 	iucn_data, _ = IUCNData.objects.update_or_create(
@@ -54,9 +71,9 @@ def load_taxon_data_from_json(line, taxonomy, batch):
 	)
 
 	iucn_data.habitat.set(valid_habitats)
+	iucn_data.sources.add(os)
 
-	# System Data
-	System.objects.update_or_create(
+	system, _ = System.objects.update_or_create(
 		taxonomy=taxonomy.first(),
 		defaults={
 			"freshwater": line["freshwater"],
@@ -65,14 +82,36 @@ def load_taxon_data_from_json(line, taxonomy, batch):
 			"batch": batch,
 		},
 	)
+	system.sources.add(os)
 
 
 def load_taxon_data_from_csv(line, taxonomy, batch):
 	if line["taxon_rank"] in ["species", "subspecies", "variety"]:
+		
+		module = get_or_create_module(
+			source_type=line[SOURCE_TYPE].lower(),
+			extraction_method=API,
+			data_type=TAXON,
+			batch=batch,
+			internal_name=line[INTERNAL_NAME],
+		)
+		
+		system = System.objects.get(taxonomy=taxonomy.first())
+
+		if system.freshwater is None and system.marine is None and system.terrestrial is None:
+			system.freshwater = BOOL_DICT.get(line["freshwater"].lower(), None)
+			system.marine = BOOL_DICT.get(line["marine"].lower(), None)
+			system.terrestrial = BOOL_DICT.get(line["terrestrial"].lower(), None)
+			system.sources.clear()
+			os, new_source = OriginId.objects.get_or_create(module=module)
+			system.sources.add(os)
+			system.save()
+		
 		taxon_tag, _ = TaxonTag.objects.get_or_create(
 			taxonomy=taxonomy.first(),
 			defaults={"batch": batch},
 		)
+		taxon_tag.sources.add(os)
 
 		doe_value = line.get("degreeOfEstablishment")
 		try:
@@ -80,66 +119,35 @@ def load_taxon_data_from_csv(line, taxonomy, batch):
 			taxon_tag.tags.add(doe_tag)
 		except Tag.DoesNotExist:
 			raise Exception(f"No Tag.DOE was found with the value '{doe_value}'")
-
-		system, _ = System.objects.get_or_create(
-			taxonomy=taxonomy.first(),
-			defaults={
-				"freshwater": BOOL_DICT.get(line["freshwater"].lower(), None),
-				"marine": BOOL_DICT.get(line["marine"].lower(), None),
-				"terrestrial": BOOL_DICT.get(line["terrestrial"].lower(), None),
-				"batch": batch,
-			},
-		)
-
-		source, _ = Source.objects.get_or_create(
-			name__iexact=line["source_1"],
-			data_type=Source.TAXON,
-			defaults={
-				"name": line["source_1"],
-				"accepted": True,
-				"origin": Source.TRANSLATE_CHOICES[line["origin_1"]],
-				"data_type": Source.TAXON,
-				"url": None,
-			},
-		)
-		os, new_source = OriginSource.objects.get_or_create(origin_id="unknown", source=source)
-		system.sources.add(os)
-
-		if system.freshwater is None and system.marine is None and system.terrestrial is None:
-			system.freshwater = BOOL_DICT.get(line["freshwater"].lower(), None)
-			system.marine = BOOL_DICT.get(line["marine"].lower(), None)
-			system.terrestrial = BOOL_DICT.get(line["terrestrial"].lower(), None)
-			source, _ = Source.objects.get_or_create(
-				name__iexact=line["source_2"],
-				data_type=Source.TAXON,
-				defaults={
-					"name": line["source_2"],
-					"accepted": True,
-					"origin": Source.TRANSLATE_CHOICES[line["origin_2"]],
-					"data_type": Source.TAXON,
-					"url": None,
-				},
-			)
-			system.sources.clear()
-			os, new_source = OriginSource.objects.get_or_create(origin_id="unknown", source=source)
-			system.sources.add(os)
-			system.save()
+		
+		Directive.objects.get_or_create(
+            taxon_name=line["origin_taxon"],
+            defaults={
+                "taxonomy": taxonomy.first(),
+                "cites": BOOL_DICT.get(line["cites"].lower(), None),
+                "ceea": BOOL_DICT.get(line["ceea"].lower(), None),
+                "lespre": BOOL_DICT.get(line["lespre"].lower(), None),
+                "directiva_aves": BOOL_DICT.get(line["directiva_aves"].lower(), None),
+                "directiva_habitats": BOOL_DICT.get(line["directiva_habitats"].lower(), None),
+				"batch": batch
+            },
+        )
 
 
 class Command(BaseCommand):
 	def add_arguments(self, parser):
 		parser.add_argument("file", type=str, help="Path to the data file")
-		parser.add_argument("--format", choices=["json", "csv"], help="File format (json or csv)")
 
 	@transaction.atomic
 	def handle(self, *args, **options):
 		file_name = options["file"]
 		_, file_format = os.path.splitext(file_name)
+		print(file_format)
 		exception = False
 		file_format = file_format.lower()
 		batch = Batch.objects.create()
 
-		if file_format == "json":
+		if file_format == ".json":
 			with open(file_name, "r") as json_file:
 				json_data = json.load(json_file)
 
@@ -150,7 +158,7 @@ class Command(BaseCommand):
 					except:
 						exception = True
 						print(traceback.format_exc(), line)
-		elif file_format == "csv":
+		elif file_format == ".csv":
 			with open(file_name, "r") as csv_file:
 				reader = csv.DictReader(csv_file)
 
@@ -161,9 +169,8 @@ class Command(BaseCommand):
 					except Exception as e:
 						exception = True
 						print(traceback.format_exc(), line)
-						error_message = str(e)
 		else:
-			raise CommandError("You must specify the file format using --format json or --format csv")
+			raise CommandError("You must upload a file in JSON or CSV format.")
 
 		if exception:
-			raise Exception(f"Errors found: Rollback control\n{error_message}")
+			raise Exception(f"Errors found: Rollback control")

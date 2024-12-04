@@ -3,12 +3,10 @@ import re
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models.functions import Substr, Lower, Upper
-from django.db.models.signals import m2m_changed
-from django.dispatch import receiver
 
 from mptt.fields import TreeForeignKey
 from mptt.models import MPTTModel, TreeManager
-from apps.versioning.models import Batch, OriginSource
+from apps.versioning.models import Batch, OriginId
 from common.utils.models import ReferencedModel, SynonymManager, SynonymModel
 from common.utils.utils import str_clean_up
 
@@ -104,7 +102,7 @@ class TaxonomicLevel(SynonymModel, MPTTModel, ReferencedModel):
 	parsed_year = models.PositiveIntegerField(null=True, default=None, blank=True)
 	authorship = models.ManyToManyField(Authorship, blank=True, symmetrical=False)
 	parent = TreeForeignKey("self", on_delete=models.CASCADE, null=True, default=None, blank=True)
-	images = models.ManyToManyField(OriginSource, blank=True, symmetrical=False, related_name="images_os")
+	images = models.ManyToManyField(OriginId, blank=True, symmetrical=False, related_name="images_os")
 
 	def clean(self):
 		if self.verbatim_authorship:

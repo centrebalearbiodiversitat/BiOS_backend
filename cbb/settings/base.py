@@ -46,12 +46,12 @@ INSTALLED_APPS = [
 	"mptt",
 	# 'rest_framework_api_key',
 	"apps.API",
+	"apps.versioning",
 	"apps.geography",
 	"apps.genetics",
 	"apps.occurrences",
 	"apps.tags",
-	"apps.taxonomy",
-	"apps.versioning",
+	"apps.taxonomy"
 ]
 
 REST_FRAMEWORK = {

@@ -1,13 +1,14 @@
 from django.core.management.base import BaseCommand
 from django.db import transaction
 
-from apps.taxonomy.models import Tag
+from apps.tags.models import Tag
 
 TAGS = [
 	("unknown", Tag.DOE),
 	("doubt", Tag.DOE),
 	("absent", Tag.DOE),
 	("native", Tag.DOE),
+	("endemic", Tag.DOE),
 	("captive", Tag.DOE),
 	("cultivated", Tag.DOE),
 	("released", Tag.DOE),

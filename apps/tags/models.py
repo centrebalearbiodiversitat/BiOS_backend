@@ -20,18 +20,14 @@ class System(ReferencedModel):
 
 class Tag(models.Model):
 	DOE = 0
-	DIRECTIVE = 1
 
 	TAG_TYPE_CHOICES = (
 		(DOE, "degreeOfEstablishment"),
-		(DIRECTIVE, "directive"),
 	)
 
 	TRANSLATE_TYPE = {
 		"degreeOfEstablishment": DOE,
 		DOE: "degreeOfEstablishment",
-		"directive": DIRECTIVE,
-		DIRECTIVE: "directive",
 	}
 
 	name = models.CharField(max_length=255)

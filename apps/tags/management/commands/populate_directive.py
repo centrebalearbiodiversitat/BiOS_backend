@@ -3,7 +3,8 @@ import csv
 from django.core.management.base import BaseCommand
 from django.db import transaction
 
-from apps.taxonomy.models import Directive, TaxonomicLevel
+from apps.taxonomy.models import TaxonomicLevel
+from apps.tags.models import Directive
 from apps.versioning.models import Batch
 
 BOOL_DICT = {"verdadero": True, "falso": False}
@@ -40,4 +41,4 @@ class Command(BaseCommand):
 					},
 				)
 
-		self.stdout.write(self.style.SUCCESS("Directivas cargadas correctamente"))
+		self.stdout.write(self.style.SUCCESS("Successfully created directives"))

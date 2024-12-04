@@ -13,19 +13,16 @@ class ModuleAdmin(admin.ModelAdmin):
 
 admin.site.register(Module, ModuleAdmin)
 
+
 class SourceAdmin(admin.ModelAdmin):
 	search_fields = ["name"]
-	list_display = [
-				"name",
-				"acronym",
-				"url",
-				"description",
-				"citation" ]
+	list_display = ["name", "acronym", "url", "description", "citation"]
 	list_filter = ["acronym"]
 	autocomplete_fields = ["authors"]
 
 
 admin.site.register(Source, SourceAdmin)
+
 
 class OriginIdAdmin(admin.ModelAdmin):
 	search_fields = ["external_id"]

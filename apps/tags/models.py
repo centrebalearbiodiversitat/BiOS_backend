@@ -21,9 +21,7 @@ class System(ReferencedModel):
 class Tag(models.Model):
 	DOE = 0
 
-	TAG_TYPE_CHOICES = (
-		(DOE, "degreeOfEstablishment"),
-	)
+	TAG_TYPE_CHOICES = ((DOE, "degreeOfEstablishment"),)
 
 	TRANSLATE_TYPE = {
 		"degreeOfEstablishment": DOE,

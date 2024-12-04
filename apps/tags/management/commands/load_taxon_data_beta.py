@@ -22,6 +22,7 @@ SOURCE_TYPE = "origin"
 TAXON = "taxon"
 URL = "origin_url"
 
+
 def check_taxon(line):
 	taxonomy = TaxonomicLevel.objects.find(taxon=line["origin_taxon"])
 
@@ -87,7 +88,6 @@ def load_taxon_data_from_json(line, taxonomy, batch):
 
 def load_taxon_data_from_csv(line, taxonomy, batch):
 	if line["taxon_rank"] in ["species", "subspecies", "variety"]:
-		
 		module = get_or_create_module(
 			source_type=line[SOURCE_TYPE].lower(),
 			extraction_method=API,
@@ -95,7 +95,7 @@ def load_taxon_data_from_csv(line, taxonomy, batch):
 			batch=batch,
 			internal_name=line[INTERNAL_NAME],
 		)
-		
+
 		system = System.objects.get(taxonomy=taxonomy.first())
 
 		if system.freshwater is None and system.marine is None and system.terrestrial is None:
@@ -106,7 +106,7 @@ def load_taxon_data_from_csv(line, taxonomy, batch):
 			os, new_source = OriginId.objects.get_or_create(module=module)
 			system.sources.add(os)
 			system.save()
-		
+
 		taxon_tag, _ = TaxonTag.objects.get_or_create(
 			taxonomy=taxonomy.first(),
 			defaults={"batch": batch},
@@ -119,19 +119,19 @@ def load_taxon_data_from_csv(line, taxonomy, batch):
 			taxon_tag.tags.add(doe_tag)
 		except Tag.DoesNotExist:
 			raise Exception(f"No Tag.DOE was found with the value '{doe_value}'")
-		
+
 		Directive.objects.get_or_create(
-            taxon_name=line["origin_taxon"],
-            defaults={
-                "taxonomy": taxonomy.first(),
-                "cites": BOOL_DICT.get(line["cites"].lower(), None),
-                "ceea": BOOL_DICT.get(line["ceea"].lower(), None),
-                "lespre": BOOL_DICT.get(line["lespre"].lower(), None),
-                "directiva_aves": BOOL_DICT.get(line["directiva_aves"].lower(), None),
-                "directiva_habitats": BOOL_DICT.get(line["directiva_habitats"].lower(), None),
-				"batch": batch
-            },
-        )
+			taxon_name=line["origin_taxon"],
+			defaults={
+				"taxonomy": taxonomy.first(),
+				"cites": BOOL_DICT.get(line["cites"].lower(), None),
+				"ceea": BOOL_DICT.get(line["ceea"].lower(), None),
+				"lespre": BOOL_DICT.get(line["lespre"].lower(), None),
+				"directiva_aves": BOOL_DICT.get(line["directiva_aves"].lower(), None),
+				"directiva_habitats": BOOL_DICT.get(line["directiva_habitats"].lower(), None),
+				"batch": batch,
+			},
+		)
 
 
 class Command(BaseCommand):

@@ -51,7 +51,7 @@ INSTALLED_APPS = [
 	"apps.genetics",
 	"apps.occurrences",
 	"apps.tags",
-	"apps.taxonomy"
+	"apps.taxonomy",
 ]
 
 REST_FRAMEWORK = {

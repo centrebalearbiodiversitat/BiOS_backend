@@ -90,14 +90,13 @@ def parse_line(line: dict):
 
 
 def genetic_sources(line: dict, batch, occ):
-
 	module = get_or_create_module(
-			source_type=line[SOURCE_TYPE],
-			extraction_method=API,
-			data_type=SEQUENCE,
-			batch=batch,
-			internal_name=line[INTERNAL_NAME],
-		)
+		source_type=line[SOURCE_TYPE],
+		extraction_method=API,
+		data_type=SEQUENCE,
+		batch=batch,
+		internal_name=line[INTERNAL_NAME],
+	)
 
 	os, new = OriginId.objects.get_or_create(
 		external_id=line[EXTERNAL_ID],
@@ -123,7 +122,6 @@ def genetic_sources(line: dict, batch, occ):
 			published_date=parse_datetime(line["date"]) if line["date"] else None,
 		)
 		seq.sources.add(os)
-
 
 	for production in line["genetic_features"]:
 		if production["gene"]:

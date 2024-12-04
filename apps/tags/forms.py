@@ -31,7 +31,6 @@ class IUCNDataForm(IdFieldForm, TranslateForm):
 	iucn_mediterranean = forms.CharField(max_length=100, required=False)
 	habitat = forms.IntegerField(required=False)
 
-
 	CHOICES_FIELD = {
 		"iucn_global": IUCNData.TRANSLATE_CS,
 		"iucn_europe": IUCNData.TRANSLATE_CS,
@@ -47,7 +46,8 @@ class TaxonTagForm(IdFieldForm, TranslateForm):
 
 	class Meta:
 		model = TaxonTag
-		fields = ['taxonomy']
+		fields = ["taxonomy"]
+
 
 class SystemForm(forms.ModelForm):
 	class Meta:

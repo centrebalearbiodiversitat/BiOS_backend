@@ -1,10 +1,10 @@
 import csv
 
-from django.db.models import Count
+from django.db.models import Count, Q
 from django.db.models.functions import Substr, Lower
 from django.http import StreamingHttpResponse
 from unidecode import unidecode
-from apps.taxonomy.serializers import SearchTaxonomicLevelSerializer
+from apps.taxonomy.serializers import SearchTaxonomicLevelSerializer, AncestorsTaxonomicLevelSerializer
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.generics import ListAPIView
@@ -21,13 +21,56 @@ from apps.taxonomy.serializers import (
 	HabitatSerializer,
 	TagSerializer,
 )
+from .utils import taxon_checklist_to_csv, generate_csv_taxon_list, generate_csv_taxon_list2
 
 from ..versioning.serializers import OriginSourceSerializer
 from .forms import IdFieldForm, TaxonDataForm, TaxonomicLevelChildrenForm, TaxonomicLevelForm, TagForm
 from common.utils.utils import EchoWriter, PUNCTUATION_TRANSLATE, str_clean_up
 
 
-class TaxonSearchView(APIView):
+class TaxonSearch:
+	def search(self, request, limit = 10):
+		taxon_form = TaxonomicLevelForm(data=request.GET)
+
+		if not taxon_form.is_valid():
+			raise CBBAPIException(taxon_form.errors, code=400)
+
+		filters = {}
+		query = taxon_form.cleaned_data.get("name", None)
+		exact = taxon_form.cleaned_data.get("exact", False)
+
+		if not query:
+			raise CBBAPIException("Missing name parameter", code=400)
+
+		queryset = None
+		query = unidecode(str_clean_up(query).translate(PUNCTUATION_TRANSLATE))
+
+		for query in query.split(" "):
+			filters["name__istartswith"] = query
+			if queryset:
+				queryset = (
+					TaxonomicLevel.objects.annotate(prefix=Lower(Substr("unidecode_name", 1, min(3, len(query)))))
+					.filter(prefix=query[:3].lower())
+					.filter(
+						**filters, rank__in=[TaxonomicLevel.SPECIES, TaxonomicLevel.SUBSPECIES, TaxonomicLevel.VARIETY],
+						parent__in=queryset
+					)
+				)
+			else:
+				queryset = (
+					TaxonomicLevel.objects.annotate(prefix=Lower(Substr("unidecode_name", 1, min(3, len(query)))))
+					.filter(prefix=query[:3].lower())
+					.filter(**filters)
+				)
+
+		if not exact and queryset.count() < limit:
+			for instance in queryset.filter(rank__in=[TaxonomicLevel.GENUS, TaxonomicLevel.SPECIES])[:limit]:
+				queryset |= instance.get_descendants()
+
+		return queryset.distinct()
+
+
+class TaxonSearchView(APIView, TaxonSearch):
 	@swagger_auto_schema(
 		tags=["Taxonomy"],
 		operation_description="Search for a taxon by name.",
@@ -49,76 +92,36 @@ class TaxonSearchView(APIView):
 		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
 	)
 	def get(self, request):
-		taxon_form = TaxonomicLevelForm(data=self.request.GET)
-
-		if not taxon_form.is_valid():
-			raise CBBAPIException(taxon_form.errors, code=400)
-
-		filters = {}
-		query = taxon_form.cleaned_data.get("name", None)
-		exact = taxon_form.cleaned_data.get("exact", False)
-		limit = 10
-
-		if not query:
-			raise CBBAPIException("Missing name parameter", code=400)
-
-		queryset = None
-		query = unidecode(str_clean_up(query).translate(PUNCTUATION_TRANSLATE))
-
-		for query in query.split(" "):
-			filters["name__istartswith"] = query
-			if queryset:
-				queryset = (
-					TaxonomicLevel.objects.annotate(prefix=Lower(Substr("unidecode_name", 1, min(3, len(query)))))
-					.filter(prefix=query[:3].lower())
-					.filter(
-						**filters, rank__in=[TaxonomicLevel.SPECIES, TaxonomicLevel.SUBSPECIES, TaxonomicLevel.VARIETY], parent__in=queryset
-					)
-				)
-			else:
-				queryset = (
-					TaxonomicLevel.objects.annotate(prefix=Lower(Substr("unidecode_name", 1, min(3, len(query)))))
-					.filter(prefix=query[:3].lower())
-					.filter(**filters)
-				)
-
-		if not exact and queryset.count() < limit:
-			for instance in queryset.filter(rank__in=[TaxonomicLevel.GENUS, TaxonomicLevel.SPECIES])[:limit]:
-				queryset |= instance.get_descendants()
-
-		return Response(SearchTaxonomicLevelSerializer(queryset.distinct()[:limit], many=True).data)
+		return Response(SearchTaxonomicLevelSerializer(self.search(request)[:10], many=True).data)
 
 
-class TaxonFilter:
+class TaxonFilter(TaxonSearch):
 	def get_taxon_list(self, request):
 		taxon_form = TaxonomicLevelForm(data=request.GET)
 
 		if not taxon_form.is_valid():
 			raise CBBAPIException(taxon_form.errors, code=400)
-		exact = taxon_form.cleaned_data.get("exact", False)
-		str_fields = ["name"]
 
-		filters = {}
-		for param in taxon_form.cleaned_data:
-			if param != "exact":
-				if param in str_fields:
-					value = taxon_form.cleaned_data.get(param)
+		query = TaxonomicLevel.objects.all()
 
-					if value:
-						param = f"{param}__iexact" if exact else f"{param}__icontains"
-						filters[param] = value
-				else:
-					value = taxon_form.cleaned_data.get(param)
-					if value or isinstance(value, int) or isinstance(value, bool):
-						filters[param] = value
+		ancestor_id = taxon_form.cleaned_data.get("ancestor_id", False)
+		if ancestor_id:
+			try:
+				query = TaxonomicLevel.objects.get(id=ancestor_id).get_descendants()
+			except TaxonomicLevel.DoesNotExist:
+				raise CBBAPIException('Ancestor id not found', code=404)
 
-		if filters:
-			query = TaxonomicLevel.objects.filter(**filters)
-		else:
-			query = TaxonomicLevel.objects.none()
+		name = taxon_form.cleaned_data.get("name", None)
+		if name:
+			query = self.search(request).exclude(~Q(id__in=query))
 
-		if not query.exists():
-			raise CBBAPIException("No taxonomic levels found for the given filters.", 404)
+		rank = taxon_form.cleaned_data.get("rank", None)
+		if rank:
+			query = query.filter(rank=rank)
+
+		accepted = taxon_form.cleaned_data.get("accepted", None)
+		if accepted is not None:
+			query = query.filter(accepted=accepted)
 
 		return query
 
@@ -157,7 +160,26 @@ class TaxonListView(APIView, TaxonFilter):
 		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
 	)
 	def get(self, request):
-		return Response(BaseTaxonomicLevelSerializer(self.get_taxon_list(request), many=True).data)
+		query = self.get_taxon_list(request)
+
+		filter_res = AncestorsTaxonomicLevelSerializer(query[:15], many=True).data
+
+		return Response({"taxa": filter_res, "total": query.count()})
+
+
+class TaxonListCSVView(APIView, TaxonFilter):
+	def get(self, request):
+		query = self.get_taxon_list(request)
+
+		to_csv = generate_csv_taxon_list2(query)
+
+		csv_writer = csv.writer(EchoWriter())
+
+		return StreamingHttpResponse(
+			(csv_writer.writerow(row) for row in to_csv),
+			content_type="text/csv",
+			headers={"Content-Disposition": f'attachment; filename="list.csv"'},
+		)
 
 
 class TaxonCountView(LoggingMixin, APIView, TaxonFilter):
@@ -279,14 +301,10 @@ class TaxonChildrenBaseView(APIView):
 			raise CBBAPIException("Taxonomic level does not exist.", code=404)
 
 		filters = {}
-		children_rank = TaxonomicLevel.TRANSLATE_RANK.get(taxon_form.cleaned_data.get("children_rank", None), None)
-
-		if children_rank:
-			filters["rank"] = children_rank
-
 		if taxon_form.cleaned_data.get("accepted_only") is True:
 			filters["accepted"] = True
 
+		children_rank = TaxonomicLevel.TRANSLATE_RANK.get(taxon_form.cleaned_data.get("children_rank", None), None)
 		if children_rank:
 			return taxon.get_descendants().filter(rank=children_rank).filter(**filters)
 		else:
@@ -496,32 +514,6 @@ class TaxonSourceView(ListAPIView):
 		return Response(OriginSourceSerializer(taxon.sources, many=True).data)
 
 
-def map_taxa_to_rank(ranks, taxa):
-	taxa_iter = iter(taxa)
-
-	mapped_taxa = []
-	current = next(taxa_iter, None)
-	current_name = ""
-	for rank in ranks:
-		if current is None:
-			break
-
-		if rank == current.rank:
-			if current.rank in [TaxonomicLevel.SPECIES, TaxonomicLevel.SUBSPECIES, TaxonomicLevel.VARIETY]:
-				current_name = f"{current_name} {current.name}"
-			else:
-				current_name = current.name
-
-			mapped_taxa.append(current_name)
-			mapped_taxa.append(current.verbatim_authorship)
-			current = next(taxa_iter, None)
-		else:
-			mapped_taxa.append(None)
-			mapped_taxa.append(None)
-
-	return mapped_taxa
-
-
 class TaxonChecklistView(APIView):
 	@swagger_auto_schema(
 		tags=["Taxonomy"],
@@ -552,31 +544,7 @@ class TaxonChecklistView(APIView):
 		except TaxonomicLevel.DoesNotExist:
 			raise CBBAPIException("Taxonomic level does not exist", code=404)
 
-		ranks = [rank[1] for rank in TaxonomicLevel.RANK_CHOICES]
-		ranks_map = [rank[0] for rank in TaxonomicLevel.RANK_CHOICES]
-		to_csv = [
-			[
-				"id",
-				"taxon",
-				"status",
-				"taxonRank",
-				*list(sum([(f"{rank.lower()}", f"authorship{rank}") for rank in ranks], ())),
-			]
-		]
-
-		upper_taxon = head_taxon.get_ancestors(include_self=False)  # .exclude(name__iexact='Biota')
-		upper_taxon = list(upper_taxon)
-		checklist = head_taxon.get_descendants(include_self=True)
-		current_taxon = []
-		last_level = -1
-		for taxon in checklist:
-			if last_level >= taxon.level:
-				current_taxon = current_taxon[: len(current_taxon) - (last_level - taxon.level + 1)]
-
-			current_taxon.append(taxon)
-			taxa_map = map_taxa_to_rank(ranks_map, upper_taxon + current_taxon)
-			to_csv.append([taxon.id, taxa_map[-2], taxon.readable_status(), taxon.readable_rank(), *taxa_map])
-			last_level = taxon.level
+		to_csv = taxon_checklist_to_csv(head_taxon)
 
 		csv_writer = csv.writer(EchoWriter())
 

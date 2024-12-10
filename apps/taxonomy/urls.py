@@ -14,6 +14,7 @@ from apps.taxonomy.views import (
 	TaxonSourceView,
 	TaxonChecklistView,
 	AuthorshipCRUDView,
+	TaxonListCSVView,
 )
 
 app_name = "taxonomy"
@@ -21,6 +22,7 @@ urlpatterns = [
 	path("/search", TaxonSearchView.as_view(), name="search"),
 	path("/list", TaxonListView.as_view(), name="list"),
 	path("/list/count", TaxonCountView.as_view(), name="list_count"),
+	path("/list/csv", TaxonListCSVView.as_view(), name="list_count"),
 	path("/taxon", TaxonCRUDView.as_view(), name="taxon_crud"),
 	path("/taxon/parent", TaxonParentView.as_view(), name="taxon_parent"),
 	path("/taxon/children", TaxonChildrenView.as_view(), name="taxon_children"),

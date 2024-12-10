@@ -5,6 +5,21 @@ from apps.versioning.serializers import OriginIdSerializer
 from common.utils.serializers import CaseModelSerializer
 
 
+class MinimalTaxonomicLevelSerializer(CaseModelSerializer):
+	taxon_rank = serializers.SerializerMethodField()
+	name = serializers.SerializerMethodField()
+
+	def get_name(self, obj):
+		return str(obj)
+
+	def get_taxon_rank(self, obj):
+		return obj.readable_rank()
+
+	class Meta:
+		model = TaxonomicLevel
+		fields = ["id", "name", "taxon_rank"]
+
+
 class BaseTaxonomicLevelSerializer(CaseModelSerializer):
 	scientific_name_authorship = serializers.CharField(source="verbatim_authorship")
 	taxon_rank = serializers.SerializerMethodField()
@@ -40,6 +55,16 @@ class BaseTaxonomicLevelSerializer(CaseModelSerializer):
 			"images",
 			"parent",
 		]
+
+
+class AncestorsTaxonomicLevelSerializer(BaseTaxonomicLevelSerializer):
+	ancestors = serializers.SerializerMethodField()
+
+	def get_ancestors(self, obj):
+		return MinimalTaxonomicLevelSerializer(obj.get_ancestors(), many=True).data
+
+	class Meta(BaseTaxonomicLevelSerializer.Meta):
+		fields = BaseTaxonomicLevelSerializer.Meta.fields + ["ancestors"]
 
 
 class SearchTaxonomicLevelSerializer(CaseModelSerializer):

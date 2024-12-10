@@ -20,7 +20,7 @@ class TaxonomicLevelManager(SynonymManager, TreeManager):
 		qs = super().get_queryset()
 
 		return qs.prefetch_related(
-			models.Prefetch("parent__parent", to_attr="parent__parent"),
+			"parent__parent"
 		)
 
 	def find(self, taxon):
@@ -155,6 +155,7 @@ class TaxonomicLevel(SynonymModel, MPTTModel, ReferencedModel):
 			("tree_id", "lft", "rght"),
 			("tree_id", "rght"),
 			("tree_id", "lft"),
+			("rght", "lft", "rank"),
 			("rght", "lft"),
 			("rght",),
 			("lft",),

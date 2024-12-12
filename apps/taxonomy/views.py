@@ -1,5 +1,6 @@
 import csv
 
+from django.core.paginator import Paginator
 from django.db.models import Count, Q
 from django.db.models.functions import Substr, Lower
 from django.http import StreamingHttpResponse
@@ -21,7 +22,8 @@ from apps.taxonomy.serializers import (
 	HabitatSerializer,
 	TagSerializer,
 )
-from .utils import taxon_checklist_to_csv, generate_csv_taxon_list, generate_csv_taxon_list2
+from common.utils.forms import PaginatorFieldForm
+from .utils import taxon_checklist_to_csv, generate_csv_taxon_list2
 
 from ..versioning.serializers import OriginSourceSerializer
 from .forms import IdFieldForm, TaxonDataForm, TaxonomicLevelChildrenForm, TaxonomicLevelForm, TagForm
@@ -123,6 +125,10 @@ class TaxonFilter(TaxonSearch):
 		if accepted is not None:
 			query = query.filter(accepted=accepted)
 
+		has_image = taxon_form.cleaned_data.get("has_image", None)
+		if has_image is not None:
+			query = query.exclude(images__isnull=has_image)
+
 		return query
 
 
@@ -162,9 +168,16 @@ class TaxonListView(APIView, TaxonFilter):
 	def get(self, request):
 		query = self.get_taxon_list(request)
 
-		filter_res = AncestorsTaxonomicLevelSerializer(query[:15], many=True).data
+		paginator = Paginator(query, 15)
+		page = PaginatorFieldForm.get_page(request.GET)
 
-		return Response({"taxa": filter_res, "total": query.count()})
+		filter_res = AncestorsTaxonomicLevelSerializer(paginator.page(page), many=True).data
+
+		return Response({
+			"total": paginator.count,
+			"pages": paginator.num_pages,
+			"taxa": filter_res
+		})
 
 
 class TaxonListCSVView(APIView, TaxonFilter):

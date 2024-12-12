@@ -1,6 +1,6 @@
 from django import forms
 
-from common.utils.forms import CamelCaseForm, IdFieldForm, TranslateForm
+from common.utils.forms import CamelCaseForm, IdFieldForm, TranslateForm, PaginatorFieldForm
 
 from .models import TaxonData, TaxonomicLevel
 
@@ -11,6 +11,7 @@ class TaxonomicLevelForm(IdFieldForm, TranslateForm):
 	authorship = forms.CharField(max_length=256, required=False)
 	name = forms.CharField(required=False)
 	accepted = forms.NullBooleanField(required=False)
+	has_image = forms.NullBooleanField(required=False)
 	ancestor_id = forms.IntegerField(required=False)
 
 	TRANSLATE_FIELDS = {
@@ -21,6 +22,10 @@ class TaxonomicLevelForm(IdFieldForm, TranslateForm):
 
 	def __init__(self, *args, **kwargs):
 		super().__init__(*args, **kwargs)
+
+
+class ListTaxonomicLevelForm(PaginatorFieldForm, TaxonomicLevelForm):
+	pass
 
 
 class TaxonomicLevelChildrenForm(IdFieldForm, CamelCaseForm):

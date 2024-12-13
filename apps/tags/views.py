@@ -6,19 +6,9 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from apps.API.exceptions import CBBAPIException
 from apps.tags.models import Directive, Habitat, IUCNData, System, TaxonomicLevel, TaxonTag
-from apps.tags.serializers import (
-	HabitatSerializer,
-	IUCNDataSerializer,
-	TaxonTagSerializer,
-	DirectiveSerializer
-)
+from apps.tags.serializers import HabitatSerializer, IUCNDataSerializer, TaxonTagSerializer, DirectiveSerializer
 
-from .forms import (
-	DirectiveForm,
-	IUCNDataForm,
-	SystemForm,
-	TaxonTagForm
-)
+from .forms import DirectiveForm, IUCNDataForm, SystemForm, TaxonTagForm
 
 
 # class TagListView(APIView):
@@ -298,6 +288,7 @@ class IUCNDataListView(APIView):
 
 		return Response(IUCNDataSerializer(taxon).data)
 
+
 # class IUCNDataFilter:
 # 	def get(self, request):
 # 		taxon_data_form = IUCNDataForm(data=request.GET)
@@ -447,7 +438,6 @@ class SystemListView(APIView):
 
 		system = System.objects.filter(taxonomy__in=descendants)
 
-
 		return Response(SystemSerializer(system, many=True).data)
 
 
@@ -480,6 +470,7 @@ class SystemListView(APIView):
 
 # 		serializer = SystemSerializer(system)
 # 		return Response(serializer.data)
+
 
 class DirectiveListView(APIView):
 	@swagger_auto_schema(

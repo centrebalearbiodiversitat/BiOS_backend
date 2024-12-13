@@ -20,7 +20,6 @@ URL = "origin_url"
 
 
 def check_taxon(line):
-
 	taxonomy = TaxonomicLevel.objects.find(taxon=line["origin_taxon"])
 
 	if taxonomy.count() == 0:
@@ -85,7 +84,6 @@ def load_taxon_data_from_json(line, taxonomy, batch):
 
 def load_taxon_data_from_csv(line, taxonomy, batch):
 	if line["taxon_rank"] in ["species", "subspecies", "variety"]:
-		
 		source = get_or_create_source(
 			source_type=Source.TRANSLATE_SOURCE_TYPE[line[SOURCE_TYPE].lower()],
 			extraction_method=Source.EXPERT,
@@ -116,7 +114,7 @@ def load_taxon_data_from_csv(line, taxonomy, batch):
 			taxon_tag.tags.add(doe_tag)
 		except Tag.DoesNotExist:
 			raise Exception(f"No Tag.DOE was found with the value '{doe_value}'")
-		
+
 		directive, _ = Directive.objects.get_or_create(
 			taxon_name=line["origin_taxon"],
 			defaults={
@@ -126,7 +124,7 @@ def load_taxon_data_from_csv(line, taxonomy, batch):
 				"lespre": BOOL_DICT.get(line["lespre"].lower(), None),
 				"directiva_aves": BOOL_DICT.get(line["directiva_aves"].lower(), None),
 				"directiva_habitats": BOOL_DICT.get(line["directiva_habitats"].lower(), None),
-				"batch": batch
+				"batch": batch,
 			},
 		)
 		directive.sources.add(os)
@@ -136,7 +134,6 @@ class Command(BaseCommand):
 	def add_arguments(self, parser):
 		parser.add_argument("file", type=str, help="Path to the data file")
 		parser.add_argument("-d", nargs="?", type=str, default=";")
-
 
 	@transaction.atomic
 	def handle(self, *args, **options):
@@ -158,7 +155,7 @@ class Command(BaseCommand):
 					except:
 						exception = True
 						print(traceback.format_exc(), line)
-		elif file_format == ".csv":		
+		elif file_format == ".csv":
 			delimiter = options["d"]
 
 			with open(file_name, "r") as csv_file:

@@ -13,11 +13,7 @@ from rest_framework.views import APIView
 from rest_framework_tracking.mixins import LoggingMixin
 from apps.API.exceptions import CBBAPIException
 from apps.taxonomy.models import Authorship, TaxonomicLevel
-from apps.taxonomy.serializers import (
-	AuthorshipSerializer,
-	BaseTaxonomicLevelSerializer,
-	TaxonCompositionSerializer
-)
+from apps.taxonomy.serializers import AuthorshipSerializer, BaseTaxonomicLevelSerializer, TaxonCompositionSerializer
 
 from apps.versioning.serializers import OriginIdSerializer
 from .forms import IdFieldForm, TaxonomicLevelChildrenForm, TaxonomicLevelForm

@@ -13,14 +13,10 @@ class SourceAdmin(admin.ModelAdmin):
 
 admin.site.register(Source, SourceAdmin)
 
+
 class BasisAdmin(admin.ModelAdmin):
 	search_fields = ["internal_name"]
-	list_display = [
-				"internal_name",
-				"acronym",
-				"url",
-				"description",
-				"citation" ]
+	list_display = ["internal_name", "acronym", "url", "description", "citation"]
 	list_filter = ["acronym"]
 	autocomplete_fields = ["authors"]
 

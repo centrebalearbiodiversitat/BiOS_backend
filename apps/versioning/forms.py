@@ -2,6 +2,7 @@ from django import forms
 from common.utils.forms import TranslateForm, IdFieldForm
 from .models import Source
 
+
 class BasisForm(IdFieldForm, TranslateForm):
 	acronym = forms.CharField(max_length=100, required=False)
 	name = forms.CharField(required=False)
@@ -10,7 +11,7 @@ class BasisForm(IdFieldForm, TranslateForm):
 	# authors = forms.CharField(required=False)
 	# citation = forms.CharField(required=False)
 
-	
+
 class SourceForm(IdFieldForm, TranslateForm):
 	source_type = forms.CharField(required=False)
 	extraction_method = forms.CharField(required=False)

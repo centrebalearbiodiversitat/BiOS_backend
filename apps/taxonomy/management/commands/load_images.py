@@ -30,13 +30,7 @@ def add_taxonomic_image(line, batch):
 
 		taxon = taxon.first()
 
-		source = get_or_create_source(
-			source_type=Source.DATABASE,
-			extraction_method=Source.API,
-			data_type=Source.IMAGE,
-			batch=batch,
-			internal_name=INATURALIST	
-		)
+		source = get_or_create_source(source_type=Source.DATABASE, extraction_method=Source.API, data_type=Source.IMAGE, batch=batch, internal_name=INATURALIST)
 
 		os, _ = OriginId.objects.get_or_create(external_id=line[EXTERNAL_ID], source=source, defaults={"attribution": line["attribution"]})
 

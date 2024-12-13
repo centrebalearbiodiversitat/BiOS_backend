@@ -18,7 +18,6 @@ class BaseTaxonomicLevelSerializer(CaseModelSerializer):
 
 	def get_name(self, obj):
 		return str(obj)
-	
 
 	def get_taxon_rank(self, obj):
 		return obj.readable_rank()
@@ -40,7 +39,6 @@ class BaseTaxonomicLevelSerializer(CaseModelSerializer):
 			"accepted_modifier",
 			"images",
 			"parent",
-
 		]
 
 

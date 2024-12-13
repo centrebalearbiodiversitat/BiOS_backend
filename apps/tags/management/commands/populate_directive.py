@@ -28,7 +28,7 @@ class Command(BaseCommand):
 			for line in reader:
 				taxon_name = line["origin_taxon"]
 				taxonomy = TaxonomicLevel.objects.find(taxon=taxon_name).first()
-				
+
 				source = get_or_create_source(
 					source_type=Source.DATABASE,
 					extraction_method=Source.API,
@@ -36,7 +36,7 @@ class Command(BaseCommand):
 					batch=batch,
 					internal_name=line["source"],
 				)
-				
+
 				os, new_source = OriginId.objects.get_or_create(source=source)
 
 				directive, _ = Directive.objects.update_or_create(

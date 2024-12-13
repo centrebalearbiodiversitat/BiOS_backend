@@ -89,14 +89,13 @@ def parse_line(line: dict):
 
 
 def genetic_sources(line: dict, batch, occ):
-
 	source = get_or_create_source(
-			source_type=Source.TRANSLATE_SOURCE_TYPE[line[SOURCE_TYPE]],
-			extraction_method=Source.API,
-			data_type=Source.SEQUENCE,
-			batch=batch,
-			internal_name=line[INTERNAL_NAME],
-		)
+		source_type=Source.TRANSLATE_SOURCE_TYPE[line[SOURCE_TYPE]],
+		extraction_method=Source.API,
+		data_type=Source.SEQUENCE,
+		batch=batch,
+		internal_name=line[INTERNAL_NAME],
+	)
 
 	os, new = OriginId.objects.get_or_create(
 		external_id=line[EXTERNAL_ID],

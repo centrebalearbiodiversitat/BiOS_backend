@@ -4,6 +4,7 @@ from common.utils.forms import CamelCaseForm, IdFieldForm, TranslateForm
 
 from .models import IUCNData, TaxonomicLevel, System, TaxonTag
 
+
 class DirectiveForm(IdFieldForm, TranslateForm):
 	taxonomy = forms.IntegerField(required=False)
 
@@ -39,9 +40,7 @@ class TaxonTagForm(IdFieldForm, TranslateForm):
 
 class SystemForm(IdFieldForm, TranslateForm):
 	taxonomy = forms.IntegerField(required=False)
-	
+
 	class Meta:
 		model = System
 		fields = ["taxonomy", "freshwater", "marine", "terrestrial"]
-
-

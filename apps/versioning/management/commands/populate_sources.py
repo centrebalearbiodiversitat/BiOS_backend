@@ -7,29 +7,30 @@ from django.db import transaction
 from apps.taxonomy.models import Authorship
 from apps.versioning.models import Batch, Basis
 
+
 def get_or_create_authorship(author, batch):
-		if not author:
-			return None, [], None
-		auths = []
-		if author:
-			pauthors = re.split(r"\s*[,;&]\s*|\s+[eE][xXtT]\s+", author)
-			for pauthor in pauthors:
-				if pauthor:
-					auth, _ = Authorship.objects.get_or_create(
-						name__iexact=pauthor,
-						defaults={
-							"name": pauthor,
-							"accepted": True,
-							"batch": batch,
-						},
-					)
-					auths.append(auth)
-		return auths
+	if not author:
+		return None, [], None
+	auths = []
+	if author:
+		pauthors = re.split(r"\s*[,;&]\s*|\s+[eE][xXtT]\s+", author)
+		for pauthor in pauthors:
+			if pauthor:
+				auth, _ = Authorship.objects.get_or_create(
+					name__iexact=pauthor,
+					defaults={
+						"name": pauthor,
+						"accepted": True,
+						"batch": batch,
+					},
+				)
+				auths.append(auth)
+	return auths
+
 
 def populate_basis(line, batch):
-
 	basis, created = Basis.objects.update_or_create(
-		internal_name=line.get('internal_name', ''),
+		internal_name=line.get("internal_name", ""),
 		defaults={
 			"name": line.get("name", ""),
 			"acronym": line.get("acronym", ""),
@@ -40,11 +41,9 @@ def populate_basis(line, batch):
 			"batch": batch,
 		},
 	)
-	author_names = line.get('authors', [])
+	author_names = line.get("authors", [])
 	if created and author_names:
-
 		if author_names:
-
 			for author_name in author_names:
 				authors = get_or_create_authorship(author_name, batch)
 				basis.authors.set(authors)

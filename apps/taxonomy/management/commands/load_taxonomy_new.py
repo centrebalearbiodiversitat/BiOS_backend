@@ -76,7 +76,7 @@ def create_taxonomic_level(line, parent, batch, idx_name, rank):
 
 		source = get_or_create_source(
 			source_type=Source.TRANSLATE_SOURCE_TYPE[line[SOURCE_TYPE]],
-			extraction_method=Source.API,	
+			extraction_method=Source.API,
 			data_type=Source.TAXON,
 			batch=batch,
 			internal_name=line[SOURCE],

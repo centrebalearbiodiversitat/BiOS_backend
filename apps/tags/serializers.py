@@ -1,13 +1,6 @@
 from rest_framework import serializers
 
-from apps.tags.models import (
-	Directive,
-	IUCNData,
-	TaxonTag,
-	Habitat,
-	Tag,
-	System
-)
+from apps.tags.models import Directive, IUCNData, TaxonTag, Habitat, Tag, System
 from apps.versioning.serializers import OriginIdSerializer
 from common.utils.serializers import BaseSerializer, CaseModelSerializer
 
@@ -17,6 +10,7 @@ class DirectiveSerializer(CaseModelSerializer):
 
 	class Meta(BaseSerializer.Meta):
 		model = Directive
+
 
 class HabitatSerializer(CaseModelSerializer):
 	sources = OriginIdSerializer(many=True)

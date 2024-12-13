@@ -1,11 +1,12 @@
 from rest_framework import serializers
 from humps import camelize, decamelize
 
-class BaseSerializer(serializers.ModelSerializer):
 
-    class Meta:
-        exclude = ('batch',)
-        abstract = True
+class BaseSerializer(serializers.ModelSerializer):
+	class Meta:
+		exclude = ("batch",)
+		abstract = True
+
 
 class CaseModelSerializer(BaseSerializer):
 	"""

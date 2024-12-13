@@ -37,12 +37,14 @@ class Basis(models.Model):
 
 	def __str__(self):
 		return f"{self.internal_name}"
-	
+
+
 class SourceManager(models.Manager):
 	def get_queryset(self):
 		qs = super().get_queryset()
 
-		return qs.select_related('basis')
+		return qs.select_related("basis")
+
 
 class Source(models.Model):
 	objects = SourceManager()
@@ -125,8 +127,7 @@ class Source(models.Model):
 	data_type = models.PositiveSmallIntegerField(choices=DATA_TYPE_CHOICES)
 	url = models.URLField(null=True, blank=True, default=None)  # revisar
 	batch = models.ForeignKey(Batch, on_delete=models.CASCADE, null=True, blank=True, default=None)
-	basis = models.ForeignKey(Basis, on_delete=models.CASCADE, related_name='source')
-
+	basis = models.ForeignKey(Basis, on_delete=models.CASCADE, related_name="source")
 
 	def __str__(self):
 		return self.basis.name

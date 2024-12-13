@@ -23,7 +23,7 @@ class Batch(models.Model):
 		verbose_name_plural = "batches"
 
 
-class Source(models.Model):
+class Basis(models.Model):
 	internal_name = models.CharField(max_length=255, unique=True)
 	name = models.CharField(max_length=255, blank=False)
 	acronym = models.CharField(max_length=50, null=True, blank=True)
@@ -36,10 +36,17 @@ class Source(models.Model):
 
 
 	def __str__(self):
-		return f"Information for {self.name}"
+		return f"{self.internal_name}"
+	
+class SourceManager(models.Manager):
+	def get_queryset(self):
+		qs = super().get_queryset()
 
+		return qs.select_related('basis')
 
-class Module(models.Model):
+class Source(models.Model):
+	objects = SourceManager()
+
 	DATABASE = 0
 	JOURNAL_ARTICLE = 1
 	BOOK = 2
@@ -118,30 +125,30 @@ class Module(models.Model):
 	data_type = models.PositiveSmallIntegerField(choices=DATA_TYPE_CHOICES)
 	url = models.URLField(null=True, blank=True, default=None) #revisar
 	batch = models.ForeignKey(Batch, on_delete=models.CASCADE, null=True, blank=True, default=None)
-	source = models.ForeignKey(Source, on_delete=models.CASCADE, related_name='module')
+	basis = models.ForeignKey(Basis, on_delete=models.CASCADE, related_name='source')
 
 
 	def __str__(self):
-		return self.source.name
+		return self.basis.name
 
 
 class OriginId(models.Model):
 	external_id = models.CharField(max_length=255, blank=True, null=True)
-	module = models.ForeignKey(Module, on_delete=models.CASCADE, db_index=True)
+	source = models.ForeignKey(Source, on_delete=models.CASCADE, db_index=True)
 	attribution = models.CharField(max_length=512, null=True, default=None, blank=True)
 
 	def clean(self):
 		super().clean()
 		if self.external_id:
-			if OriginId.objects.filter(external_id=self.external_id, module=self.module).exists():
+			if OriginId.objects.filter(external_id=self.external_id, source=self.source).exists():
 				raise ValidationError("External ID already exists for this source.")
-		elif self.module.external_id in {Module.DATABASE, Module.JOURNAL_ARTICLE, Module.WEB_PAGE}:
-			raise ValidationError(f"External ID is None and is not allowed with origin type '{Module.TRANSLATE_CHOICES[self.module.source_type].upper()}'")
+		elif self.source.external_id in {Source.DATABASE, Source.JOURNAL_ARTICLE, Source.WEB_PAGE}:
+			raise ValidationError(f"External ID is None and is not allowed with origin type '{Source.TRANSLATE_CHOICES[self.source.source_type].upper()}'")
 
 	def __str__(self):
-		return f"{self.module.source.internal_name}:{self.external_id}"
+		return f"{self.source.basis.internal_name}:{self.external_id}"
 
 	class Meta:
 		indexes = [
-			models.Index(fields=["external_id", "module"]),
+			models.Index(fields=["external_id", "source"]),
 		]

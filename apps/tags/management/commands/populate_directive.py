@@ -1,11 +1,12 @@
 import csv
 
-from django.core.management.base import BaseCommand
-from django.db import transaction
-
 from apps.taxonomy.models import TaxonomicLevel
 from apps.tags.models import Directive
-from apps.versioning.models import Batch
+from apps.versioning.models import Batch, OriginId, Source
+from django.core.management.base import BaseCommand
+from django.db import transaction
+from common.utils.utils import get_or_create_source
+
 
 BOOL_DICT = {"verdadero": True, "falso": False}
 
@@ -27,8 +28,18 @@ class Command(BaseCommand):
 			for line in reader:
 				taxon_name = line["origin_taxon"]
 				taxonomy = TaxonomicLevel.objects.find(taxon=taxon_name).first()
+				
+				source = get_or_create_source(
+					source_type=Source.DATABASE,
+					extraction_method=Source.API,
+					data_type=Source.TAXON,
+					batch=batch,
+					internal_name=line["source"],
+				)
+				
+				os, new_source = OriginId.objects.get_or_create(source=source)
 
-				Directive.objects.update_or_create(
+				directive, _ = Directive.objects.update_or_create(
 					taxon_name=line["origin_taxon"],
 					defaults={
 						"taxonomy": taxonomy,
@@ -40,5 +51,6 @@ class Command(BaseCommand):
 						"batch": batch,
 					},
 				)
+				directive.sources.add(os)
 
 		self.stdout.write(self.style.SUCCESS("Successfully created directives"))

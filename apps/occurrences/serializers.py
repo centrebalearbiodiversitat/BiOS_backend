@@ -2,7 +2,7 @@ from rest_framework import serializers
 from common.utils.serializers import CaseModelSerializer
 from .models import Occurrence
 from ..taxonomy.serializers import BaseTaxonomicLevelSerializer
-from ..versioning.serializers import OriginSourceSerializer
+from ..versioning.serializers import OriginIdSerializer
 
 
 class BaseOccurrenceSerializer(CaseModelSerializer):
@@ -56,7 +56,7 @@ class OccurrenceSerializer(BaseOccurrenceSerializer):
 	year = serializers.IntegerField(source="collection_date_year")
 
 	taxonomy = BaseTaxonomicLevelSerializer()
-	sources = OriginSourceSerializer(many=True)
+	sources = OriginIdSerializer(many=True)
 
 	class Meta:
 		model = Occurrence
@@ -141,4 +141,4 @@ class DynamicSourceSerializer(serializers.Serializer):
 	source = serializers.CharField()  # Renamed for clarity
 
 	def to_representation(self, instance):
-		return {"source": instance["sources__source__name"], "count": instance["count"]}
+		return {"source": instance["sources__source__basis__name"], "count": instance["count"]}

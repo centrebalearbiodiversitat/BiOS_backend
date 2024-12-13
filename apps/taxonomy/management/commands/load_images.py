@@ -5,8 +5,8 @@ from django.core.management.base import BaseCommand
 from django.db import transaction
 
 from apps.taxonomy.models import TaxonomicLevel
-from apps.versioning.models import OriginId, Batch
-from common.utils.utils import get_or_create_module
+from apps.versioning.models import OriginId, Batch, Source
+from common.utils.utils import get_or_create_source
 
 API = "api"
 DATABASE = "database"
@@ -29,15 +29,15 @@ def add_taxonomic_image(line, batch):
 
 		taxon = taxon.first()
 
-		module = get_or_create_module(
-			source_type=DATABASE,
-			extraction_method=API,
-			data_type=IMAGE,
+		source = get_or_create_source(
+			source_type=Source.DATABASE,
+			extraction_method=Source.API,
+			data_type=Source.IMAGE,
 			batch=batch,
 			internal_name=INATURALIST	
 		)
 
-		os, new_os = OriginId.objects.get_or_create(external_id=line[EXTERNAL_ID], module=module, defaults={"attribution": line["attribution"]})
+		os, new_os = OriginId.objects.get_or_create(external_id=line[EXTERNAL_ID], source=source, defaults={"attribution": line["attribution"]})
 
 		if not taxon.images.filter(id=os.id):
 			taxon.images.clear()

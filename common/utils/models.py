@@ -26,7 +26,7 @@ class ReferencedModel(models.Model):
 			obj = kwargs["instance"]
 
 			if hasattr(obj, "sources"):
-				sources = [(s.module.source.name, s.external_id) for s in obj.sources.all()]
+				sources = [(s.source.basis.name, s.external_id) for s in obj.sources.all()]
 
 				if len(sources) != len(set(sources)):
 					raise ValidationError(f"Sources must be unique.\n{obj}\n{sources}")

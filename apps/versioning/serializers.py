@@ -1,30 +1,30 @@
 from rest_framework import serializers
-from rest_framework.fields import SerializerMethodField
-
-from apps.versioning.models import Source, Batch, OriginSource
+from apps.versioning.models import Basis, Source, OriginId
 from common.utils.serializers import CaseModelSerializer
 
 
 class SourceSerializer(CaseModelSerializer):
-	origin = SerializerMethodField()
-	data_type = SerializerMethodField()
+	source_type = serializers.CharField(source='get_source_type_display')
+	extraction_method = serializers.CharField(source='get_extraction_method_display')
+	data_type = serializers.CharField(source='get_data_type_display')
+	name = serializers.CharField(source='basis.internal_name')
 
-	def get_origin(self, obj):
-		return Source.TRANSLATE_CHOICES[obj.origin]
-
-	def get_data_type(self, obj):
-		return Source.TRANSLATE_DATA_TYPE[obj.data_type]
-
+	
 	class Meta:
 		model = Source
 		fields = [
 			"id",
-			"name",
-			"url",
-			"origin",
+			"source_type",
+			"extraction_method",
 			"data_type",
+			"url",
+			"name",
 		]
 
+class BasisSerializer(CaseModelSerializer):
+	class Meta:
+		model = Basis
+		fields = "__all__"
 
 class SourceCountSerializer(SourceSerializer):
 	count = serializers.IntegerField()
@@ -33,9 +33,9 @@ class SourceCountSerializer(SourceSerializer):
 		fields = SourceSerializer.Meta.fields + ["count"]
 
 
-class OriginSourceSerializer(CaseModelSerializer):
+class OriginIdSerializer(CaseModelSerializer):
 	source = SourceSerializer(read_only=True)
 
 	class Meta:
-		model = OriginSource
+		model = OriginId
 		fields = "__all__"

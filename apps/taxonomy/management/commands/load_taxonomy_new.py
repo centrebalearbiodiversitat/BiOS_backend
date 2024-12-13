@@ -6,9 +6,9 @@ from django.core.management.base import BaseCommand
 from django.db import transaction
 
 from apps.taxonomy.models import Authorship, TaxonomicLevel
-from apps.versioning.models import Batch, OriginId
+from apps.versioning.models import Batch, OriginId, Source
 from apps.tags.models import Directive
-from common.utils.utils import str_clean_up, get_or_create_module
+from common.utils.utils import str_clean_up, get_or_create_source
 
 KINGDOM = "kingdom"
 PHYLUM = "phylum"
@@ -36,14 +36,12 @@ LEVELS_PARAMS = {
 }
 
 ACCEPTED_TAXON = "accepted_taxon"
-API = "api"
 AUTHOR_ACCEPTED = "author_accepted"
 ORIGIN_TAXON = "origin_taxon"
 RANK = "rank"
 SOURCE = "source"
 SOURCE_TYPE = "origin"
 STATUS = "status"
-TAXON = "taxon"
 TAXON_ID = "taxon_id"
 
 @transaction.atomic
@@ -75,10 +73,10 @@ def create_taxonomic_level(line, parent, batch, idx_name, rank):
 		if line[idx_name][0].isupper() and rank in [TaxonomicLevel.SPECIES, TaxonomicLevel.SUBSPECIES, TaxonomicLevel.VARIETY]:
 			raise Exception(f"Epithet cant be upper cased.\n{line}")
 
-		module = get_or_create_module(
-			source_type=line[SOURCE_TYPE],
-			extraction_method=API,	
-			data_type=TAXON,
+		source = get_or_create_source(
+			source_type=Source.TRANSLATE_SOURCE_TYPE[line[SOURCE_TYPE]],
+			extraction_method=Source.API,	
+			data_type=Source.TAXON,
 			batch=batch,
 			internal_name=line[SOURCE],
 			
@@ -106,9 +104,9 @@ def create_taxonomic_level(line, parent, batch, idx_name, rank):
 		except Directive.DoesNotExist:
 			pass
 
-		os, new_source = OriginId.objects.get_or_create(external_id=line[TAXON_ID], module=module)
+		os, new_source = OriginId.objects.get_or_create(external_id=line[TAXON_ID], source=source)
 		if new_source:
-			if child.sources.filter(module=os.module, external_id=os.external_id).exists():
+			if child.sources.filter(source=os.source, external_id=os.external_id).exists():
 				raise Exception(f"Origin ID id already existing. {os}\n{line}")
 			child.sources.add(os)
 			child.save()

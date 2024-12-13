@@ -1,22 +1,22 @@
 from django.contrib import admin
 
-from apps.versioning.models import Batch, Source, Module, OriginId
+from apps.versioning.models import Batch, Source, Basis, OriginId
 
 admin.site.register(Batch)
 
 
-class ModuleAdmin(admin.ModelAdmin):
+class SourceAdmin(admin.ModelAdmin):
 	search_fields = ["source_type"]
 	list_display = ["source_type", "extraction_method", "data_type", "url"]
 	list_filter = ["data_type"]
 
 
-admin.site.register(Module, ModuleAdmin)
+admin.site.register(Source, SourceAdmin)
 
-class SourceAdmin(admin.ModelAdmin):
-	search_fields = ["name"]
+class BasisAdmin(admin.ModelAdmin):
+	search_fields = ["internal_name"]
 	list_display = [
-				"name",
+				"internal_name",
 				"acronym",
 				"url",
 				"description",
@@ -25,11 +25,11 @@ class SourceAdmin(admin.ModelAdmin):
 	autocomplete_fields = ["authors"]
 
 
-admin.site.register(Source, SourceAdmin)
+admin.site.register(Basis, BasisAdmin)
 
 class OriginIdAdmin(admin.ModelAdmin):
 	search_fields = ["external_id"]
-	list_filter = ["module"]
+	list_filter = ["source"]
 
 
 admin.site.register(OriginId, OriginIdAdmin)

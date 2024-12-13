@@ -1,50 +1,61 @@
 from rest_framework import serializers
 
-from apps.tags.models import TaxonTag, Habitat, Tag, System, IUCNData
-from apps.versioning.serializers import OriginSourceSerializer
+from apps.tags.models import (
+	Directive,
+	IUCNData,
+	TaxonTag,
+	Habitat,
+	Tag,
+	System
+)
+from apps.versioning.serializers import OriginIdSerializer
+from common.utils.serializers import BaseSerializer, CaseModelSerializer
 
 
-class HabitatSerializer(serializers.ModelSerializer):
-	sources = OriginSourceSerializer(many=True)
+class DirectiveSerializer(CaseModelSerializer):
+	sources = OriginIdSerializer(many=True)
 
-	class Meta:
+	class Meta(BaseSerializer.Meta):
+		model = Directive
+
+class HabitatSerializer(CaseModelSerializer):
+	sources = OriginIdSerializer(many=True)
+
+	class Meta(BaseSerializer.Meta):
 		model = Habitat
-		fields = ["sources", "name"]
 
 
-class TagSerializer(serializers.ModelSerializer):
+class TagSerializer(CaseModelSerializer):
 	tag_type = serializers.SerializerMethodField()
 
 	def get_tag_type(self, obj):
 		return Tag.TRANSLATE_TYPE[obj.tag_type]
 
-	class Meta:
+	class Meta(BaseSerializer.Meta):
 		model = Tag
-		fields = ["name", "tag_type"]
 
 
-class TaxonTagSerializer(serializers.ModelSerializer):
+class TaxonTagSerializer(CaseModelSerializer):
 	tags = serializers.SlugRelatedField(many=True, slug_field="name", queryset=Tag.objects.all())
+	sources = OriginIdSerializer(many=True)
 
-	class Meta:
+	class Meta(BaseSerializer.Meta):
 		model = TaxonTag
-		fields = "__all__"
 
 
-class SystemSerializer(serializers.ModelSerializer):
-	sources = OriginSourceSerializer(many=True)
+class SystemSerializer(CaseModelSerializer):
+	sources = OriginIdSerializer(many=True)
 
-	class Meta:
+	class Meta(BaseSerializer.Meta):
 		model = System
-		fields = "__all__"
 
 
-class IUCNDataSerializer(serializers.ModelSerializer):
+class IUCNDataSerializer(CaseModelSerializer):
+	habitat = serializers.SlugRelatedField(many=True, slug_field="name", queryset=Habitat.objects.all())
 	iucn_global = serializers.CharField(source="get_iucn_global_display")
 	iucn_europe = serializers.CharField(source="get_iucn_europe_display")
 	iucn_mediterranean = serializers.CharField(source="get_iucn_mediterranean_display")
-	habitat = serializers.SlugRelatedField(many=True, slug_field="name", queryset=Habitat.objects.all())
+	sources = OriginIdSerializer(many=True)
 
-	class Meta:
+	class Meta(BaseSerializer.Meta):
 		model = IUCNData
-		fields = "__all__"

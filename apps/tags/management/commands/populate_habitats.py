@@ -2,13 +2,11 @@ from django.core.management.base import BaseCommand
 from django.db import transaction
 
 from apps.tags.models import Habitat
-from apps.versioning.models import Batch, OriginId
-from common.utils.utils import get_or_create_module
+from apps.versioning.models import Batch, OriginId, Source
+from common.utils.utils import get_or_create_source
 
-API = "api"
-DATABASE = "database"
+
 IUCN = "IUCN"
-TAXON = "taxon"
 
 HABITATS = [
 	("forest", 1),
@@ -37,10 +35,10 @@ class Command(BaseCommand):
 
 	def populate_habitat(self, batch):
 		for name, iucn_id in HABITATS:
-			module = get_or_create_module(
-				source_type=DATABASE,
-				extraction_method=API,
-				data_type=TAXON,
+			source = get_or_create_source(
+				source_type=Source.DATABASE,
+				extraction_method=Source.API,
+				data_type=Source.TAXON,
 				batch=batch,
 				internal_name=IUCN,
 			)
@@ -49,9 +47,9 @@ class Command(BaseCommand):
 				defaults={"name": name, "batch": batch},
 			)
 
-			os, new_source = OriginId.objects.get_or_create(module=module, external_id=iucn_id)
+			os, new_source = OriginId.objects.get_or_create(source=source, external_id=iucn_id)
 			if new_source:
-				if habitat.sources.filter(module=os.module, external_id=os.external_id).exists():
+				if habitat.sources.filter(source=os.source, external_id=os.external_id).exists():
 					raise Exception(f"Origin source id already existing. {os}\n{name}")
 				habitat.sources.add(os)
 				habitat.save()

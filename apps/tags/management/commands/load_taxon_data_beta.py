@@ -8,21 +8,18 @@ from django.core.management.base import BaseCommand
 from django.db import transaction
 from apps.taxonomy.models import TaxonomicLevel
 from apps.tags.models import Habitat, Tag, TaxonTag, IUCNData, System, Directive
-from apps.versioning.models import Batch, OriginId
-from common.utils.utils import get_or_create_module
+from apps.versioning.models import Batch, OriginId, Source
+from common.utils.utils import get_or_create_source
 
 BOOL_DICT = {"verdadero": True, "falso": False}
-
-API = "api"
-DATABASE = "database"
 EXTERNAL_ID = "origin_id"
 INTERNAL_NAME = "source"
 IUCN = "IUCN"
 SOURCE_TYPE = "origin"
-TAXON = "taxon"
 URL = "origin_url"
 
 def check_taxon(line):
+
 	taxonomy = TaxonomicLevel.objects.find(taxon=line["origin_taxon"])
 
 	if taxonomy.count() == 0:
@@ -45,14 +42,14 @@ def transform_iucn_status(line):
 
 
 def load_taxon_data_from_json(line, taxonomy, batch):
-	module = get_or_create_module(
-		source_type=DATABASE,
-		extraction_method=API,
-		data_type=TAXON,
+	source = get_or_create_source(
+		source_type=Source.DATABASE,
+		extraction_method=Source.API,
+		data_type=Source.TAXON_DATA,
 		batch=batch,
 		internal_name=IUCN,
 	)
-	os, new_source = OriginId.objects.get_or_create(external_id=line[EXTERNAL_ID], module=module)
+	os, new_source = OriginId.objects.get_or_create(external_id=line[EXTERNAL_ID], source=source)
 
 	habitat_ids = set(line["habitat"] or [])
 	valid_habitats = Habitat.objects.filter(sources__external_id__in=habitat_ids)
@@ -88,22 +85,21 @@ def load_taxon_data_from_json(line, taxonomy, batch):
 def load_taxon_data_from_csv(line, taxonomy, batch):
 	if line["taxon_rank"] in ["species", "subspecies", "variety"]:
 		
-		module = get_or_create_module(
-			source_type=line[SOURCE_TYPE].lower(),
-			extraction_method=API,
-			data_type=TAXON,
+		source = get_or_create_source(
+			source_type=Source.TRANSLATE_SOURCE_TYPE[line[SOURCE_TYPE].lower()],
+			extraction_method=Source.EXPERT,
+			data_type=Source.TAXON_DATA,
 			batch=batch,
 			internal_name=line[INTERNAL_NAME],
 		)
-		
 		system = System.objects.get(taxonomy=taxonomy.first())
 
+		os, _ = OriginId.objects.get_or_create(source=source)
 		if system.freshwater is None and system.marine is None and system.terrestrial is None:
 			system.freshwater = BOOL_DICT.get(line["freshwater"].lower(), None)
 			system.marine = BOOL_DICT.get(line["marine"].lower(), None)
 			system.terrestrial = BOOL_DICT.get(line["terrestrial"].lower(), None)
 			system.sources.clear()
-			os, new_source = OriginId.objects.get_or_create(module=module)
 			system.sources.add(os)
 			system.save()
 		
@@ -120,7 +116,7 @@ def load_taxon_data_from_csv(line, taxonomy, batch):
 		except Tag.DoesNotExist:
 			raise Exception(f"No Tag.DOE was found with the value '{doe_value}'")
 		
-		Directive.objects.get_or_create(
+		directive, _ = Directive.objects.get_or_create(
             taxon_name=line["origin_taxon"],
             defaults={
                 "taxonomy": taxonomy.first(),
@@ -132,17 +128,20 @@ def load_taxon_data_from_csv(line, taxonomy, batch):
 				"batch": batch
             },
         )
+		directive.sources.add(os)
 
 
 class Command(BaseCommand):
 	def add_arguments(self, parser):
 		parser.add_argument("file", type=str, help="Path to the data file")
+		parser.add_argument("-d", nargs="?", type=str, default=";")
+
 
 	@transaction.atomic
 	def handle(self, *args, **options):
 		file_name = options["file"]
 		_, file_format = os.path.splitext(file_name)
-		print(file_format)
+
 		exception = False
 		file_format = file_format.lower()
 		batch = Batch.objects.create()
@@ -158,9 +157,11 @@ class Command(BaseCommand):
 					except:
 						exception = True
 						print(traceback.format_exc(), line)
-		elif file_format == ".csv":
+		elif file_format == ".csv":		
+			delimiter = options["d"]
+
 			with open(file_name, "r") as csv_file:
-				reader = csv.DictReader(csv_file)
+				reader = csv.DictReader(csv_file, delimiter=delimiter)
 
 				for line in reader:
 					try:

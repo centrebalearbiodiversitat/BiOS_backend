@@ -1,30 +1,29 @@
 from django.urls import path
 
 from apps.tags.views import (
-	IUCNDataCRUDView,
+    DirectiveListView,
+	IUCNDataListView,
 	# IUCNDataListView,
 	# IUCNDataCountView,
-	HabitatsCRUDView,
-	# TagCRUDView,
+	HabitatsListView,
+	# TagListView,
 	# TaxonDataInvasiveView
-	SystemCRUDView,
-	TaxonTagCRUDView,
+	SystemListView,
+	TaxonTagListView
 )
 
 app_name = "tags"
 urlpatterns = [
-	path("/habitats", HabitatsCRUDView.as_view(), name="habitats_crud"),
-	path("/iucn", IUCNDataCRUDView.as_view(), name="iucn_crud"),
-	path(
-		"/",
-		TaxonTagCRUDView.as_view(),
-		name="taxon_tag_crud",
-	),
-	path("/system", SystemCRUDView.as_view(), name="system_crud"),
+    path("", TaxonTagListView.as_view(), name="taxon_tag_list"),
+    path("/directive", DirectiveListView.as_view(), name="directive_list"),
+	path("/habitat", HabitatsListView.as_view(), name="habitats_List"),
+	path("/iucn", IUCNDataListView.as_view(), name="iucn_list"),
+	path("/system", SystemListView.as_view(), name="system_list"),
+    
 	# path("/taxon/tags/list", IUCNDataListView.as_view(), name="data_list"),
 	# path("/taxon/data/list/count", IUCNDataCountView.as_view(), name="data_count"),
 	# path("/data/list", IUCNDataListView.as_view(), name="data_list"),
 	# path("/taxon/data/list/count", IUCNDataCountView.as_view(), name="data_count"),
-	# path("/taxon/tag", TagCRUDView.as_view(), name="tag_crud"),
+	# path("/taxon/tag", TagListView.as_view(), name="tag_list"),
 	# path("/taxon/data/invasive", TaxonDataInvasiveView.as_view(), name="data_invasive")
 ]

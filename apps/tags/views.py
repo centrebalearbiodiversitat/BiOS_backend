@@ -5,13 +5,23 @@ from rest_framework.generics import ListAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from apps.API.exceptions import CBBAPIException
-from apps.tags.models import IUCNData, TaxonomicLevel, Habitat, TaxonTag, System
-from apps.tags.serializers import HabitatSerializer, IUCNDataSerializer, TaxonTagSerializer
+from apps.tags.models import Directive, Habitat, IUCNData, System, TaxonomicLevel, TaxonTag
+from apps.tags.serializers import (
+	HabitatSerializer,
+	IUCNDataSerializer,
+	TaxonTagSerializer,
+	DirectiveSerializer
+)
 
-from .forms import IUCNDataForm, TaxonTagForm
+from .forms import (
+	DirectiveForm,
+	IUCNDataForm,
+	SystemForm,
+	TaxonTagForm
+)
 
 
-# class TagCRUDView(APIView):
+# class TagListView(APIView):
 # 	@swagger_auto_schema(
 # 		tags=["Tag"],
 # 		operation_description="Retrieve a specific tag instance by its id",
@@ -44,7 +54,7 @@ from .forms import IUCNDataForm, TaxonTagForm
 # 		return Response(TagSerializer(tag).data)
 
 
-class TaxonTagCRUDView(APIView):
+class TaxonTagListView(APIView):
 	@swagger_auto_schema(
 		tags=["Tags"],
 		operation_description="Retrieve a specific taxonomic tags instance by its taxonomic level id",
@@ -216,7 +226,47 @@ class TaxonTagCRUDView(APIView):
 # 		return Response(BaseTaxonomicLevelSerializer(invasive_species, many=True).data)
 
 
-class IUCNDataCRUDView(APIView):
+class HabitatsListView(APIView):
+	@swagger_auto_schema(
+		tags=["Tags"],
+		operation_description="Obtains the habitats in which a taxonomic level is found by its ID.",
+		manual_parameters=[
+			openapi.Parameter(
+				name="taxonomy",
+				in_=openapi.IN_QUERY,
+				description="ID of the taxon to retrieve it's habitats",
+				type=openapi.TYPE_INTEGER,
+				required=True,
+			),
+		],
+		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
+	)
+	def get(self, request):
+		taxon_form = IUCNDataForm(data=request.GET)
+
+		if not taxon_form.is_valid():
+			raise CBBAPIException(taxon_form.errors, 400)
+
+		taxonomy = taxon_form.cleaned_data.get("taxonomy", None)
+
+		if not taxonomy:
+			raise CBBAPIException("Missing taxonomy id parameter", 400)
+
+		try:
+			taxon_parent = TaxonomicLevel.objects.get(id=taxonomy)
+		except TaxonomicLevel.DoesNotExist:
+			raise CBBAPIException("Taxonomic level does not exist", 404)
+
+		descendants = taxon_parent.get_descendants(include_self=True)
+
+		iucn_data = IUCNData.objects.filter(taxonomy__in=descendants)
+
+		habitats = Habitat.objects.filter(iucndata__in=iucn_data).distinct()
+
+		return Response(HabitatSerializer(habitats, many=True).data)
+
+
+class IUCNDataListView(APIView):
 	@swagger_auto_schema(
 		tags=["Tags"],
 		operation_description="Retrieve the conservation status and habitats of a taxonomic level by its ID",
@@ -232,22 +282,21 @@ class IUCNDataCRUDView(APIView):
 		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
 	)
 	def get(self, request):
-		taxon_form = IUCNDataForm(self.request.GET)
+		iucn_form = IUCNDataForm(self.request.GET)
 
-		if not taxon_form.is_valid():
-			raise CBBAPIException(taxon_form.errors, code=400)
+		if not iucn_form.is_valid():
+			raise CBBAPIException(iucn_form.errors, code=400)
 
-		taxon_id = taxon_form.cleaned_data.get("taxonomy")
+		taxon_id = iucn_form.cleaned_data.get("taxonomy")
 
 		if not taxon_id:
 			raise CBBAPIException("Missing taxonomy id parameter", code=400)
 		try:
 			taxon = IUCNData.objects.get(taxonomy=taxon_id)
 		except IUCNData.DoesNotExist:
-			raise CBBAPIException("Conservation  does not exist", code=404)
+			raise CBBAPIException("Conservation status does not exist", code=404)
 
 		return Response(IUCNDataSerializer(taxon).data)
-
 
 # class IUCNDataFilter:
 # 	def get(self, request):
@@ -363,7 +412,7 @@ class IUCNDataCRUDView(APIView):
 # 		return Response(super().get(request).count())
 
 
-class HabitatsCRUDView(APIView):
+class SystemListView(APIView):
 	@swagger_auto_schema(
 		tags=["Tags"],
 		operation_description="Obtains the habitats in which a taxonomic level is found by its ID.",
@@ -379,52 +428,12 @@ class HabitatsCRUDView(APIView):
 		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
 	)
 	def get(self, request):
-		taxon_form = IUCNDataForm(data=request.GET)
+		system_form = SystemForm(data=request.GET)
 
-		if not taxon_form.is_valid():
-			raise CBBAPIException(taxon_form.errors, 400)
+		if not system_form.is_valid():
+			raise CBBAPIException(system_form.errors, 400)
 
-		taxonomy = taxon_form.cleaned_data.get("taxonomy", None)
-
-		if not taxonomy:
-			raise CBBAPIException("Missing taxonomy id parameter", 400)
-
-		try:
-			taxon_parent = TaxonomicLevel.objects.get(id=taxonomy)
-		except TaxonomicLevel.DoesNotExist:
-			raise CBBAPIException("Taxonomic level does not exist", 404)
-
-		descendants = taxon_parent.get_descendants(include_self=True)
-
-		iucn_data = IUCNData.objects.filter(taxonomy__in=descendants)
-
-		habitats = Habitat.objects.filter(iucndata__in=iucn_data).distinct()
-
-		return Response(HabitatSerializer(habitats, many=True).data)
-
-
-class SystemCRUDView(APIView):
-	@swagger_auto_schema(
-		tags=["Tags"],
-		operation_description="Obtains the habitats in which a taxonomic level is found by its ID.",
-		manual_parameters=[
-			openapi.Parameter(
-				name="taxonomy",
-				in_=openapi.IN_QUERY,
-				description="ID of the taxon to retrieve it's habitats",
-				type=openapi.TYPE_INTEGER,
-				required=True,
-			),
-		],
-		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
-	)
-	def get(self, request):
-		taxon_form = IUCNDataForm(data=request.GET)
-
-		if not taxon_form.is_valid():
-			raise CBBAPIException(taxon_form.errors, 400)
-
-		taxonomy = taxon_form.cleaned_data.get("taxonomy", None)
+		taxonomy = system_form.cleaned_data.get("taxonomy", None)
 
 		if not taxonomy:
 			raise CBBAPIException("Missing taxonomy id parameter", 400)
@@ -437,9 +446,7 @@ class SystemCRUDView(APIView):
 		descendants = taxon_parent.get_descendants(include_self=True)
 
 		system = System.objects.filter(taxonomy__in=descendants)
-		print(descendants)
 
-		print(system)
 
 		return Response(SystemSerializer(system, many=True).data)
 
@@ -473,3 +480,36 @@ class SystemCRUDView(APIView):
 
 # 		serializer = SystemSerializer(system)
 # 		return Response(serializer.data)
+
+class DirectiveListView(APIView):
+	@swagger_auto_schema(
+		tags=["Tags"],
+		operation_description="Retrieve a specific directive instance by its taxonomic level id",
+		manual_parameters=[
+			openapi.Parameter(
+				"taxonomy",
+				openapi.IN_QUERY,
+				description="ID of the taxonomic level to retrieve",
+				type=openapi.TYPE_INTEGER,
+				required=True,
+			)
+		],
+		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
+	)
+	def get(self, request):
+		directive_form = DirectiveForm(self.request.GET)
+
+		if not directive_form.is_valid():
+			raise CBBAPIException(directive_form.errors, code=400)
+
+		taxon_id = directive_form.cleaned_data.get("taxonomy")
+
+		if not taxon_id:
+			raise CBBAPIException("Missing taxonomy id parameter", code=400)
+
+		try:
+			taxon = Directive.objects.get(taxonomy=taxon_id)
+		except TaxonTag.DoesNotExist:
+			raise CBBAPIException("Taxonomic tags does not exist", code=404)
+
+		return Response(DirectiveSerializer(taxon).data)

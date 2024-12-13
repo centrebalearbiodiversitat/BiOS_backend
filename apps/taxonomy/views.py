@@ -12,18 +12,15 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_tracking.mixins import LoggingMixin
 from apps.API.exceptions import CBBAPIException
-from apps.taxonomy.models import Authorship, IUCNData, TaxonomicLevel, Habitat, Tag
+from apps.taxonomy.models import Authorship, TaxonomicLevel
 from apps.taxonomy.serializers import (
 	AuthorshipSerializer,
 	BaseTaxonomicLevelSerializer,
-	TaxonCompositionSerializer,
-	IUCNDataSerializer,
-	HabitatSerializer,
-	TagSerializer,
+	TaxonCompositionSerializer
 )
 
-from ..versioning.serializers import OriginSourceSerializer
-from .forms import IdFieldForm, IUCNDataForm, TaxonomicLevelChildrenForm, TaxonomicLevelForm, TagForm
+from apps.versioning.serializers import OriginIdSerializer
+from .forms import IdFieldForm, TaxonomicLevelChildrenForm, TaxonomicLevelForm
 from common.utils.utils import EchoWriter, PUNCTUATION_TRANSLATE, str_clean_up
 
 
@@ -484,8 +481,7 @@ class TaxonSourceView(ListAPIView):
 			taxon = TaxonomicLevel.objects.get(id=taxon_id)
 		except TaxonomicLevel.DoesNotExist:
 			raise CBBAPIException("Taxonomic level does not exist.", code=404)
-
-		return Response(OriginSourceSerializer(taxon.sources, many=True).data)
+		return Response(OriginIdSerializer(taxon.sources, many=True).data)
 
 
 def map_taxa_to_rank(ranks, taxa):
@@ -577,226 +573,6 @@ class TaxonChecklistView(APIView):
 			content_type="text/csv",
 			headers={"Content-Disposition": f'attachment; filename="{head_taxon}_checklist.csv"'},
 		)
-
-
-class IUCNDataCRUDView(APIView):
-	@swagger_auto_schema(
-		tags=["Taxon Data"],
-		operation_description="Retrieve a specific taxonomic data instance by its taxonomic level id",
-		manual_parameters=[
-			openapi.Parameter(
-				"taxonomy",
-				openapi.IN_QUERY,
-				description="ID of the taxon data to retrieve",
-				type=openapi.TYPE_INTEGER,
-				required=True,
-			)
-		],
-		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
-	)
-	def get(self, request):
-		taxon_form = IUCNDataForm(self.request.GET)
-
-		if not taxon_form.is_valid():
-			raise CBBAPIException(taxon_form.errors, code=400)
-
-		taxon_id = taxon_form.cleaned_data.get("taxonomy")
-
-		if not taxon_id:
-			raise CBBAPIException("Missing taxonomy id parameter", code=400)
-
-		try:
-			taxon = IUCNData.objects.get(taxonomy=taxon_id)
-		except IUCNData.DoesNotExist:
-			raise CBBAPIException("Taxonomic data does not exist", code=404)
-
-		return Response(IUCNDataSerializer(taxon).data)
-
-
-class IUCNDataFilter:
-	def get(self, request):
-		taxon_data_form = IUCNDataForm(data=request.GET)
-
-		if not taxon_data_form.is_valid():
-			raise CBBAPIException(taxon_data_form.errors, code=400)
-
-		taxonomy = taxon_data_form.cleaned_data.get("taxonomy", None)
-		if not taxonomy:
-			raise CBBAPIException("Missing taxonomy id parameter", 400)
-
-		exact = taxon_data_form.cleaned_data.get("exact", False)
-		str_fields = ["habitat"]
-
-		filters = {}
-		for param in taxon_data_form.cleaned_data:
-			if param != "exact":
-				if param in str_fields:
-					value = taxon_data_form.cleaned_data.get(param)
-
-					if value:
-						param = f"{param}__iexact" if exact else f"{param}__icontains"
-						filters[param] = value
-				else:
-					value = taxon_data_form.cleaned_data.get(param)
-					if value or isinstance(value, int):
-						filters[param] = value
-
-		if filters:
-			query = IUCNData.objects.filter(**filters)
-		else:
-			query = IUCNData.objects.none()
-
-		return query
-
-
-class IUCNDataListView(IUCNDataFilter, ListAPIView):
-	@swagger_auto_schema(
-		tags=["Taxon Data"],
-		operation_description="Get a list of taxon data with filtering.",
-		manual_parameters=[
-			openapi.Parameter("taxonomy", openapi.IN_QUERY, description="ID of the taxon", type=openapi.TYPE_INTEGER),
-			openapi.Parameter(
-				"iucn_global",
-				openapi.IN_QUERY,
-				description="IUCN Global status",
-				type=openapi.TYPE_STRING,
-				enum=[str(c[0]) for c in IUCNData.CS_CHOICES],
-			),
-			openapi.Parameter(
-				"iucn_europe",
-				openapi.IN_QUERY,
-				description="IUCN Europe status",
-				type=openapi.TYPE_STRING,
-				enum=[str(c[0]) for c in IUCNData.CS_CHOICES],
-			),
-			openapi.Parameter(
-				"iucn_mediterranean",
-				openapi.IN_QUERY,
-				description="IUCN Mediterranean status",
-				type=openapi.TYPE_STRING,
-				enum=[str(c[0]) for c in IUCNData.CS_CHOICES],
-			),
-			openapi.Parameter("invasive", openapi.IN_QUERY, description="Is invasive?", type=openapi.TYPE_BOOLEAN),
-			openapi.Parameter("domesticated", openapi.IN_QUERY, description="Is domesticated?", type=openapi.TYPE_BOOLEAN),
-			openapi.Parameter("freshwater", openapi.IN_QUERY, description="Inhabit freshwater?", type=openapi.TYPE_BOOLEAN),
-			openapi.Parameter("marine", openapi.IN_QUERY, description="Inhabit marine?", type=openapi.TYPE_BOOLEAN),
-			openapi.Parameter("terrestrial", openapi.IN_QUERY, description="Inhabit terrestrial?", type=openapi.TYPE_BOOLEAN),
-		],
-		responses={200: "Success", 400: "Bad Request"},
-	)
-	def get(self, request):
-		return Response(IUCNDataSerializer(super().get(request), many=True).data)
-
-
-class IUCNDataCountView(IUCNDataFilter, ListAPIView):
-	@swagger_auto_schema(
-		tags=["Taxon Data"],
-		operation_description="Get a list of taxon data with filtering.",
-		manual_parameters=[
-			openapi.Parameter("taxonomy_id", openapi.IN_QUERY, description="ID of the taxon", type=openapi.TYPE_INTEGER),
-			openapi.Parameter(
-				"iucn_global",
-				openapi.IN_QUERY,
-				description="IUCN Global status",
-				type=openapi.TYPE_STRING,
-				enum=[str(c[0]) for c in IUCNData.CS_CHOICES],
-			),
-			openapi.Parameter(
-				"iucn_europe",
-				openapi.IN_QUERY,
-				description="IUCN Europe status",
-				type=openapi.TYPE_STRING,
-				enum=[str(c[0]) for c in IUCNData.CS_CHOICES],
-			),
-			openapi.Parameter(
-				"iucn_mediterranean",
-				openapi.IN_QUERY,
-				description="IUCN Mediterranean status",
-				type=openapi.TYPE_STRING,
-				enum=[str(c[0]) for c in IUCNData.CS_CHOICES],
-			),
-			openapi.Parameter("invasive", openapi.IN_QUERY, description="Is invasive?", type=openapi.TYPE_BOOLEAN),
-			openapi.Parameter("domesticated", openapi.IN_QUERY, description="Is domesticated?", type=openapi.TYPE_BOOLEAN),
-			openapi.Parameter("freshwater", openapi.IN_QUERY, description="Inhabit freshwater?", type=openapi.TYPE_BOOLEAN),
-			openapi.Parameter("marine", openapi.IN_QUERY, description="Inhabit marine?", type=openapi.TYPE_BOOLEAN),
-			openapi.Parameter("terrestrial", openapi.IN_QUERY, description="Inhabit terrestrial?", type=openapi.TYPE_BOOLEAN),
-		],
-		responses={200: "Success", 400: "Bad Request"},
-	)
-	def get(self, request):
-		return Response(super().get(request).count())
-
-
-class HabitatsView(APIView):
-	@swagger_auto_schema(
-		tags=["Taxon Data"],
-		operation_description="Obtains the habitats in which a taxonomic level is found by its ID.",
-		manual_parameters=[
-			openapi.Parameter(
-				name="taxonomy",
-				in_=openapi.IN_QUERY,
-				description="ID of the taxon to retrieve it's habitats",
-				type=openapi.TYPE_INTEGER,
-				required=True,
-			),
-		],
-		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
-	)
-	def get(self, request):
-		taxon_form = IUCNDataForm(data=request.GET)
-
-		if not taxon_form.is_valid():
-			raise CBBAPIException(taxon_form.errors, 400)
-
-		taxonomy = taxon_form.cleaned_data.get("taxonomy", None)
-
-		if not taxonomy:
-			raise CBBAPIException("Missing taxonomy id parameter", 400)
-
-		try:
-			taxon_parent = TaxonomicLevel.objects.get(id=taxonomy)
-		except TaxonomicLevel.DoesNotExist:
-			raise CBBAPIException("Taxonomic level does not exist", 404)
-
-		descendants = taxon_parent.get_descendants(include_self=True)
-
-		iucn_data = IUCNData.objects.filter(taxonomy__in=descendants)
-		habitats = Habitat.objects.filter(iucn_data__in=iucn_data).distinct().order_by("name")
-
-		return Response(HabitatSerializer(habitats, many=True).data)
-
-
-class TagCRUDView(APIView):
-	@swagger_auto_schema(
-		tags=["Tag"],
-		operation_description="Retrieve a specific tag instance by its id",
-		manual_parameters=[
-			openapi.Parameter(
-				"id",
-				openapi.IN_QUERY,
-				description="ID of the tag to retrieve",
-				type=openapi.TYPE_INTEGER,
-				required=True,
-			)
-		],
-		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
-	)
-	def get(self, request):
-		tag_form = TagForm(self.request.GET)
-
-		if not tag_form.is_valid():
-			raise CBBAPIException(tag_form.errors, code=400)
-
-		tag_id = tag_form.cleaned_data.get("id")
-		if not tag_id:
-			raise CBBAPIException("Missing id parameter", code=400)
-
-		try:
-			tag = Tag.objects.get(id=tag_id)
-		except Tag.DoesNotExist:
-			raise CBBAPIException("Tag does not exist", code=404)
-
-		return Response(TagSerializer(tag).data)
 
 
 class AuthorshipCRUDView(APIView):

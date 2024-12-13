@@ -6,9 +6,9 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from ..API.exceptions import CBBAPIException
-from .forms import OriginSourceForm, SourceForm
-from .models import OriginSource, Source
-from .serializers import OriginSourceSerializer, SourceSerializer, SourceCountSerializer
+from .forms import OriginIdForm, SourceForm
+from .models import OriginId, Source
+from .serializers import OriginIdSerializer, SourceSerializer, SourceCountSerializer
 
 
 class SourceSearchView(APIView):
@@ -107,7 +107,7 @@ class SourceFilter(APIView):
 				filters[param] = value
 
 		oq = (
-			OriginSource.objects.filter(source=OuterRef("id"))
+			OriginId.objects.filter(source=OuterRef("id"))
 			.exclude(source__data_type=Source.OCCURRENCE, occurrence__in_cbb_scope=False)
 			.values("source")
 			.annotate(ent_count=Count("id"))
@@ -187,7 +187,7 @@ class SourceCountView(SourceFilter):
 		return Response(super().get(request).count())
 
 
-class OriginSourceCRUDView(APIView):
+class OriginIdCRUDView(APIView):
 	@swagger_auto_schema(
 		tags=["Versioning"],
 		operation_description="Get details of a specific source.",
@@ -207,7 +207,7 @@ class OriginSourceCRUDView(APIView):
 		},
 	)
 	def get(self, request):
-		os_form = OriginSourceForm(data=self.request.GET)
+		os_form = OriginIdForm(data=self.request.GET)
 
 		if not os_form.is_valid():
 			raise CBBAPIException(os_form.errors, 400)
@@ -217,8 +217,8 @@ class OriginSourceCRUDView(APIView):
 			raise CBBAPIException("Missing id parameter", 400)
 
 		try:
-			os = OriginSource.objects.get(id=os_id)
-		except OriginSource.DoesNotExist:
+			os = OriginId.objects.get(id=os_id)
+		except OriginId.DoesNotExist:
 			raise CBBAPIException("Source does not exist", 404)
 
-		return Response(OriginSourceSerializer(os).data)
+		return Response(OriginIdSerializer(os).data)

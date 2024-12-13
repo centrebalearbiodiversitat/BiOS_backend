@@ -5,7 +5,7 @@ import traceback
 from django.core.management.base import BaseCommand
 from django.db import transaction
 from apps.taxonomy.models import Authorship
-from apps.versioning.models import Batch, Source
+from apps.versioning.models import Batch, Basis
 
 def get_or_create_authorship(author, batch):
 		if not author:
@@ -24,19 +24,11 @@ def get_or_create_authorship(author, batch):
 						},
 					)
 					auths.append(auth)
-
 		return auths
 
-def populate_source(line, batch):
-	author_names = line.get('authors', [])
+def populate_basis(line, batch):
 
-	if author_names:
-
-		for author_name in author_names:
-			authors = get_or_create_authorship(author_name, batch)
-		
-
-	source, created = Source.objects.update_or_create(
+	basis, created = Basis.objects.update_or_create(
 		internal_name=line.get('internal_name', ''),
 		defaults={
 			'name': line.get('name', ''),
@@ -48,8 +40,14 @@ def populate_source(line, batch):
 			'batch': batch
 		}
 	)
+	author_names = line.get('authors', [])
 	if created and author_names:
-				source.authors.add(authors)
+
+		if author_names:
+
+			for author_name in author_names:
+				authors = get_or_create_authorship(author_name, batch)
+				basis.authors.set(authors)
 
 
 class Command(BaseCommand):
@@ -68,7 +66,7 @@ class Command(BaseCommand):
 
 		try:
 			for line in json_file:
-				populate_source(line, batch)
+				populate_basis(line, batch)
 
 			self.stdout.write(self.style.SUCCESS(f"Successfully created sources"))
 		

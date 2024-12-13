@@ -4,24 +4,12 @@ from common.utils.forms import CamelCaseForm, IdFieldForm, TranslateForm
 
 from .models import IUCNData, TaxonomicLevel, System, TaxonTag
 
+class DirectiveForm(IdFieldForm, TranslateForm):
+	taxonomy = forms.IntegerField(required=False)
 
-class TaxonomicLevelForm(IdFieldForm, TranslateForm):
-	exact = forms.BooleanField(required=False)
-	rank = forms.CharField(max_length=100, required=False)
-	authorship = forms.CharField(max_length=256, required=False)
-	name = forms.CharField(required=False)
-	accepted = forms.NullBooleanField(required=False)
-
-	TRANSLATE_FIELDS = {"taxon_rank": "rank", "scientific_name_authorship": "authorship"}
-	CHOICES_FIELD = {"rank": TaxonomicLevel.TRANSLATE_RANK}
-
-	def __init__(self, *args, **kwargs):
-		super().__init__(*args, **kwargs)
-
-
-class TaxonomicLevelChildrenForm(IdFieldForm, CamelCaseForm):
-	children_rank = forms.CharField(max_length=100, required=False)
-	accepted_only = forms.NullBooleanField(required=False)
+	class Meta:
+		model = TaxonTag
+		fields = ["taxonomy"]
 
 
 class IUCNDataForm(IdFieldForm, TranslateForm):
@@ -49,7 +37,11 @@ class TaxonTagForm(IdFieldForm, TranslateForm):
 		fields = ["taxonomy"]
 
 
-class SystemForm(forms.ModelForm):
+class SystemForm(IdFieldForm, TranslateForm):
+	taxonomy = forms.IntegerField(required=False)
+	
 	class Meta:
 		model = System
 		fields = ["taxonomy", "freshwater", "marine", "terrestrial"]
+
+

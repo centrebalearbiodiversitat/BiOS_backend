@@ -334,9 +334,9 @@ class OccurrenceCountBySourceView(APIView):
 		occurrences = (
 			Occurrence.objects.filter(taxonomy__in=taxonomy, in_cbb_scope=True)
 			.prefetch_related("sources")
-			.values("sources__source__name")
+			.values("sources__source__basis__name")
 			.annotate(count=Count("id"))
-			.order_by("sources__source__name")
+			.order_by("sources__source__basis__name")
 		)
 
 		return Response(DynamicSourceSerializer(occurrences, many=True).data)

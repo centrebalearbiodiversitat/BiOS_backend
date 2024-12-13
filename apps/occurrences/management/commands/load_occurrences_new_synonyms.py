@@ -9,8 +9,8 @@ from django.contrib.gis.geos import Point, GEOSGeometry
 from apps.genetics.models import Sequence, Marker, Product
 from apps.occurrences.models import Occurrence
 from apps.taxonomy.models import TaxonomicLevel
-from apps.versioning.models import Batch, OriginId
-from common.utils.utils import get_or_create_module
+from apps.versioning.models import Batch, OriginId, Source
+from common.utils.utils import get_or_create_source
 
 API = "api"
 EXTERNAL_ID = "sample_id"
@@ -91,17 +91,17 @@ def parse_line(line: dict):
 
 def genetic_sources(line: dict, batch, occ):
 
-	module = get_or_create_module(
-			source_type=line[SOURCE_TYPE],
-			extraction_method=API,
-			data_type=SEQUENCE,
+	source = get_or_create_source(
+			source_type=Source.TRANSLATE_SOURCE_TYPE[line[SOURCE_TYPE]],
+			extraction_method=Source.API,
+			data_type=Source.SEQUENCE,
 			batch=batch,
 			internal_name=line[INTERNAL_NAME],
 		)
 
 	os, new = OriginId.objects.get_or_create(
 		external_id=line[EXTERNAL_ID],
-		module=module,
+		source=source,
 		defaults={
 			"attribution": line["attribution"],
 		},
@@ -157,8 +157,8 @@ def genetic_sources(line: dict, batch, occ):
 	seq.save()
 
 
-def create_origin_id(ref_model_elem, external_id, module):
-	os, new = OriginId.objects.get_or_create(external_id=external_id, module=module)
+def create_origin_id(ref_model_elem, external_id, source):
+	os, new = OriginId.objects.get_or_create(external_id=external_id, source=source)
 	if new:
 		ref_model_elem.sources.add(os)
 		ref_model_elem.save()
@@ -187,14 +187,14 @@ class Command(BaseCommand):
 			for line in data:
 				line = parse_line(line)
 
-				if OriginId.objects.filter(external_id=line[EXTERNAL_ID], module__source__name__icontains="NCBI").exists():
+				if OriginId.objects.filter(external_id=line[EXTERNAL_ID], source__basis__name__icontains="NCBI").exists():
 					# print(f"OriginId already exists in NCBI\n{line['sample_id']}")
 					continue
 
-				module = get_or_create_module(
-					source_type=line[SOURCE_TYPE],
-					extraction_method=API,
-					data_type=TAXON,
+				source = get_or_create_source(
+					source_type=Source.TRANSLATE_SOURCE_TYPE[line[SOURCE_TYPE]],
+					extraction_method=Source.API,
+					data_type=Source.TAXON,
 					batch=batch,
 					internal_name=line[INTERNAL_NAME],
 				)
@@ -215,7 +215,7 @@ class Command(BaseCommand):
 							continue
 
 						taxon = taxon.first()
-						create_origin_id(taxon, line[taxon_id_key], module)
+						create_origin_id(taxon, line[taxon_id_key], source)
 						parent_level = line[taxon_key]
 
 				taxonomy = TaxonomicLevel.objects.find(taxon=line["originalName"]).filter(rank=TaxonomicLevel.TRANSLATE_RANK[line["taxonRank"].lower()])
@@ -235,17 +235,17 @@ class Command(BaseCommand):
 				else:
 					del line["lat_lon"]
 
-				module = get_or_create_module(
-					source_type=line[SOURCE_TYPE],
-					extraction_method=API,
-					data_type=OCCURRENCE,
+				source = get_or_create_source(
+					source_type=Source.TRANSLATE_SOURCE_TYPE[line[SOURCE_TYPE]],
+					extraction_method=Source.API,
+					data_type=Source.OCCURRENCE,
 					batch=batch,
 					internal_name=line[INTERNAL_NAME],
 				)
 
 				os, new = OriginId.objects.get_or_create(
 					external_id=line[EXTERNAL_ID],
-					module=module,
+					source=source,
 					defaults={
 						"attribution": line["attribution"],
 					},

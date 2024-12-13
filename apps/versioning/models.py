@@ -2,6 +2,7 @@ from django.core.exceptions import ValidationError
 from django.db import models
 import sys
 
+
 class Batch(models.Model):
 	PENDING = 0
 	ACCEPTED = 1
@@ -33,7 +34,6 @@ class Basis(models.Model):
 	citation = models.TextField(null=True, blank=True)
 	contact = models.CharField(max_length=255, null=True, blank=True)
 	batch = models.ForeignKey(Batch, on_delete=models.CASCADE, null=True, blank=True, default=None)
-
 
 	def __str__(self):
 		return f"{self.internal_name}"
@@ -119,11 +119,11 @@ class Source(models.Model):
 		"image": IMAGE,
 		"taxon_data": TAXON_DATA,
 	}
-	
+
 	source_type = models.PositiveSmallIntegerField(choices=SOURCE_TYPE_CHOICES)
 	extraction_method = models.PositiveSmallIntegerField(choices=EXTRACTION_METHOD_CHOICES)
 	data_type = models.PositiveSmallIntegerField(choices=DATA_TYPE_CHOICES)
-	url = models.URLField(null=True, blank=True, default=None) #revisar
+	url = models.URLField(null=True, blank=True, default=None)  # revisar
 	batch = models.ForeignKey(Batch, on_delete=models.CASCADE, null=True, blank=True, default=None)
 	basis = models.ForeignKey(Basis, on_delete=models.CASCADE, related_name='source')
 

@@ -44,6 +44,7 @@ SOURCE_TYPE = "origin"
 STATUS = "status"
 TAXON_ID = "taxon_id"
 
+
 @transaction.atomic
 def create_taxonomic_level(line, parent, batch, idx_name, rank):
 	if idx_name == VARIETY and idx_name not in line:
@@ -79,7 +80,6 @@ def create_taxonomic_level(line, parent, batch, idx_name, rank):
 			data_type=Source.TAXON,
 			batch=batch,
 			internal_name=line[SOURCE],
-			
 		)
 		verb_auth, auths, parsed_year = get_or_create_authorship(line, batch)
 

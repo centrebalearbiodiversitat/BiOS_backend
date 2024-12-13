@@ -14,6 +14,7 @@ EXTERNAL_ID = "image_id"
 INATURALIST = "INaturalist"
 IMAGE = "image"
 
+
 def add_taxonomic_image(line, batch):
 	if not line["taxon"]:
 		print(f"Taxon does not exist\n{line}")
@@ -37,7 +38,7 @@ def add_taxonomic_image(line, batch):
 			internal_name=INATURALIST	
 		)
 
-		os, new_os = OriginId.objects.get_or_create(external_id=line[EXTERNAL_ID], source=source, defaults={"attribution": line["attribution"]})
+		os, _ = OriginId.objects.get_or_create(external_id=line[EXTERNAL_ID], source=source, defaults={"attribution": line["attribution"]})
 
 		if not taxon.images.filter(id=os.id):
 			taxon.images.clear()

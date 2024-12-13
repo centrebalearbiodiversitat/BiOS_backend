@@ -56,6 +56,7 @@ class Command(BaseCommand):
 			elif not habitat.sources.filter(id=os.id).exists():
 				raise Exception(f"Origin source id already existing. {os}\n{name}")
 		self.stdout.write(self.style.SUCCESS(f"Successfully created habitats"))
+
 	@transaction.atomic
 	def handle(self, *args, **kwargs):
 		self.populate_habitat(Batch.objects.create())

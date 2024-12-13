@@ -18,6 +18,7 @@ IUCN = "IUCN"
 SOURCE_TYPE = "origin"
 URL = "origin_url"
 
+
 def check_taxon(line):
 
 	taxonomy = TaxonomicLevel.objects.find(taxon=line["origin_taxon"])
@@ -102,7 +103,7 @@ def load_taxon_data_from_csv(line, taxonomy, batch):
 			system.sources.clear()
 			system.sources.add(os)
 			system.save()
-		
+
 		taxon_tag, _ = TaxonTag.objects.get_or_create(
 			taxonomy=taxonomy.first(),
 			defaults={"batch": batch},
@@ -117,17 +118,17 @@ def load_taxon_data_from_csv(line, taxonomy, batch):
 			raise Exception(f"No Tag.DOE was found with the value '{doe_value}'")
 		
 		directive, _ = Directive.objects.get_or_create(
-            taxon_name=line["origin_taxon"],
-            defaults={
-                "taxonomy": taxonomy.first(),
-                "cites": BOOL_DICT.get(line["cites"].lower(), None),
-                "ceea": BOOL_DICT.get(line["ceea"].lower(), None),
-                "lespre": BOOL_DICT.get(line["lespre"].lower(), None),
-                "directiva_aves": BOOL_DICT.get(line["directiva_aves"].lower(), None),
-                "directiva_habitats": BOOL_DICT.get(line["directiva_habitats"].lower(), None),
+			taxon_name=line["origin_taxon"],
+			defaults={
+				"taxonomy": taxonomy.first(),
+				"cites": BOOL_DICT.get(line["cites"].lower(), None),
+				"ceea": BOOL_DICT.get(line["ceea"].lower(), None),
+				"lespre": BOOL_DICT.get(line["lespre"].lower(), None),
+				"directiva_aves": BOOL_DICT.get(line["directiva_aves"].lower(), None),
+				"directiva_habitats": BOOL_DICT.get(line["directiva_habitats"].lower(), None),
 				"batch": batch
-            },
-        )
+			},
+		)
 		directive.sources.add(os)
 
 

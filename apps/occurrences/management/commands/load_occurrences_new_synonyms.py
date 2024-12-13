@@ -1,4 +1,3 @@
-import datetime
 import json
 import geopandas as gpd
 
@@ -123,7 +122,6 @@ def genetic_sources(line: dict, batch, occ):
 			published_date=parse_datetime(line["date"]) if line["date"] else None,
 		)
 		seq.sources.add(os)
-
 
 	for production in line["genetic_features"]:
 		if production["gene"]:

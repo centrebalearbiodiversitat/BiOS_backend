@@ -1,7 +1,6 @@
 from apps.tags.serializers import SystemSerializer
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
-from rest_framework.generics import ListAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from apps.API.exceptions import CBBAPIException
@@ -70,12 +69,9 @@ class TaxonTagListView(APIView):
 		if not taxon_id:
 			raise CBBAPIException("Missing taxonomy id parameter", code=400)
 
-		try:
-			taxon = TaxonTag.objects.get(taxonomy=taxon_id)
-		except TaxonTag.DoesNotExist:
-			raise CBBAPIException("Taxonomic tags does not exist", code=404)
+		taxon_tags = TaxonTag.objects.filter(taxonomy=taxon_id)
 
-		return Response(TaxonTagSerializer(taxon).data)
+		return Response(TaxonTagSerializer(taxon_tags, many=True).data)
 
 
 # class TaxonTagFilter:

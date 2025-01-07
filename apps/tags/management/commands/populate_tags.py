@@ -5,7 +5,7 @@ from apps.tags.models import Tag
 
 TAGS = [
 	("unknown", Tag.DOE),
-	("doubt", Tag.DOE),
+	("doubtful", Tag.DOE),
 	("absent", Tag.DOE),
 	("native", Tag.DOE),
 	("endemic", Tag.DOE),

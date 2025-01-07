@@ -29,12 +29,12 @@ class IUCNDataAdmin(admin.ModelAdmin):
 	search_fields = ("taxonomy__name",)
 	autocomplete_fields = ("taxonomy",)
 
-	filter_horizontal = ("habitat",)
+	filter_horizontal = ("habitats",)
 	readonly_fields = ["taxonomy"]
 	fieldsets = (
 		(None, {"fields": ["taxonomy"]}),
 		("IUCN Status", {"fields": ("iucn_global", "iucn_europe", "iucn_mediterranean")}),
-		("Other Information", {"fields": ("habitat",)}),
+		("Other Information", {"fields": ("habitats",)}),
 	)
 
 
@@ -58,21 +58,18 @@ admin.site.register(System, SystemAdmin)
 
 
 class TaxonTagAdmin(admin.ModelAdmin):
-	list_display = ("taxonomy",)
+	list_display = ("taxonomy", "tag_name", "tag_type")
 	search_fields = ("taxonomy__name",)
-	autocomplete_fields = ("taxonomy",)
+	autocomplete_fields = ("taxonomy", "sources")
+	list_filter = ("tag__tag_type", )
 
-	filter_horizontal = ("tags",)
-	readonly_fields = ["taxonomy"]
-	fieldsets = (
-		(None, {"fields": ["taxonomy"]}),
-		("Other Information", {"fields": ("tags",)}),
-	)
+	@admin.display(ordering="tag__name")
+	def tag_name(self, obj):
+		return obj.tag.name
 
-	def formfield_for_manytomany(self, db_field, request, **kwargs):
-		if db_field.name == "tags":
-			kwargs["queryset"] = Tag.objects.all().order_by("name")
-		return super().formfield_for_manytomany(db_field, request, **kwargs)
+	@admin.display(ordering="tag__tag_type")
+	def tag_type(self, obj):
+		return obj.tag.translate_tag_type()
 
 
 admin.site.register(TaxonTag, TaxonTagAdmin)
@@ -80,7 +77,6 @@ admin.site.register(TaxonTag, TaxonTagAdmin)
 
 class DirectiveAdmin(admin.ModelAdmin):
 	list_display = (
-		"taxon_name",
 		"taxonomy",
 		"cites",
 		"ceea",
@@ -95,12 +91,12 @@ class DirectiveAdmin(admin.ModelAdmin):
 		"directiva_aves",
 		"directiva_habitats",
 	)
-	search_fields = ("taxon_name", "taxon__name")
+	search_fields = ("taxonomy__name", )
 	autocomplete_fields = ("taxonomy",)
 
-	readonly_fields = ["taxon_name", "taxonomy"]
+	readonly_fields = ["taxonomy"]
 	fieldsets = (
-		(None, {"fields": ["taxon_name", "taxonomy"]}),
+		(None, {"fields": ["taxonomy"]}),
 		(
 			"Directivas",
 			{

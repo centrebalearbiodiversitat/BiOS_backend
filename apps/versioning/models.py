@@ -1,6 +1,5 @@
 from django.core.exceptions import ValidationError
 from django.db import models
-import sys
 
 
 class Batch(models.Model):
@@ -20,7 +19,6 @@ class Batch(models.Model):
 		return f"{self.created_at.year}-{self.created_at.month}-{self.created_at.day}__{self.id}"
 
 	class Meta:
-		app_label = "versioning"
 		verbose_name_plural = "batches"
 
 
@@ -30,13 +28,16 @@ class Basis(models.Model):
 	acronym = models.CharField(max_length=50, null=True, blank=True)
 	url = models.URLField(null=True, blank=True)
 	description = models.TextField(null=True, blank=True)
-	authors = models.ManyToManyField("taxonomy.Authorship", blank=True)
+	authors = models.TextField(null=True, blank=True)
 	citation = models.TextField(null=True, blank=True)
 	contact = models.CharField(max_length=255, null=True, blank=True)
-	batch = models.ForeignKey(Batch, on_delete=models.CASCADE, null=True, blank=True, default=None)
+	batch = models.ForeignKey(Batch, on_delete=models.CASCADE)
 
 	def __str__(self):
 		return f"{self.internal_name}"
+
+	class Meta:
+		verbose_name_plural = "Bases"
 
 
 class SourceManager(models.Manager):
@@ -127,7 +128,7 @@ class Source(models.Model):
 	data_type = models.PositiveSmallIntegerField(choices=DATA_TYPE_CHOICES)
 	url = models.URLField(null=True, blank=True, default=None)  # revisar
 	batch = models.ForeignKey(Batch, on_delete=models.CASCADE, null=True, blank=True, default=None)
-	basis = models.ForeignKey(Basis, on_delete=models.CASCADE, related_name="source")
+	basis = models.ForeignKey(Basis, on_delete=models.CASCADE, related_name="source", null=True, blank=True, default=None)
 
 	def __str__(self):
 		return self.basis.name
@@ -143,11 +144,14 @@ class OriginId(models.Model):
 		if self.external_id:
 			if OriginId.objects.filter(external_id=self.external_id, source=self.source).exists():
 				raise ValidationError("External ID already exists for this source.")
-		elif self.source.external_id in {Source.DATABASE, Source.JOURNAL_ARTICLE, Source.WEB_PAGE}:
-			raise ValidationError(f"External ID is None and is not allowed with origin type '{Source.TRANSLATE_CHOICES[self.source.source_type].upper()}'")
+		elif self.source.source_type in {Source.DATABASE, Source.JOURNAL_ARTICLE, Source.WEB_PAGE}:
+			raise ValidationError(f"External ID is None and is not allowed with origin type '{Source.SOURCE_TYPE_CHOICES[self.source.source_type].upper()}'")
 
 	def __str__(self):
-		return f"{self.source.basis.internal_name}:{self.external_id}"
+		if self.external_id:
+			return f"{self.source.basis.internal_name}:{self.external_id}"
+		else:
+			return f"{self.source.basis.internal_name}"
 
 	class Meta:
 		indexes = [

@@ -7,7 +7,6 @@ from django.db import transaction
 
 from apps.taxonomy.models import Authorship, TaxonomicLevel
 from apps.versioning.models import Batch, OriginId, Source
-from apps.tags.models import Directive
 from common.utils.utils import str_clean_up, get_or_create_source
 
 KINGDOM = "kingdom"
@@ -19,7 +18,6 @@ GENUS = "genus"
 SPECIES = "species"
 SUBSPECIES = "subspecies"
 VARIETY = "variety"
-
 
 LEVELS = [KINGDOM, PHYLUM, CLASS, ORDER, FAMILY, GENUS, SPECIES, SUBSPECIES, VARIETY]
 
@@ -97,21 +95,20 @@ def create_taxonomic_level(line, parent, batch, idx_name, rank):
 			},
 		)
 
-		try:
-			directive = Directive.objects.get(taxon_name=line[ORIGIN_TAXON])
-			directive.taxonomy = child
-			directive.save()
-		except Directive.DoesNotExist:
-			pass
-
-		os, new_source = OriginId.objects.get_or_create(external_id=line[TAXON_ID], source=source)
+		os, new_source = OriginId.objects.get_or_create(
+			external_id__iexact=line[TAXON_ID],
+			source=source,
+			defaults={
+				"external_id": line[TAXON_ID],
+			}
+		)
 		if new_source:
-			if child.sources.filter(source=os.source, external_id=os.external_id).exists():
-				raise Exception(f"Origin ID id already existing. {os}\n{line}")
+			if child.sources.filter(source=os.source, external_id__iexact=os.external_id).exists():
+				raise Exception(f"Origin ID already existing. {os}\n{line}")
 			child.sources.add(os)
 			child.save()
 		elif not child.sources.filter(id=os.id).exists():
-			raise Exception(f"Origin ID id already existing. {os}\n{line}")
+			raise Exception(f"Origin ID already existing. {os}\n{line}")
 
 		if auths:
 			child.authorship.add(*auths)

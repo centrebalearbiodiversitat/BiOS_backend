@@ -1,6 +1,4 @@
 from django.db import models
-from django.db.models.signals import m2m_changed
-from django.dispatch import receiver
 from apps.taxonomy.models import TaxonomicLevel
 from common.utils.models import ReferencedModel
 
@@ -31,27 +29,23 @@ class Tag(models.Model):
 	name = models.CharField(max_length=255)
 	tag_type = models.PositiveSmallIntegerField(choices=TAG_TYPE_CHOICES)
 
-	class Meta:
-		unique_together = ("name", "tag_type")
+	def translate_tag_type(self):
+		return Tag.TRANSLATE_TYPE[self.tag_type]
 
 	def __str__(self):
-		return f"{self.name}"
+		return f"({self.translate_tag_type()}) {self.name}"
+
+	class Meta:
+		unique_together = ("name", "tag_type")
 
 
 class TaxonTag(ReferencedModel):
 	taxonomy = models.ForeignKey(TaxonomicLevel, on_delete=models.CASCADE, db_index=True)
-	tags = models.ManyToManyField(Tag, blank=True)
+	tag = models.ForeignKey(Tag, on_delete=models.CASCADE, db_index=True)
 
 	class Meta:
 		verbose_name_plural = "Taxon tags"
 		unique_together = ["taxonomy"]
-
-
-@receiver(m2m_changed, sender=TaxonTag.tags.through)
-def validate_doe_tag(instance, action, **kwargs):
-	if action == "post_add":
-		if instance.tags.filter(tag_type=Tag.DOE).count() > 1:
-			raise ValueError("You cannot add another DOE Tag. There is already one associated with it.")
 
 
 class Habitat(ReferencedModel):
@@ -117,10 +111,10 @@ class IUCNData(ReferencedModel):
 	iucn_global = models.PositiveSmallIntegerField(choices=CS_CHOICES, default=NE)
 	iucn_europe = models.PositiveSmallIntegerField(choices=CS_CHOICES, default=NE)
 	iucn_mediterranean = models.PositiveSmallIntegerField(choices=CS_CHOICES, default=NE)
-	habitat = models.ManyToManyField(Habitat, blank=True)
+	habitats = models.ManyToManyField(Habitat, blank=True)
 
 	def __str__(self):
-		return f"{self.taxonomy} - iucn_global: {self.iucn_global}, iucn_europe: {self.iucn_europe}, iucn_mediterranean: {self.iucn_mediterranean}, habitat: {self.habitat}"
+		return f"{self.taxonomy} - iucn_global: {self.iucn_global}, iucn_europe: {self.iucn_europe}, iucn_mediterranean: {self.iucn_mediterranean}"
 
 	class Meta:
 		verbose_name_plural = "IUCN data"
@@ -128,7 +122,6 @@ class IUCNData(ReferencedModel):
 
 
 class Directive(ReferencedModel):
-	taxon_name = models.CharField(max_length=50, unique=True)
 	taxonomy = models.ForeignKey(TaxonomicLevel, on_delete=models.CASCADE, db_index=True, null=True)
 	cites = models.BooleanField(default=None, null=True)
 	ceea = models.BooleanField(default=None, null=True)
@@ -137,7 +130,7 @@ class Directive(ReferencedModel):
 	directiva_habitats = models.BooleanField(default=None, null=True)
 
 	def __str__(self):
-		return self.taxon_name
+		return self.taxonomy
 
 	class Meta:
-		unique_together = ["taxon_name"]
+		unique_together = ["taxonomy"]

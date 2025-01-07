@@ -11,13 +11,9 @@ from apps.taxonomy.models import TaxonomicLevel
 from apps.versioning.models import Batch, OriginId, Source
 from common.utils.utils import get_or_create_source
 
-API = "api"
 EXTERNAL_ID = "sample_id"
 INTERNAL_NAME = "occurrenceSource"
-OCCURRENCE = "occurrence"
-SEQUENCE = "sequence"
 SOURCE_TYPE = "occurrenceOrigin"
-TAXON = "taxon"
 
 TAXON_KEYS = [
 	("kingdom", "kingdomKey", TaxonomicLevel.KINGDOM),
@@ -143,8 +139,8 @@ def genetic_sources(line: dict, batch, occ):
 				},
 			)
 
-			# if product and not marker.products.all().filter(name=product).exists():
-			# 	marker.products.add(product)
+			if product and not marker.products.all().filter(name=product).exists():
+				marker.products.add(product)
 
 			# if not marker.sources.filter(id=os.id).exists():
 			# 	marker.sources.add(os)
@@ -202,6 +198,7 @@ class Command(BaseCommand):
 						taxon = TaxonomicLevel.objects.find(taxon=line[taxon_key]).filter(rank=taxon_rank)
 
 						taxon_count = taxon.count()
+						# If there are taxon collisions, then try again with the parent
 						if taxon_count > 1:
 							taxon = TaxonomicLevel.objects.find(taxon=f"{parent_level} {line[taxon_key]}").filter(rank=taxon_rank)
 							taxon_count = taxon.count()
@@ -271,3 +268,4 @@ class Command(BaseCommand):
 
 				if "genetic_features" in line:
 					genetic_sources(line, batch, occ)
+			raise Exception()

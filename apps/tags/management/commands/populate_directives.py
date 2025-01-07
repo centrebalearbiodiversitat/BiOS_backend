@@ -26,8 +26,7 @@ class Command(BaseCommand):
 			reader = csv.DictReader(csv_file)
 
 			for line in reader:
-				taxon_name = line["origin_taxon"]
-				taxonomy = TaxonomicLevel.objects.find(taxon=taxon_name).first()
+				taxonomy = TaxonomicLevel.objects.find(taxon=line["origin_taxon"]).first()
 
 				source = get_or_create_source(
 					source_type=Source.DATABASE,
@@ -40,9 +39,8 @@ class Command(BaseCommand):
 				os, new_source = OriginId.objects.get_or_create(source=source)
 
 				directive, _ = Directive.objects.update_or_create(
-					taxon_name=line["origin_taxon"],
+					taxonomy=taxonomy,
 					defaults={
-						"taxonomy": taxonomy,
 						"cites": BOOL_DICT.get(line["cites"].lower()),
 						"ceea": BOOL_DICT.get(line["ceea"].lower()),
 						"lespre": BOOL_DICT.get(line["lespre"].lower()),

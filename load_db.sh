@@ -9,12 +9,14 @@ echo "Loading Populations..."
 python manage.py load_gadm data/GIS/CNIG_poblaciones/*uncertainess*/*.shp
 
 #Populate
-echo "Populating sources..."
-python manage.py populate_sources data/sources.csv
+#echo "Populating sources..."
+#python manage.py populate_sources data/sources.csv
 echo "Populating tags..."
 python manage.py populate_tags
 echo "Populating habitats..."
 python manage.py populate_habitats
+echo "Populating directives..."
+python manage.py populate_directives
 
 
 for folder in data/groups/*/
@@ -29,7 +31,11 @@ do
 
   # IUCN
   echo "$folder/iucn.json"
-  python manage.py load_taxon_data_beta "$folder/iucn.json"
+  python manage.py load_taxon_data "$folder/iucn.json"
+
+  # Tags
+  echo "$folder/tags.xlsx"
+  python manage.py load_taxon_tags "$folder/tags.xlsx"
 
   # Occurrences
   for file in "$folder/occurrences/"*.json

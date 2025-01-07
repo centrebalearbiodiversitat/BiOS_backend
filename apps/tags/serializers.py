@@ -10,42 +10,46 @@ class DirectiveSerializer(CaseModelSerializer):
 
 	class Meta(BaseSerializer.Meta):
 		model = Directive
+		exclude = ("id", "taxonomy", "batch")
 
 
 class HabitatSerializer(CaseModelSerializer):
 	sources = OriginIdSerializer(many=True)
 
-	class Meta(BaseSerializer.Meta):
+	class Meta:
 		model = Habitat
+		fields = ["id", "name", "sources"]
 
 
 class TagSerializer(CaseModelSerializer):
 	tag_type = serializers.SerializerMethodField()
 
 	def get_tag_type(self, obj):
-		return Tag.TRANSLATE_TYPE[obj.tag_type]
+		return obj.translate_tag_type()
 
-	class Meta(BaseSerializer.Meta):
+	class Meta:
 		model = Tag
+		fields = "__all__"
 
 
 class TaxonTagSerializer(CaseModelSerializer):
-	tags = serializers.SlugRelatedField(many=True, slug_field="name", queryset=Tag.objects.all())
+	tag = TagSerializer()
 	sources = OriginIdSerializer(many=True)
 
 	class Meta(BaseSerializer.Meta):
 		model = TaxonTag
+		exclude = ("id", "taxonomy", "batch")
 
 
 class SystemSerializer(CaseModelSerializer):
 	sources = OriginIdSerializer(many=True)
 
-	class Meta(BaseSerializer.Meta):
+	class Meta:
 		model = System
+		fields = ["freshwater", "marine", "terrestrial", "sources"]
 
 
 class IUCNDataSerializer(CaseModelSerializer):
-	habitat = serializers.SlugRelatedField(many=True, slug_field="name", queryset=Habitat.objects.all())
 	iucn_global = serializers.CharField(source="get_iucn_global_display")
 	iucn_europe = serializers.CharField(source="get_iucn_europe_display")
 	iucn_mediterranean = serializers.CharField(source="get_iucn_mediterranean_display")
@@ -53,3 +57,4 @@ class IUCNDataSerializer(CaseModelSerializer):
 
 	class Meta(BaseSerializer.Meta):
 		model = IUCNData
+		exclude = ("id", "taxonomy", "batch", "habitats")

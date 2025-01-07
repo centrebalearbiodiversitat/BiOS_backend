@@ -38,7 +38,7 @@ class Command(BaseCommand):
 			source = get_or_create_source(
 				source_type=Source.DATABASE,
 				extraction_method=Source.API,
-				data_type=Source.TAXON,
+				data_type=Source.TAXON_DATA,
 				batch=batch,
 				internal_name=IUCN,
 			)

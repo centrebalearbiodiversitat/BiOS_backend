@@ -1,4 +1,3 @@
-import csv
 import json
 
 from django.core.management.base import BaseCommand
@@ -8,11 +7,8 @@ from apps.taxonomy.models import TaxonomicLevel
 from apps.versioning.models import OriginId, Batch, Source
 from common.utils.utils import get_or_create_source
 
-API = "api"
-DATABASE = "database"
 EXTERNAL_ID = "image_id"
 INATURALIST = "INaturalist"
-IMAGE = "image"
 
 
 def add_taxonomic_image(line, batch):
@@ -30,9 +26,21 @@ def add_taxonomic_image(line, batch):
 
 		taxon = taxon.first()
 
-		source = get_or_create_source(source_type=Source.DATABASE, extraction_method=Source.API, data_type=Source.IMAGE, batch=batch, internal_name=INATURALIST)
+		source = get_or_create_source(
+			source_type=Source.DATABASE,
+			extraction_method=Source.API,
+			data_type=Source.IMAGE,
+			batch=batch,
+			internal_name=INATURALIST
+		)
 
-		os, _ = OriginId.objects.get_or_create(external_id=line[EXTERNAL_ID], source=source, defaults={"attribution": line["attribution"]})
+		os, _ = OriginId.objects.get_or_create(
+			external_id=line[EXTERNAL_ID],
+			source=source,
+			defaults={
+				"attribution": line["attribution"]
+			}
+		)
 
 		if not taxon.images.filter(id=os.id):
 			taxon.images.clear()
@@ -65,5 +73,3 @@ class Command(BaseCommand):
 
 			if exception:
 				raise Exception("Errors found: Rollback control")
-			else:
-				self.stdout.write(self.style.SUCCESS(f"Successfully added images"))

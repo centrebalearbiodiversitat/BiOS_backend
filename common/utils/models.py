@@ -17,6 +17,14 @@ class LatLonModel(models.Model):
 
 
 class ReferencedModel(models.Model):
+	class ReferencedManager(models.Manager):
+		def get_queryset(self):
+			qs = super().get_queryset()
+
+			return qs.prefetch_related("sources", 'sources__source__basis')
+
+	objects = ReferencedManager()
+
 	batch = models.ForeignKey("versioning.Batch", on_delete=models.CASCADE)
 	sources = models.ManyToManyField("versioning.OriginId")
 
@@ -24,10 +32,8 @@ class ReferencedModel(models.Model):
 	def clean_sources(**kwargs):
 		if kwargs and kwargs["action"] == "post_add":
 			obj = kwargs["instance"]
-
 			if hasattr(obj, "sources"):
-				sources = [(s.source.basis.name, s.external_id) for s in obj.sources.all()]
-
+				sources = [(s.source.basis, s.external_id) for s in obj.sources.all()]
 				if len(sources) != len(set(sources)):
 					raise ValidationError(f"Sources must be unique.\n{obj}\n{sources}")
 

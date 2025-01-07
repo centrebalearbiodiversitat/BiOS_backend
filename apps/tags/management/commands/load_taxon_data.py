@@ -44,10 +44,7 @@ def load_taxon_data_from_json(line, taxonomy, batch):
 		batch=batch,
 		internal_name=IUCN,
 	)
-	os, new_source = OriginId.objects.get_or_create(
-		external_id=line[EXTERNAL_ID],
-		source=source
-	)
+	os, new_source = OriginId.objects.get_or_create(external_id=line[EXTERNAL_ID], source=source)
 
 	habitat_ids = set(line["habitat"] or [])
 	valid_habitats = Habitat.objects.filter(sources__external_id__in=habitat_ids)

@@ -100,7 +100,7 @@ def create_taxonomic_level(line, parent, batch, idx_name, rank):
 			source=source,
 			defaults={
 				"external_id": line[TAXON_ID],
-			}
+			},
 		)
 		if new_source:
 			if child.sources.filter(source=os.source, external_id__iexact=os.external_id).exists():

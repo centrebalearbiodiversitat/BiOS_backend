@@ -40,4 +40,4 @@ class OriginIdSerializer(CaseModelSerializer):
 
 	class Meta:
 		model = OriginId
-		exclude = ("id",  )
+		exclude = ("id",)

@@ -61,7 +61,7 @@ class TaxonTagAdmin(admin.ModelAdmin):
 	list_display = ("taxonomy", "tag_name", "tag_type")
 	search_fields = ("taxonomy__name",)
 	autocomplete_fields = ("taxonomy", "sources")
-	list_filter = ("tag__tag_type", )
+	list_filter = ("tag__tag_type",)
 
 	@admin.display(ordering="tag__name")
 	def tag_name(self, obj):
@@ -91,7 +91,7 @@ class DirectiveAdmin(admin.ModelAdmin):
 		"directiva_aves",
 		"directiva_habitats",
 	)
-	search_fields = ("taxonomy__name", )
+	search_fields = ("taxonomy__name",)
 	autocomplete_fields = ("taxonomy",)
 
 	readonly_fields = ["taxonomy"]

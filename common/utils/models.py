@@ -21,7 +21,7 @@ class ReferencedModel(models.Model):
 		def get_queryset(self):
 			qs = super().get_queryset()
 
-			return qs.prefetch_related("sources", 'sources__source__basis')
+			return qs.prefetch_related("sources", "sources__source__basis")
 
 	objects = ReferencedManager()
 

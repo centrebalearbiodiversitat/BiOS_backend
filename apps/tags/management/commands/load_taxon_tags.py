@@ -26,7 +26,7 @@ def check_taxon(line):
 
 def load_taxon_tags(line, taxonomy, batch):
 	if line["taxon_rank"] not in ["species", "subspecies", "variety"]:
-		raise Exception(f'Taxon rank not allowed.\n{line}')
+		raise Exception(f"Taxon rank not allowed.\n{line}")
 
 	source = get_or_create_source(
 		source_type=Source.TRANSLATE_SOURCE_TYPE[line[SOURCE_TYPE].lower()],

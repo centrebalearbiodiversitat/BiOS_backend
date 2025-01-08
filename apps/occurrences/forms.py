@@ -25,11 +25,7 @@ class LatLonModelForm(IdFieldForm, TranslateForm):
 		longitude_min = cleaned_data.get("longitude_min")
 		longitude_max = cleaned_data.get("longitude_max")
 
-		if (
-			coordinate_uncertainty_in_meters_min
-			and coordinate_uncertainty_in_meters_max
-			and coordinate_uncertainty_in_meters_min > coordinate_uncertainty_in_meters_max
-		):
+		if coordinate_uncertainty_in_meters_min and coordinate_uncertainty_in_meters_max and coordinate_uncertainty_in_meters_min > coordinate_uncertainty_in_meters_max:
 			raise forms.ValidationError("Minimum coordinate uncertainty cannot be greater than maximum coordinate uncertainty.")
 		if latitude_min and latitude_max and latitude_min > latitude_max:
 			raise forms.ValidationError("Minimum latitude cannot be greater than maximum latitude.")

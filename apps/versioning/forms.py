@@ -3,28 +3,27 @@ from common.utils.forms import TranslateForm, IdFieldForm
 from .models import Source
 
 
-class SourceForm(IdFieldForm, TranslateForm):
-	origin = forms.CharField(required=False)
+class BasisForm(IdFieldForm, TranslateForm):
+	acronym = forms.CharField(max_length=100, required=False)
 	name = forms.CharField(required=False)
-	unidecode_name = forms.CharField(required=False)
-	synonyms = forms.CharField(required=False)
-	accepted = forms.BooleanField(required=False)
-	accepted_modifier = forms.CharField(required=False)
+	# url = forms.URLField(required=False)
+	# description = forms.CharField(required=False)
+	# authors = forms.CharField(required=False)
+	# citation = forms.CharField(required=False)
+
+
+class SourceForm(IdFieldForm, TranslateForm):
+	source_type = forms.CharField(required=False)
+	extraction_method = forms.CharField(required=False)
+	data_type = forms.CharField(required=False)
 
 	CHOICES_FIELD = {
-		"origin": Source.TRANSLATE_CHOICES,
+		"source_type": Source.TRANSLATE_SOURCE_TYPE,
+		"extraction_method": Source.TRANSLATE_EXTRACTION_METHOD,
+		"data_type": Source.TRANSLATE_DATA_TYPE,
 	}
 
-	def __init__(self, *args, **kwargs):
-		super().__init__(*args, **kwargs)
 
-
-class OriginSourceForm(IdFieldForm, TranslateForm):
-	origin_id = forms.IntegerField(required=False)
+class OriginIdForm(IdFieldForm, TranslateForm):
+	external_id = forms.IntegerField(required=False)
 	source = forms.CharField(required=False)
-
-	def __init__(self, *args, **kwargs):
-		super().__init__(*args, **kwargs)
-
-	def validate_unique(self):
-		return

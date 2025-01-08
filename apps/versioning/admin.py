@@ -1,22 +1,31 @@
 from django.contrib import admin
 
-from apps.versioning.models import Batch, Source, OriginSource
+from apps.versioning.models import Batch, Source, Basis, OriginId
 
 admin.site.register(Batch)
 
 
 class SourceAdmin(admin.ModelAdmin):
-	search_fields = ["name"]
-	list_display = ["name", "data_type"]
+	search_fields = ["source_type"]
+	list_display = ["source_type", "extraction_method", "data_type", "url"]
 	list_filter = ["data_type"]
 
 
 admin.site.register(Source, SourceAdmin)
 
 
-class OriginSourceAdmin(admin.ModelAdmin):
-	search_fields = ["origin_id"]
+class BasisAdmin(admin.ModelAdmin):
+	search_fields = ["internal_name"]
+	list_display = ["internal_name", "acronym", "url", "description", "citation"]
+	list_filter = ["acronym"]
+
+
+admin.site.register(Basis, BasisAdmin)
+
+
+class OriginIdAdmin(admin.ModelAdmin):
+	search_fields = ["external_id"]
 	list_filter = ["source"]
 
 
-admin.site.register(OriginSource, OriginSourceAdmin)
+admin.site.register(OriginId, OriginIdAdmin)

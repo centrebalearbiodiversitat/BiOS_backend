@@ -1,4 +1,3 @@
-import datetime
 import json
 import geopandas as gpd
 
@@ -9,7 +8,12 @@ from django.contrib.gis.geos import Point, GEOSGeometry
 from apps.genetics.models import Sequence, Marker, Product
 from apps.occurrences.models import Occurrence
 from apps.taxonomy.models import TaxonomicLevel
-from apps.versioning.models import Batch, Source, OriginSource
+from apps.versioning.models import Batch, OriginId, Source
+from common.utils.utils import get_or_create_source
+
+EXTERNAL_ID = "sample_id"
+INTERNAL_NAME = "occurrenceSource"
+SOURCE_TYPE = "occurrenceOrigin"
 
 TAXON_KEYS = [
 	("kingdom", "kingdomKey", TaxonomicLevel.KINGDOM),
@@ -81,26 +85,23 @@ def parse_line(line: dict):
 
 
 def genetic_sources(line: dict, batch, occ):
-	source, _ = Source.objects.get_or_create(
-		name__icontains=line["occurrenceSource"],
+	source = get_or_create_source(
+		source_type=Source.TRANSLATE_SOURCE_TYPE[line[SOURCE_TYPE]],
+		extraction_method=Source.API,
 		data_type=Source.SEQUENCE,
-		defaults={
-			"name": line["occurrenceSource"],
-			"accepted": True,
-			"origin": Source.TRANSLATE_CHOICES[line["occurrenceOrigin"]],
-			"url": None,
-		},
+		batch=batch,
+		internal_name=line[INTERNAL_NAME],
 	)
 
-	os, new = OriginSource.objects.get_or_create(
-		origin_id=line["sample_id"],
+	os, new = OriginId.objects.get_or_create(
+		external_id=line[EXTERNAL_ID],
 		source=source,
 		defaults={
 			"attribution": line["attribution"],
 		},
 	)
 	if not new and not Sequence.objects.filter(sources=os, occurrence=occ).exists():
-		raise Exception(f"OriginSource already exists\n{line}")
+		raise Exception(f"OriginId already exists\n{line}")
 
 	seq = Sequence.objects.filter(sources=os, occurrence=occ)
 	if seq.exists():
@@ -138,8 +139,8 @@ def genetic_sources(line: dict, batch, occ):
 				},
 			)
 
-			# if product and not marker.products.all().filter(name=product).exists():
-			# 	marker.products.add(product)
+			if product and not marker.products.all().filter(name=product).exists():
+				marker.products.add(product)
 
 			# if not marker.sources.filter(id=os.id).exists():
 			# 	marker.sources.add(os)
@@ -149,8 +150,8 @@ def genetic_sources(line: dict, batch, occ):
 	seq.save()
 
 
-def create_origin_source(ref_model_elem, origin_id, source):
-	os, new = OriginSource.objects.get_or_create(origin_id=origin_id, source=source)
+def create_origin_id(ref_model_elem, external_id, source):
+	os, new = OriginId.objects.get_or_create(external_id=external_id, source=source)
 	if new:
 		ref_model_elem.sources.add(os)
 		ref_model_elem.save()
@@ -171,11 +172,7 @@ class Command(BaseCommand):
 		file_name = options["file"]
 		with open(file_name, "r") as file:
 			data = json.load(file)
-			cbb_scope_geometry = (
-				gpd.read_file("apps/occurrences/management/commands/geometry/sea_uncertainess_no_holes/sea_uncertainess_no_holes.shp")
-				.loc[0]
-				.geometry
-			)
+			cbb_scope_geometry = gpd.read_file("apps/occurrences/management/commands/geometry/sea_uncertainess_no_holes/sea_uncertainess_no_holes.shp").loc[0].geometry
 			cbb_scope_geometry = GEOSGeometry(cbb_scope_geometry.wkt)
 			batch = Batch.objects.create()
 
@@ -183,38 +180,44 @@ class Command(BaseCommand):
 			for line in data:
 				line = parse_line(line)
 
-				if OriginSource.objects.filter(origin_id=line["sample_id"], source__name__icontains="NCBI").exists():
-					# print(f"OriginSource already exists in NCBI\n{line['sample_id']}")
+				if OriginId.objects.filter(external_id=line[EXTERNAL_ID], source__basis__name__icontains="NCBI").exists():
+					# print(f"OriginId already exists in NCBI\n{line['sample_id']}")
 					continue
 
-				source, _ = Source.objects.get_or_create(
-					name__iexact=line["occurrenceSource"],
+				source = get_or_create_source(
+					source_type=Source.TRANSLATE_SOURCE_TYPE[line[SOURCE_TYPE]],
+					extraction_method=Source.API,
 					data_type=Source.TAXON,
-					defaults={
-						"name": line["occurrenceSource"],
-						"accepted": True,
-						"origin": Source.TRANSLATE_CHOICES[line["occurrenceOrigin"]],
-						"url": None,
-					},
+					batch=batch,
+					internal_name=line[INTERNAL_NAME],
 				)
 
+				parent_level = ""
 				for taxon_key, taxon_id_key, taxon_rank in TAXON_KEYS:
 					if line[taxon_key] and line[taxon_id_key]:
 						taxon = TaxonomicLevel.objects.find(taxon=line[taxon_key]).filter(rank=taxon_rank)
 
 						taxon_count = taxon.count()
+						# If there are taxon collisions, then try again with the parent
+						if taxon_count > 1:
+							taxon = TaxonomicLevel.objects.find(taxon=f"{parent_level} {line[taxon_key]}").filter(rank=taxon_rank)
+							taxon_count = taxon.count()
+
 						if taxon_count > 1:
 							raise Exception(f"Found multiple taxa for {taxon_key}:{taxon_id_key}.\n{line}")
 						elif taxon_count == 0:
 							continue
 
 						taxon = taxon.first()
-						create_origin_source(taxon, line[taxon_id_key], source)
+						create_origin_id(taxon, line[taxon_id_key], source)
+						parent_level = line[taxon_key]
 
-				taxonomy = TaxonomicLevel.objects.find(taxon=line["originalName"]).filter(
-					rank=TaxonomicLevel.TRANSLATE_RANK[line["taxonRank"].lower()]
-				)
+				taxonomy = TaxonomicLevel.objects.find(taxon=line["originalName"]).filter(rank=TaxonomicLevel.TRANSLATE_RANK[line["taxonRank"].lower()])
 				taxon_count = taxonomy.count()
+				if taxon_count > 1:
+					taxonomy = TaxonomicLevel.objects.find(taxon=f'{parent_level} {line["originalName"]}').filter(rank=TaxonomicLevel.TRANSLATE_RANK[line["taxonRank"].lower()])
+					taxon_count = taxon.count()
+
 				if taxon_count == 0:
 					raise Exception(f"Taxonomy not found.\n{line}")
 				elif taxon_count > 1:
@@ -226,19 +229,16 @@ class Command(BaseCommand):
 				else:
 					del line["lat_lon"]
 
-				source, _ = Source.objects.get_or_create(
-					name__iexact=line["occurrenceSource"],
+				source = get_or_create_source(
+					source_type=Source.TRANSLATE_SOURCE_TYPE[line[SOURCE_TYPE]],
+					extraction_method=Source.API,
 					data_type=Source.OCCURRENCE,
-					defaults={
-						"name": line["occurrenceSource"],
-						"accepted": True,
-						"origin": Source.TRANSLATE_CHOICES[line["occurrenceOrigin"]],
-						"url": None,
-					},
+					batch=batch,
+					internal_name=line[INTERNAL_NAME],
 				)
 
-				os, new = OriginSource.objects.get_or_create(
-					origin_id=line["sample_id"],
+				os, new = OriginId.objects.get_or_create(
+					external_id=line[EXTERNAL_ID],
 					source=source,
 					defaults={
 						"attribution": line["attribution"],
@@ -250,16 +250,12 @@ class Command(BaseCommand):
 						taxonomy=taxonomy.first(),
 						batch=batch,
 						voucher=line["voucher"] if line["voucher"] else None,
-						basis_of_record=Occurrence.TRANSLATE_BASIS_OF_RECORD.get(
-							line["basisOfRecord"].lower() if line["basisOfRecord"] else "unknown", Occurrence.INVALID
-						),
+						basis_of_record=Occurrence.TRANSLATE_BASIS_OF_RECORD.get(line["basisOfRecord"].lower() if line["basisOfRecord"] else "unknown", Occurrence.INVALID),
 						collection_date_year=(int(line["year"]) if line["year"] and 1500 < line["year"] < 3000 else None),
 						collection_date_month=(int(line["month"]) if line["month"] and 0 < line["month"] <= 12 else None),
 						collection_date_day=int(line["day"]) if line["day"] and 0 < line["month"] <= 31 else None,
 						location=location,
-						coordinate_uncertainty_in_meters=(
-							int(line["coordinateUncertaintyInMeters"]) if line["coordinateUncertaintyInMeters"] else None
-						),
+						coordinate_uncertainty_in_meters=(int(line["coordinateUncertaintyInMeters"]) if line["coordinateUncertaintyInMeters"] else None),
 						elevation=int(line["elevation"]) if line["elevation"] else None,
 						depth=int(line["depth"]) if line["depth"] else None,
 						recorded_by=line["recordedBy"],
@@ -272,3 +268,4 @@ class Command(BaseCommand):
 
 				if "genetic_features" in line:
 					genetic_sources(line, batch, occ)
+			raise Exception()

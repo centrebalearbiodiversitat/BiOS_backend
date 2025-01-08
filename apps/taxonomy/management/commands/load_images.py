@@ -1,11 +1,14 @@
-import csv
 import json
 
 from django.core.management.base import BaseCommand
 from django.db import transaction
 
 from apps.taxonomy.models import TaxonomicLevel
-from apps.versioning.models import OriginSource, Source, Batch
+from apps.versioning.models import OriginId, Batch, Source
+from common.utils.utils import get_or_create_source
+
+EXTERNAL_ID = "image_id"
+INATURALIST = "INaturalist"
 
 
 def add_taxonomic_image(line, batch):
@@ -13,47 +16,25 @@ def add_taxonomic_image(line, batch):
 		print(f"Taxon does not exist\n{line}")
 		return
 
-	if line["image_id"]:
+	if line[EXTERNAL_ID]:
 		taxon = TaxonomicLevel.objects.find(line["taxon"])
 		taxon_count = taxon.count()
 		if taxon_count == 0:
-			raise Exception("Taxon not found")
+			raise Exception(f"Taxon not found.\n{line}")
 		elif taxon_count > 1:
-			raise Exception("Multiple taxa found")
+			raise Exception(f"Multiple taxa found\n{line}")
 
 		taxon = taxon.first()
 
-		source = get_or_create_source("iNaturalist", "database", batch)
-		# source = get_or_create_source(line["source"], line["origin"], batch)
-		os, new_os = OriginSource.objects.get_or_create(
-			origin_id=line["image_id"], source=source, defaults={"attribution": line["attribution"]}
-		)
+		source = get_or_create_source(source_type=Source.DATABASE, extraction_method=Source.API, data_type=Source.IMAGE, batch=batch, internal_name=INATURALIST)
+
+		os, _ = OriginId.objects.get_or_create(external_id=line[EXTERNAL_ID], source=source, defaults={"attribution": line["attribution"]})
 
 		if not taxon.images.filter(id=os.id):
 			taxon.images.clear()
 			taxon.images.add(os)
 
 		taxon.save()
-
-
-def get_or_create_source(source, origin, batch):
-	if not source:
-		raise Exception("All records must have a source")
-
-	source, _ = Source.objects.get_or_create(
-		name__iexact=source,
-		data_type=Source.IMAGE,  # Filter out 2 sources with the same name and data_type
-		defaults={
-			"name": source,
-			"accepted": True,
-			"origin": Source.TRANSLATE_CHOICES[origin],
-			"data_type": Source.IMAGE,  # data_type equal to 3 (IMAGE)
-			"url": "https://inaturalist-open-data.s3.amazonaws.com/photos/{id}",
-			"batch": batch,
-		},
-	)
-
-	return source
 
 
 class Command(BaseCommand):

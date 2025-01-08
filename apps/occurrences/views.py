@@ -111,7 +111,7 @@ class OccurrenceFilter(APIView):
 		if gl:
 			try:
 				gl = GeographicLevel.objects.get(id=gl)
-				occurrences = Occurrence.objects.filter(id__in=occurrences.values("id"), location__within=gl.area)
+				occurrences = occurrences.filter(location__within=gl.area)
 			except GeographicLevel.DoesNotExist:
 				raise CBBAPIException("Geographical location does not exist", 404)
 
@@ -334,9 +334,9 @@ class OccurrenceCountBySourceView(APIView):
 		occurrences = (
 			Occurrence.objects.filter(taxonomy__in=taxonomy, in_cbb_scope=True)
 			.prefetch_related("sources")
-			.values("sources__source__name")
+			.values("sources__source__basis__name")
 			.annotate(count=Count("id"))
-			.order_by("sources__source__name")
+			.order_by("sources__source__basis__name")
 		)
 
 		return Response(DynamicSourceSerializer(occurrences, many=True).data)
@@ -421,12 +421,7 @@ class OccurrenceCountByTaxonDateBaseView:
 		except TaxonomicLevel.DoesNotExist:
 			raise CBBAPIException("Taxonomic level does not exist", 404)
 
-		occurrences = (
-			Occurrence.objects.filter(taxonomy__in=taxonomy, in_cbb_scope=True)
-			.values(date_key)
-			.annotate(count=Count("id"))
-			.order_by(date_key)
-		)
+		occurrences = Occurrence.objects.filter(taxonomy__in=taxonomy, in_cbb_scope=True).values(date_key).annotate(count=Count("id")).order_by(date_key)
 
 		return Response(OccurrenceCountByDateSerializer(occurrences, many=True, view_class=view_class).data)
 

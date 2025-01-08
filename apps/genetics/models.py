@@ -11,7 +11,6 @@ class Product(models.Model):
 
 
 class Marker(ReferencedModel, SynonymModel):
-	# product = models.CharField(max_length=512, null=True, blank=True, default=None, db_index=True)
 	products = models.ManyToManyField(Product, blank=True, symmetrical=False)
 
 
@@ -23,4 +22,7 @@ class Sequence(ReferencedModel):
 	markers = models.ManyToManyField(Marker)
 
 	def __str__(self):
-		return self.definition
+		if self.definition:
+			return f"{self.definition}"
+		else:
+			return f"{self.occurrence}"

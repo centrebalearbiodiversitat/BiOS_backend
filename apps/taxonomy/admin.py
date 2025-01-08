@@ -1,7 +1,7 @@
 from django.contrib import admin
 from mptt.admin import MPTTModelAdmin
 
-from apps.taxonomy.models import Authorship, Habitat, TaxonData, TaxonomicLevel, Tag
+from apps.taxonomy.models import Authorship, TaxonomicLevel
 
 
 class BaseTaxonLevelAdmin(MPTTModelAdmin):
@@ -53,57 +53,6 @@ class BaseTaxonLevelAdmin(MPTTModelAdmin):
 
 
 admin.site.register(TaxonomicLevel, BaseTaxonLevelAdmin)
-
-
-class TaxonDataAdmin(admin.ModelAdmin):
-	list_display = ("taxonomy", "iucn_global", "iucn_europe", "iucn_mediterranean")
-	list_filter = ("iucn_global", "iucn_europe", "iucn_mediterranean")
-	search_fields = ("taxonomy__name",)
-	autocomplete_fields = ()
-
-	filter_horizontal = ("habitat", "tags")
-	readonly_fields = ["taxonomy"]
-	fieldsets = (
-		(
-			None,
-			{
-				"fields": [
-					"taxonomy",
-				]
-			},
-		),
-		("System", {"fields": ("freshwater", "marine", "terrestrial")}),
-		("IUCN Status", {"fields": ("iucn_global", "iucn_europe", "iucn_mediterranean")}),
-		("Other Information", {"fields": ("habitat", "tags")}),
-	)
-
-	def formfield_for_manytomany(self, db_field, request, **kwargs):
-		if db_field.name == "tags":
-			kwargs["queryset"] = Tag.objects.all().order_by("name")
-		return super().formfield_for_manytomany(db_field, request, **kwargs)
-
-
-admin.site.register(TaxonData, TaxonDataAdmin)
-
-
-class HabitatAdmin(admin.ModelAdmin):
-	search_fields = ["name"]
-	list_display = ["name"]
-	fields = ["name", "sources"]
-	readonly_fields = ["name"]
-	autocomplete_fields = ["sources"]
-
-
-admin.site.register(Habitat, HabitatAdmin)
-
-
-class TagAdmin(admin.ModelAdmin):
-	search_fields = ["name", "tag_type"]
-	list_display = ["name", "tag_type"]
-	fields = ["name", "tag_type"]
-
-
-admin.site.register(Tag, TagAdmin)
 
 
 class AuthorshipAdmin(admin.ModelAdmin):

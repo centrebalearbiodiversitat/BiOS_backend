@@ -1,12 +1,14 @@
+from django.db.models import OuterRef, Subquery, Count
+from django.db.models.functions import Coalesce
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from ..API.exceptions import CBBAPIException
-from .forms import OriginSourceForm, SourceForm
-from .models import OriginSource, Source
-from .serializers import OriginSourceSerializer, SourceSerializer
+from .forms import OriginIdForm, SourceForm
+from .models import OriginId, Source
+from .serializers import OriginIdSerializer, SourceSerializer, SourceCountSerializer
 
 
 class SourceSearchView(APIView):
@@ -103,15 +105,18 @@ class SourceFilter(APIView):
 			value = source_form.cleaned_data.get(param)
 			if value or isinstance(value, int):
 				filters[param] = value
-		if filters:
-			queryset = Source.objects.filter(**filters)
-		else:
-			queryset = Source.objects.none()
 
-		if not queryset.exists():
-			raise CBBAPIException("No taxonomic levels found for the given filters.", 404)
+		oq = (
+			OriginId.objects.filter(source=OuterRef("id"))
+			.exclude(source__data_type=Source.OCCURRENCE, occurrence__in_cbb_scope=False)
+			.values("source")
+			.annotate(ent_count=Count("id"))
+			.values("ent_count")
+		)
 
-		return queryset
+		sources = Source.objects.filter(**filters).annotate(count=Coalesce(Subquery(oq[:1]), 0))
+
+		return sources
 
 
 class SourceListView(SourceFilter):
@@ -145,7 +150,7 @@ class SourceListView(SourceFilter):
 		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
 	)
 	def get(self, request):
-		return Response(SourceSerializer(super().get(request), many=True).data)
+		return Response(SourceCountSerializer(super().get(request).order_by("-count"), many=True).data)
 
 
 class SourceCountView(SourceFilter):
@@ -182,7 +187,7 @@ class SourceCountView(SourceFilter):
 		return Response(super().get(request).count())
 
 
-class OriginSourceCRUDView(APIView):
+class OriginIdCRUDView(APIView):
 	@swagger_auto_schema(
 		tags=["Versioning"],
 		operation_description="Get details of a specific source.",
@@ -202,7 +207,7 @@ class OriginSourceCRUDView(APIView):
 		},
 	)
 	def get(self, request):
-		os_form = OriginSourceForm(data=self.request.GET)
+		os_form = OriginIdForm(data=self.request.GET)
 
 		if not os_form.is_valid():
 			raise CBBAPIException(os_form.errors, 400)
@@ -212,8 +217,8 @@ class OriginSourceCRUDView(APIView):
 			raise CBBAPIException("Missing id parameter", 400)
 
 		try:
-			os = OriginSource.objects.get(id=os_id)
-		except OriginSource.DoesNotExist:
+			os = OriginId.objects.get(id=os_id)
+		except OriginId.DoesNotExist:
 			raise CBBAPIException("Source does not exist", 404)
 
-		return Response(OriginSourceSerializer(os).data)
+		return Response(OriginIdSerializer(os).data)

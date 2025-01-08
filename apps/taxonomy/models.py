@@ -6,7 +6,7 @@ from django.db.models.functions import Substr, Lower, Upper
 
 from mptt.fields import TreeForeignKey
 from mptt.models import MPTTModel, TreeManager
-from apps.versioning.models import Batch, OriginSource
+from apps.versioning.models import Batch, OriginId
 from common.utils.models import ReferencedModel, SynonymManager, SynonymModel
 from common.utils.utils import str_clean_up
 
@@ -102,7 +102,7 @@ class TaxonomicLevel(SynonymModel, MPTTModel, ReferencedModel):
 	parsed_year = models.PositiveIntegerField(null=True, default=None, blank=True)
 	authorship = models.ManyToManyField(Authorship, blank=True, symmetrical=False)
 	parent = TreeForeignKey("self", on_delete=models.CASCADE, null=True, default=None, blank=True)
-	images = models.ManyToManyField(OriginSource, blank=True, symmetrical=False, related_name="images_os")
+	images = models.ManyToManyField(OriginId, blank=True, symmetrical=False, related_name="images_os")
 
 	def clean(self):
 		if self.verbatim_authorship:
@@ -163,104 +163,3 @@ class TaxonomicLevel(SynonymModel, MPTTModel, ReferencedModel):
 
 	class MPTTMeta:
 		order_insertion_by = ["name"]
-
-
-class Habitat(ReferencedModel):
-	name = models.CharField(max_length=50, unique=True)
-
-	def __str__(self):
-		return self.name
-
-
-class Tag(models.Model):
-	DOE = 0
-	ECOLOGICAL = 1
-	DIRECTIVE = 2
-
-	TAG_TYPE_CHOICES = (
-		(DOE, "degreeOfEstablishment"),
-		(DIRECTIVE, "directive"),
-	)
-
-	TRANSLATE_TYPE = {
-		"degreeOfEstablishment": DOE,
-		DOE: "degreeOfEstablishment",
-		"directive": DIRECTIVE,
-		DIRECTIVE: "directive",
-	}
-
-	name = models.CharField(max_length=255)
-	tag_type = models.PositiveSmallIntegerField(choices=TAG_TYPE_CHOICES)
-
-	class Meta:
-		unique_together = ("name", "tag_type")
-
-	def __str__(self):
-		return f"{self.name}"
-
-
-class TaxonData(ReferencedModel):
-	NE = 0
-	DD = 1
-	LC = 2
-	NT = 3
-	VU = 4
-	EN = 5
-	CR = 6
-	EW = 7
-	EX = 8
-	CD = 9
-	NA = 10
-
-	CS_CHOICES = (
-		(NE, "ne"),
-		(DD, "dd"),
-		(LC, "lc"),
-		(NT, "nt"),
-		(VU, "vu"),
-		(EN, "en"),
-		(CR, "cr"),
-		(EW, "ew"),
-		(EX, "ex"),
-		(CD, "cd"),
-		(NA, "na"),
-	)
-
-	TRANSLATE_CS = {
-		NE: "ne",
-		"ne": NE,
-		DD: "dd",
-		"dd": DD,
-		LC: "lc",
-		"lc": LC,
-		NT: "nt",
-		"nt": NT,
-		VU: "vu",
-		"vu": VU,
-		EN: "en",
-		"en": EN,
-		CR: "cr",
-		"cr": CR,
-		EW: "ew",
-		"ew": EW,
-		EX: "ex",
-		"ex": EX,
-		CD: "cd",
-		"cd": CD,
-		NA: "na",
-		"na": NA,
-	}
-
-	taxonomy = models.ForeignKey(TaxonomicLevel, on_delete=models.CASCADE, db_index=True)
-	iucn_global = models.PositiveSmallIntegerField(choices=CS_CHOICES, default=NE)
-	iucn_europe = models.PositiveSmallIntegerField(choices=CS_CHOICES, default=NE)
-	iucn_mediterranean = models.PositiveSmallIntegerField(choices=CS_CHOICES, default=NE)
-	habitat = models.ManyToManyField(Habitat, blank=True)  # global scale
-	tags = models.ManyToManyField(Tag, blank=True)
-	freshwater = models.BooleanField(default=None, null=True)
-	marine = models.BooleanField(default=None, null=True)
-	terrestrial = models.BooleanField(default=None, null=True)
-
-	class Meta:
-		verbose_name_plural = "Taxon data"
-		unique_together = ["taxonomy"]

@@ -5,10 +5,13 @@ from common.utils.serializers import CaseModelSerializer
 
 class SourceSerializer(CaseModelSerializer):
 	id = serializers.CharField(source="basis.id")
-	name = serializers.CharField(source="basis.internal_name")
+	name = serializers.SerializerMethodField()
 	source_type = serializers.CharField(source="get_source_type_display")
 	extraction_method = serializers.CharField(source="get_extraction_method_display")
 	data_type = serializers.CharField(source="get_data_type_display")
+
+	def get_name(self, obj):
+		return obj.basis.acronym or obj.basis.name or obj.basis.internal_name
 
 	class Meta:
 		model = Source

@@ -425,16 +425,19 @@ class SystemListView(APIView):
 		if not taxonomy:
 			raise CBBAPIException("Missing taxonomy id parameter", 400)
 
+		# try:
+		# 	taxon_parent = TaxonomicLevel.objects.get(id=taxonomy)
+		# except TaxonomicLevel.DoesNotExist:
+		# 	raise CBBAPIException("Taxonomic level does not exist", 404)
+
+		# descendants = taxon_parent.get_descendants(include_self=True)
+
 		try:
-			taxon_parent = TaxonomicLevel.objects.get(id=taxonomy)
-		except TaxonomicLevel.DoesNotExist:
+			system = System.objects.get(taxonomy=taxonomy)
+		except System.DoesNotExist:
 			raise CBBAPIException("Taxonomic level does not exist", 404)
 
-		descendants = taxon_parent.get_descendants(include_self=True)
-
-		system = System.objects.filter(taxonomy__in=descendants)
-
-		return Response(SystemSerializer(system, many=True).data)
+		return Response(SystemSerializer(system).data)
 
 
 # class SystemDetailView(APIView):

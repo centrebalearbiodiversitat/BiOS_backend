@@ -12,9 +12,9 @@ class PaginatorFieldForm(forms.Form):
 	page = forms.IntegerField(required=False, min_value=1, initial=1)
 
 	def clean_page(self):
-		value = self.cleaned_data.get('page')
+		value = self.cleaned_data.get("page")
 
-		return self.fields['page'].initial if value is None else value
+		return self.fields["page"].initial if value is None else value
 
 	@staticmethod
 	def get_page(data):
@@ -22,7 +22,7 @@ class PaginatorFieldForm(forms.Form):
 		if not paginator_form.is_valid():
 			raise CBBAPIException(paginator_form.errors, code=400)
 
-		return paginator_form.cleaned_data.get('page')
+		return paginator_form.cleaned_data.get("page")
 
 
 class CamelCaseForm(forms.Form):

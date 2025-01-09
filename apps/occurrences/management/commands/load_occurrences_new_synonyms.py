@@ -215,7 +215,7 @@ class Command(BaseCommand):
 				taxonomy = TaxonomicLevel.objects.find(taxon=line["originalName"]).filter(rank=TaxonomicLevel.TRANSLATE_RANK[line["taxonRank"].lower()])
 				taxon_count = taxonomy.count()
 				if taxon_count > 1:
-					taxonomy = TaxonomicLevel.objects.find(taxon=f'{parent_level} {line["originalName"]}').filter(rank=TaxonomicLevel.TRANSLATE_RANK[line["taxonRank"].lower()])
+					taxonomy = TaxonomicLevel.objects.find(taxon=f"{parent_level} {line['originalName']}").filter(rank=TaxonomicLevel.TRANSLATE_RANK[line["taxonRank"].lower()])
 					taxon_count = taxon.count()
 
 				if taxon_count == 0:

@@ -14,10 +14,7 @@ class TaxonomicLevelForm(IdFieldForm, TranslateForm):
 	has_image = forms.NullBooleanField(required=False)
 	ancestor_id = forms.IntegerField(required=False)
 
-	TRANSLATE_FIELDS = {
-		"taxon_rank": "rank",
-		"scientific_name_authorship": "authorship"
-	}
+	TRANSLATE_FIELDS = {"taxon_rank": "rank", "scientific_name_authorship": "authorship"}
 	CHOICES_FIELD = {"rank": TaxonomicLevel.TRANSLATE_RANK}
 
 	def __init__(self, *args, **kwargs):

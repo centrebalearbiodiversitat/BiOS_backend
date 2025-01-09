@@ -57,18 +57,9 @@ def generate_csv_taxon_list(checklist):
 
 	subqueries = {}
 	for rank, key in TaxonomicLevel.RANK_CHOICES[:4]:
-		subqueries[key.lower()] = Coalesce(Subquery(
-			TaxonomicLevel.objects
-							.filter(
-									lft__lte=OuterRef('lft'),
-									rght__gte=OuterRef('rght'),
-									rank=rank
-							).values("name")[:1]
-		), None)
+		subqueries[key.lower()] = Coalesce(Subquery(TaxonomicLevel.objects.filter(lft__lte=OuterRef("lft"), rght__gte=OuterRef("rght"), rank=rank).values("name")[:1]), None)
 
-	checklist = checklist.annotate(
-		**subqueries
-	)
+	checklist = checklist.annotate(**subqueries)
 
 	current_taxon = []
 	for taxon in checklist:
@@ -85,13 +76,15 @@ def generate_csv_taxon_list(checklist):
 
 		taxa_map = map_taxa_to_rank(ranks_map, taxon_map, authors=False)
 
-		to_csv.append([
-			taxon.id,
-			taxon.scientific_name(),
-			taxon.readable_status(),
-			taxon.readable_rank(),
-			*taxa_map,
-		])
+		to_csv.append(
+			[
+				taxon.id,
+				taxon.scientific_name(),
+				taxon.readable_status(),
+				taxon.readable_rank(),
+				*taxa_map,
+			]
+		)
 
 	return to_csv
 
@@ -128,5 +121,3 @@ def taxon_checklist_to_csv(head, ids: set = None):
 		last_level = taxon.level
 
 	return to_csv
-
-

@@ -24,7 +24,7 @@ from common.utils.forms import PaginatorFieldForm
 
 
 class TaxonSearch:
-	def search(self, request, limit = 10):
+	def search(self, request, limit=10):
 		taxon_form = TaxonomicLevelForm(data=request.GET)
 
 		if not taxon_form.is_valid():
@@ -46,17 +46,10 @@ class TaxonSearch:
 				queryset = (
 					TaxonomicLevel.objects.annotate(prefix=Lower(Substr("unidecode_name", 1, min(3, len(query)))))
 					.filter(prefix=query[:3].lower())
-					.filter(
-						**filters, rank__in=[TaxonomicLevel.SPECIES, TaxonomicLevel.SUBSPECIES, TaxonomicLevel.VARIETY],
-						parent__in=queryset
-					)
+					.filter(**filters, rank__in=[TaxonomicLevel.SPECIES, TaxonomicLevel.SUBSPECIES, TaxonomicLevel.VARIETY], parent__in=queryset)
 				)
 			else:
-				queryset = (
-					TaxonomicLevel.objects.annotate(prefix=Lower(Substr("unidecode_name", 1, min(3, len(query)))))
-						.filter(prefix=query[:3].lower())
-						.filter(**filters)
-				)
+				queryset = TaxonomicLevel.objects.annotate(prefix=Lower(Substr("unidecode_name", 1, min(3, len(query))))).filter(prefix=query[:3].lower()).filter(**filters)
 
 		if not exact and queryset.count() < limit:
 			for instance in queryset.filter(rank__in=[TaxonomicLevel.GENUS, TaxonomicLevel.SPECIES])[:limit]:
@@ -104,7 +97,7 @@ class TaxonFilter(TaxonSearch):
 			try:
 				query = TaxonomicLevel.objects.get(id=ancestor_id).get_descendants()
 			except TaxonomicLevel.DoesNotExist:
-				raise CBBAPIException('Ancestor id not found', code=404)
+				raise CBBAPIException("Ancestor id not found", code=404)
 
 		name = taxon_form.cleaned_data.get("name", None)
 		if name:
@@ -166,11 +159,7 @@ class TaxonListView(APIView, TaxonFilter):
 
 		filter_res = AncestorsTaxonomicLevelSerializer(paginator.page(page), many=True).data
 
-		return Response({
-			"total": paginator.count,
-			"pages": paginator.num_pages,
-			"taxa": filter_res
-		})
+		return Response({"total": paginator.count, "pages": paginator.num_pages, "taxa": filter_res})
 
 
 class TaxonListCSVView(APIView, TaxonFilter):
@@ -397,11 +386,7 @@ class TaxonomicLevelDescendantsCountView(APIView):
 			raise CBBAPIException("TaxonomicLevel not found", code=404)
 
 		result = {}
-		descendants = taxon.get_descendants(include_self=False)\
-								.filter(accepted=True)\
-								.values("rank")\
-								.order_by("rank")\
-								.annotate(count=Count("rank"))
+		descendants = taxon.get_descendants(include_self=False).filter(accepted=True).values("rank").order_by("rank").annotate(count=Count("rank"))
 		for descendant in descendants:
 			result[TaxonomicLevel.TRANSLATE_RANK[descendant["rank"]]] = descendant["count"]
 

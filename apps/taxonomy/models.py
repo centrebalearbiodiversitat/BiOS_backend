@@ -19,9 +19,7 @@ class TaxonomicLevelManager(SynonymManager, TreeManager):
 	def get_queryset(self):
 		qs = super().get_queryset()
 
-		return qs.prefetch_related(
-			"parent__parent"
-		)
+		return qs.prefetch_related("parent__parent")
 
 	def find(self, taxon):
 		# regex for properly split handle when hybrids or

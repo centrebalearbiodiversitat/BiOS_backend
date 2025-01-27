@@ -181,7 +181,6 @@ class BasisCountView(BasisFilter):
 		return Response(super().get(request).count())
 
 
-
 class SourceSearchView(APIView):
 	@swagger_auto_schema(
 		tags=["Versioning"],
@@ -255,7 +254,7 @@ class SourceCRUDView(APIView):
 		source_id = source_form.cleaned_data.get("id")
 		if not source_id:
 			raise CBBAPIException("Missing id parameter", 400)
-		
+
 		try:
 			occurrence = Source.objects.get(id=source_id)
 		except Source.DoesNotExist:
@@ -393,4 +392,3 @@ class OriginIdCRUDView(APIView):
 			raise CBBAPIException("Source does not exist", 404)
 
 		return Response(OriginIdSerializer(os).data)
-

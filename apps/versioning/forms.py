@@ -14,10 +14,11 @@ class BasisForm(IdFieldForm, TranslateForm):
 
 	def clean(self):
 		cleaned_data = super().clean()
-		if 'exact' not in self.data:
-			del cleaned_data['exact']
+		if "exact" not in self.data:
+			del cleaned_data["exact"]
 		return cleaned_data
-	
+
+
 class SourceForm(IdFieldForm, TranslateForm):
 	source_type = forms.CharField(required=False)
 	extraction_method = forms.CharField(required=False)

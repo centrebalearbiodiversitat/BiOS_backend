@@ -8,7 +8,7 @@ class BasisSerializer(CaseModelSerializer):
 		model = Basis
 		fields = "__all__"
 
-		
+
 class SourceSerializer(CaseModelSerializer):
 	id = serializers.CharField(source="basis.id")
 	name = serializers.SerializerMethodField()

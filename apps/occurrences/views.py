@@ -81,7 +81,7 @@ class OccurrenceFilter(APIView):
 		if taxonomy:
 			taxon_query = Q(id=taxonomy)
 			if add_synonyms:
-				taxon_query |= Q(synonyms=taxonomy, accepted=True)	
+				taxon_query |= Q(synonyms=taxonomy, accepted=True)
 			taxa = TaxonomicLevel.objects.filter(taxon_query).distinct()
 
 			if not taxa:
@@ -139,7 +139,7 @@ class OccurrenceFilter(APIView):
 
 		if in_cbb_scope:
 			occurrences = occurrences.filter(in_cbb_scope=in_cbb_scope)
-		
+
 		return occurrences
 
 

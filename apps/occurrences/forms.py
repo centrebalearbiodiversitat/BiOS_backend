@@ -80,15 +80,14 @@ class OccurrenceForm(LatLonModelForm):
 	def clean(self):
 		cleaned_data = super().clean()
 
-		for field_name in ['cites', 'ceea', 'lespre', 'directiva_aves', 'directiva_habitats', 'freshwater', 'marine', 'terrestrial']:
+		for field_name in ["cites", "ceea", "lespre", "directiva_aves", "directiva_habitats", "freshwater", "marine", "terrestrial"]:
 			if field_name not in self.data:
 				cleaned_data[field_name] = None
 
-		for field_name in ['iucn_global', 'iucn_europe', 'iucn_mediterranean']:
+		for field_name in ["iucn_global", "iucn_europe", "iucn_mediterranean"]:
 			cleaned_data[field_name] = self.clean_iucn_field(field_name)
 
 		return cleaned_data
 
 	def __init__(self, *args, **kwargs):
 		super().__init__(*args, **kwargs)
-

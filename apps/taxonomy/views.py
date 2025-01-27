@@ -136,7 +136,7 @@ class TaxonFilter(TaxonSearch):
 			for field, value in filter_data.items():
 				if value is not None:
 					filters &= Q(**{field: value})
-		
+
 		source = taxon_form.cleaned_data.get("source", None)
 		if source:
 			filters &= Q(sources__source__basis__internal_name__icontains=source)
@@ -384,6 +384,7 @@ class TaxonChildrenCountView(LoggingMixin, TaxonChildrenBaseView):
 	def get(self, request):
 		return Response(super().get(request).count())
 
+
 class TaxonBrotherView(APIView):
 	@swagger_auto_schema(
 		tags=["Taxonomy"],
@@ -399,9 +400,7 @@ class TaxonBrotherView(APIView):
 		],
 		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
 	)
-
 	def get(self, request, *args, **kwargs):
-
 		taxon_form = TaxonomicLevelForm(self.request.GET)
 		if not taxon_form.is_valid():
 			raise CBBAPIException(taxon_form.errors, code=400)
@@ -416,6 +415,7 @@ class TaxonBrotherView(APIView):
 		siblings = TaxonomicLevel.objects.filter(parent=taxon.parent).exclude(pk=taxon_id)
 		serializer = BaseTaxonomicLevelSerializer(siblings, many=True)
 		return Response(serializer.data)
+
 
 class TaxonomicLevelDescendantsCountView(APIView):
 	@swagger_auto_schema(

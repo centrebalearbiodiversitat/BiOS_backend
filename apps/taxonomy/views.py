@@ -99,10 +99,6 @@ class TaxonFilter(TaxonSearch):
 			except TaxonomicLevel.DoesNotExist:
 				raise CBBAPIException("Ancestor id not found", code=404)
 
-		name = taxon_form.cleaned_data.get("name", None)
-		if name:
-			query = self.search(request).exclude(~Q(id__in=query))
-
 		rank = taxon_form.cleaned_data.get("rank", None)
 		if rank:
 			query = query.filter(rank=rank)
@@ -114,6 +110,37 @@ class TaxonFilter(TaxonSearch):
 		has_image = taxon_form.cleaned_data.get("has_image", None)
 		if has_image is not None:
 			query = query.exclude(images__isnull=has_image)
+
+		filters = Q()
+
+		name = taxon_form.cleaned_data.get("name", None)
+		if name:
+			query = self.search(request).exclude(~Q(id__in=query))
+
+		else:
+			filter_data = {
+				"iucndata__iucn_global": taxon_form.cleaned_data.get("iucn_global", None),
+				"iucndata__iucn_europe": taxon_form.cleaned_data.get("iucn_europe", None),
+				"iucndata__iucn_mediterranean": taxon_form.cleaned_data.get("iucn_mediterranean", None),
+				"directive__cites": taxon_form.cleaned_data.get("cites", None),
+				"directive__ceea": taxon_form.cleaned_data.get("ceea", None),
+				"directive__lespre": taxon_form.cleaned_data.get("lespre", None),
+				"directive__directiva_aves": taxon_form.cleaned_data.get("directiva_aves", None),
+				"directive__directiva_habitats": taxon_form.cleaned_data.get("directiva_habitats", None),
+				"system__freshwater": taxon_form.cleaned_data.get("freshwater", None),
+				"system__marine": taxon_form.cleaned_data.get("marine", None),
+				"system__terrestrial": taxon_form.cleaned_data.get("terrestrial", None),
+				"taxontag__tag__id": taxon_form.cleaned_data.get("taxon_tag", None),
+			}
+
+			for field, value in filter_data.items():
+				if value is not None:
+					filters &= Q(**{field: value})
+		
+		source = taxon_form.cleaned_data.get("source", None)
+		if source:
+			filters &= Q(sources__source__basis__internal_name__icontains=source)
+		query = query.filter(filters)
 
 		return query
 
@@ -357,6 +384,38 @@ class TaxonChildrenCountView(LoggingMixin, TaxonChildrenBaseView):
 	def get(self, request):
 		return Response(super().get(request).count())
 
+class TaxonBrotherView(APIView):
+	@swagger_auto_schema(
+		tags=["Taxonomy"],
+		operation_description="Get the brothers of the given taxon id",
+		manual_parameters=[
+			openapi.Parameter(
+				name="id",
+				in_=openapi.IN_QUERY,
+				type=openapi.TYPE_INTEGER,
+				description="ID of the taxonomic level",
+				required=True,
+			)
+		],
+		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
+	)
+
+	def get(self, request, *args, **kwargs):
+
+		taxon_form = TaxonomicLevelForm(self.request.GET)
+		if not taxon_form.is_valid():
+			raise CBBAPIException(taxon_form.errors, code=400)
+
+		taxon_id = taxon_form.cleaned_data["id"]
+
+		try:
+			taxon = TaxonomicLevel.objects.get(pk=taxon_id)
+		except TaxonomicLevel.DoesNotExist:
+			raise CBBAPIException("TaxonomicLevel not found", code=404)
+
+		siblings = TaxonomicLevel.objects.filter(parent=taxon.parent).exclude(pk=taxon_id)
+		serializer = BaseTaxonomicLevelSerializer(siblings, many=True)
+		return Response(serializer.data)
 
 class TaxonomicLevelDescendantsCountView(APIView):
 	@swagger_auto_schema(

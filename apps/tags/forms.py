@@ -1,8 +1,8 @@
 from django import forms
 
-from common.utils.forms import CamelCaseForm, IdFieldForm, TranslateForm
+from common.utils.forms import IdFieldForm, TranslateForm
 
-from .models import IUCNData, TaxonomicLevel, System, TaxonTag
+from .models import IUCNData, System, TaxonTag
 
 
 class DirectiveForm(IdFieldForm, TranslateForm):

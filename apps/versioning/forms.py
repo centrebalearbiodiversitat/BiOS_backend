@@ -7,11 +7,17 @@ class BasisForm(IdFieldForm, TranslateForm):
 	acronym = forms.CharField(max_length=100, required=False)
 	name = forms.CharField(required=False)
 	# url = forms.URLField(required=False)
-	# description = forms.CharField(required=False)
+	description = forms.CharField(required=False)
+	exact = forms.BooleanField(required=False)
 	# authors = forms.CharField(required=False)
 	# citation = forms.CharField(required=False)
 
-
+	def clean(self):
+		cleaned_data = super().clean()
+		if 'exact' not in self.data:
+			del cleaned_data['exact']
+		return cleaned_data
+	
 class SourceForm(IdFieldForm, TranslateForm):
 	source_type = forms.CharField(required=False)
 	extraction_method = forms.CharField(required=False)

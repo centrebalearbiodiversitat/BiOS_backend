@@ -47,6 +47,7 @@ class OccurrenceCRUDView(APIView):
 			raise CBBAPIException(occur_form.errors, 400)
 
 		occur_id = occur_form.cleaned_data.get("id")
+
 		if not occur_id:
 			raise CBBAPIException("Missing id parameter", 400)
 
@@ -75,21 +76,43 @@ class OccurrenceFilter(APIView):
 		taxonomy = occur_form.cleaned_data.get("taxonomy", None)
 		add_synonyms = occur_form.cleaned_data.get("add_synonyms")
 
-		if not taxonomy:
-			raise CBBAPIException("Missing taxonomy id parameter", 400)
-
-		taxon_query = Q(id=taxonomy)
-		if add_synonyms:
-			taxon_query |= Q(synonyms=taxonomy, accepted=False)
-
-		taxa = TaxonomicLevel.objects.filter(taxon_query).distinct()
-
-		if not taxa:
-			raise CBBAPIException("Taxonomic level does not exist", 404)
-
 		filters = Q()
-		for taxon in taxa:
-			filters |= Q(taxonomy__id=taxon.id) | Q(taxonomy__lft__gte=taxon.lft, taxonomy__rght__lte=taxon.rght)
+
+		if taxonomy:
+			taxon_query = Q(id=taxonomy)
+			if add_synonyms:
+				taxon_query |= Q(synonyms=taxonomy, accepted=True)	
+			taxa = TaxonomicLevel.objects.filter(taxon_query).distinct()
+
+			if not taxa:
+				raise CBBAPIException("Taxonomic level does not exist", 404)
+
+			for taxon in taxa:
+				filters |= Q(taxonomy__id=taxon.id) | Q(taxonomy__lft__gte=taxon.lft, taxonomy__rght__lte=taxon.rght)
+
+		else:
+			filter_data = {
+				"taxonomy__iucndata__iucn_global": occur_form.cleaned_data.get("iucn_global", None),
+				"taxonomy__iucndata__iucn_europe": occur_form.cleaned_data.get("iucn_europe", None),
+				"taxonomy__iucndata__iucn_mediterranean": occur_form.cleaned_data.get("iucn_mediterranean", None),
+				"taxonomy__directive__cites": occur_form.cleaned_data.get("cites", None),
+				"taxonomy__directive__ceea": occur_form.cleaned_data.get("ceea", None),
+				"taxonomy__directive__lespre": occur_form.cleaned_data.get("lespre", None),
+				"taxonomy__directive__directiva_aves": occur_form.cleaned_data.get("directiva_aves", None),
+				"taxonomy__directive__directiva_habitats": occur_form.cleaned_data.get("directiva_habitats", None),
+				"taxonomy__system__freshwater": occur_form.cleaned_data.get("freshwater", None),
+				"taxonomy__system__marine": occur_form.cleaned_data.get("marine", None),
+				"taxonomy__system__terrestrial": occur_form.cleaned_data.get("terrestrial", None),
+				"taxonomy__taxontag__tag__id": occur_form.cleaned_data.get("taxon_tag", None),
+			}
+
+			for field, value in filter_data.items():
+				if value is not None:
+					filters &= Q(**{field: value})
+
+		source = occur_form.cleaned_data.get("source", None)
+		if source:
+			filters &= Q(sources__source__basis__internal_name__icontains=source)
 
 		voucher = occur_form.cleaned_data.get("voucher", None)
 		if voucher:
@@ -104,7 +127,6 @@ class OccurrenceFilter(APIView):
 				occur_form.cleaned_data.get(f"{param}_min"),
 				occur_form.cleaned_data.get(f"{param}_max"),
 			)
-
 		occurrences = Occurrence.objects.filter(filters).distinct()
 
 		gl = occur_form.cleaned_data.get("geographical_location", None)
@@ -117,7 +139,7 @@ class OccurrenceFilter(APIView):
 
 		if in_cbb_scope:
 			occurrences = occurrences.filter(in_cbb_scope=in_cbb_scope)
-
+		
 		return occurrences
 
 

@@ -1,9 +1,14 @@
 from rest_framework import serializers
-from rest_framework.fields import SerializerMethodField
 from apps.versioning.models import Basis, Source, OriginId
 from common.utils.serializers import CaseModelSerializer
 
 
+class BasisSerializer(CaseModelSerializer):
+	class Meta:
+		model = Basis
+		fields = "__all__"
+
+		
 class SourceSerializer(CaseModelSerializer):
 	id = serializers.CharField(source="basis.id")
 	name = serializers.SerializerMethodField()
@@ -26,17 +31,11 @@ class SourceSerializer(CaseModelSerializer):
 		]
 
 
-class BasisSerializer(CaseModelSerializer):
-	class Meta:
-		model = Basis
-		fields = "__all__"
-
-
 class SourceCountSerializer(SourceSerializer):
 	count = serializers.IntegerField()
 
 	class Meta(SourceSerializer.Meta):
-		fields = SourceSerializer.Meta.fields + ["count"]
+		fields = "count"
 
 
 class OriginIdSerializer(CaseModelSerializer):

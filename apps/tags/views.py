@@ -247,6 +247,9 @@ class HabitatsListView(APIView):
 
 		iucn_data = IUCNData.objects.filter(taxonomy__in=descendants)
 
+		if not iucn_data.exists():
+			return Response(data=None)
+
 		habitats = Habitat.objects.filter(iucndata__in=iucn_data).distinct()
 
 		return Response(HabitatSerializer(habitats, many=True).data)
@@ -435,7 +438,7 @@ class SystemListView(APIView):
 		try:
 			system = System.objects.get(taxonomy=taxonomy)
 		except System.DoesNotExist:
-			raise CBBAPIException("Taxonomic level does not exist", 404)
+			system = None
 
 		return Response(SystemSerializer(system).data)
 
@@ -498,8 +501,8 @@ class DirectiveListView(APIView):
 			raise CBBAPIException("Missing taxonomy id parameter", code=400)
 
 		try:
-			taxon = Directive.objects.get(taxonomy=taxon_id)
-		except TaxonTag.DoesNotExist:
-			raise CBBAPIException("Taxonomic tags does not exist", code=404)
+			directives = Directive.objects.get(taxonomy=taxon_id)
+		except Directive.DoesNotExist:
+			directives = None
 
-		return Response(DirectiveSerializer(taxon).data)
+		return Response(DirectiveSerializer(directives).data)

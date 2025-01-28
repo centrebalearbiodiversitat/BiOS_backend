@@ -130,6 +130,9 @@ class Source(models.Model):
 	batch = models.ForeignKey(Batch, on_delete=models.CASCADE, null=True, blank=True, default=None)
 	basis = models.ForeignKey(Basis, on_delete=models.CASCADE, related_name="source", null=True, blank=True, default=None)
 
+	def translate_source_type(self):
+		return Source.TRANSLATE_SOURCE_TYPE[self.source_type]
+
 	def __str__(self):
 		return self.basis.name
 
@@ -139,13 +142,14 @@ class OriginId(models.Model):
 	source = models.ForeignKey(Source, on_delete=models.CASCADE, db_index=True)
 	attribution = models.CharField(max_length=512, null=True, default=None, blank=True)
 
+	def save(self, force_insert=False, force_update=False, using=None, update_fields=None):
+		self.clean()
+		super().save(force_insert, force_update, using, update_fields)
+
 	def clean(self):
 		super().clean()
-		if self.external_id:
-			if OriginId.objects.filter(external_id=self.external_id, source=self.source).exists():
-				raise ValidationError("External ID already exists for this source.")
-		elif self.source.source_type in {Source.DATABASE, Source.JOURNAL_ARTICLE, Source.WEB_PAGE}:
-			raise ValidationError(f"External ID is None and is not allowed with origin type '{Source.SOURCE_TYPE_CHOICES[self.source.source_type].upper()}'")
+		if not self.external_id and self.source.source_type in {Source.DATABASE, Source.JOURNAL_ARTICLE, Source.WEB_PAGE}:
+			raise ValidationError(f"External ID is None and is not allowed with origin type '{self.source.translate_source_type().upper()}'")
 
 	def __str__(self):
 		if self.external_id:
@@ -157,3 +161,4 @@ class OriginId(models.Model):
 		indexes = [
 			models.Index(fields=["external_id", "source"]),
 		]
+		unique_together = ("external_id", "source")

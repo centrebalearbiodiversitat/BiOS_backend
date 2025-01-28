@@ -66,7 +66,10 @@ def create_taxonomic_level(line, parent, batch, idx_name, rank):
 		else:
 			raise Exception(f'{STATUS} must be either "accepted", "misapplied" or "synonym" but was "{line[STATUS]}"\n{line}')
 
-		if line[ORIGIN_TAXON].split()[-1] != line[idx_name].replace("x ", ""):
+		if rank in {TaxonomicLevel.SPECIES, TaxonomicLevel.SUBSPECIES, TaxonomicLevel.VARIETY}:
+			if line[ORIGIN_TAXON] != " ".join(filter(lambda x: x, [line[GENUS], line[SPECIES], line[SUBSPECIES], line[VARIETY]])):
+				raise Exception(f"Taxonomy mismatch with accepted taxon name.\n{line}")
+		elif line[ORIGIN_TAXON].split()[-1] != line[idx_name]:
 			raise Exception(f"Taxonomy mismatch with accepted taxon name.\n{line}")
 
 		if line[idx_name][0].isupper() and rank in [TaxonomicLevel.SPECIES, TaxonomicLevel.SUBSPECIES, TaxonomicLevel.VARIETY]:
@@ -197,6 +200,10 @@ def get_or_create_authorship(line, batch):
 def clean_up_input_line(line):
 	for key in line.keys():
 		line[key] = str_clean_up(line[key])
+		try:
+			line[key] = line[key].encode("latin-1").decode("utf-8")
+		except:
+			pass
 
 
 class Command(BaseCommand):

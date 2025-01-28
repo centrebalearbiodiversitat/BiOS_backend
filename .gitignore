@@ -104,5 +104,5 @@ docker-compose.*.yml
 .vscode
 
 cbb/settings/developer/*
-/data/
+/data*/
 /public/

@@ -130,7 +130,7 @@ class Directive(ReferencedModel):
 	directiva_habitats = models.BooleanField(default=None, null=True)
 
 	def __str__(self):
-		return self.taxonomy
+		return str(self.taxonomy)
 
 	class Meta:
 		unique_together = ["taxonomy"]

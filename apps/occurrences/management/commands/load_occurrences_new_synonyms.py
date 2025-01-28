@@ -268,4 +268,3 @@ class Command(BaseCommand):
 
 				if "genetic_features" in line:
 					genetic_sources(line, batch, occ)
-			raise Exception()

@@ -122,7 +122,7 @@ class IUCNData(ReferencedModel):
 
 
 class Directive(ReferencedModel):
-	taxonomy = models.ForeignKey(TaxonomicLevel, on_delete=models.CASCADE, db_index=True, null=True)
+	taxonomy = models.ForeignKey(TaxonomicLevel, on_delete=models.CASCADE, db_index=True)
 	cites = models.BooleanField(default=None, null=True)
 	ceea = models.BooleanField(default=None, null=True)
 	lespre = models.BooleanField(default=None, null=True)

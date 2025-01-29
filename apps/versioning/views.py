@@ -109,8 +109,7 @@ class BasisFilter(APIView):
 			elif value or isinstance(value, int):
 				filters[param] = value
 
-		basis = Basis.objects.filter(**filters)
-		return basis
+		return Basis.objects.filter(**filters)
 
 
 class BasisListView(BasisFilter):

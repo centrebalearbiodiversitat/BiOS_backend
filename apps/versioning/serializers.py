@@ -35,7 +35,7 @@ class SourceCountSerializer(SourceSerializer):
 	count = serializers.IntegerField()
 
 	class Meta(SourceSerializer.Meta):
-		fields = "count"
+		fields = SourceSerializer.Meta.fields + ["count"]
 
 
 class OriginIdSerializer(CaseModelSerializer):

@@ -8,6 +8,10 @@ class IdFieldForm(forms.Form):
 	id = forms.IntegerField(required=False)
 
 
+class TaxonomyForm(forms.Form):
+	taxonomy = forms.IntegerField(required=False)
+
+
 class PaginatorFieldForm(forms.Form):
 	page = forms.IntegerField(required=False, min_value=1, initial=1)
 

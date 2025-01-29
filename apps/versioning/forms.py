@@ -7,7 +7,7 @@ class BasisForm(IdFieldForm, TranslateForm):
 	acronym = forms.CharField(max_length=100, required=False)
 	name = forms.CharField(required=False)
 	# url = forms.URLField(required=False)
-	description = forms.CharField(required=False)
+	# description = forms.CharField(required=False)
 	exact = forms.BooleanField(required=False)
 	# authors = forms.CharField(required=False)
 	# citation = forms.CharField(required=False)

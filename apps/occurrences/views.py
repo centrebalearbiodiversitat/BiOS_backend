@@ -8,7 +8,7 @@ from drf_yasg.utils import swagger_auto_schema
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from apps.taxonomy.models import TaxonomicLevel
-from ..API.exceptions import CBBAPIException
+from apps.API.exceptions import CBBAPIException
 from .forms import OccurrenceForm
 from .models import Occurrence
 from .serializers import (
@@ -18,7 +18,8 @@ from .serializers import (
 	OccurrenceCountByDateSerializer,
 	DynamicSourceSerializer,
 )
-from ..geography.models import GeographicLevel
+from apps.geography.models import GeographicLevel
+from apps.tags.forms import IUCNDataForm, DirectiveForm, SystemForm, TaxonTagForm
 
 
 class OccurrenceCRUDView(APIView):
@@ -90,25 +91,37 @@ class OccurrenceFilter(APIView):
 			for taxon in taxa:
 				filters |= Q(taxonomy__id=taxon.id) | Q(taxonomy__lft__gte=taxon.lft, taxonomy__rght__lte=taxon.rght)
 
-		else:
-			filter_data = {
-				"taxonomy__iucndata__iucn_global": occur_form.cleaned_data.get("iucn_global", None),
-				"taxonomy__iucndata__iucn_europe": occur_form.cleaned_data.get("iucn_europe", None),
-				"taxonomy__iucndata__iucn_mediterranean": occur_form.cleaned_data.get("iucn_mediterranean", None),
-				"taxonomy__directive__cites": occur_form.cleaned_data.get("cites", None),
-				"taxonomy__directive__ceea": occur_form.cleaned_data.get("ceea", None),
-				"taxonomy__directive__lespre": occur_form.cleaned_data.get("lespre", None),
-				"taxonomy__directive__directiva_aves": occur_form.cleaned_data.get("directiva_aves", None),
-				"taxonomy__directive__directiva_habitats": occur_form.cleaned_data.get("directiva_habitats", None),
-				"taxonomy__system__freshwater": occur_form.cleaned_data.get("freshwater", None),
-				"taxonomy__system__marine": occur_form.cleaned_data.get("marine", None),
-				"taxonomy__system__terrestrial": occur_form.cleaned_data.get("terrestrial", None),
-				"taxonomy__taxontag__tag__id": occur_form.cleaned_data.get("taxon_tag", None),
-			}
+		filtered_data = {}
 
-			for field, value in filter_data.items():
-				if value is not None:
-					filters &= Q(**{field: value})
+		iucn_form = IUCNDataForm(data=request.GET)
+		if not iucn_form.is_valid():
+			raise CBBAPIException(iucn_form.errors, 400)
+		for key, value in iucn_form.cleaned_data.items():
+			if value != "":
+				filtered_data[f"taxonomy__iucndata__{key}"] = value and int(value)
+
+		directive_form = DirectiveForm(data=request.GET)
+		if not directive_form.is_valid():
+			raise CBBAPIException(directive_form.errors, 400)
+		for key, value in directive_form.cleaned_data.items():
+			if value:
+				filtered_data[f"taxonomy__directive__{key}"] = value
+
+		system_form = SystemForm(data=request.GET)
+		if not system_form.is_valid():
+			raise CBBAPIException(system_form.errors, 400)
+		for key, value in system_form.cleaned_data.items():
+			if value:
+				filtered_data[f"taxonomy__system__{key}"] = value
+
+		tag_form = TaxonTagForm(data=request.GET)
+		if not tag_form.is_valid():
+			raise CBBAPIException(tag_form.errors, 400)
+		filtered_data["taxonomy__taxontag__tag__id"] = tag_form.cleaned_data.get("tag")
+
+		for field, value in filtered_data.items():
+			if value is not None:
+				filters &= Q(**{field: value})
 
 		source = occur_form.cleaned_data.get("source", None)
 		if source:
@@ -356,9 +369,9 @@ class OccurrenceCountBySourceView(APIView):
 		occurrences = (
 			Occurrence.objects.filter(taxonomy__in=taxonomy, in_cbb_scope=True)
 			.prefetch_related("sources")
-			.values("sources__source__basis__name")
+			.values("sources__source__basis__internal_name")
 			.annotate(count=Count("id"))
-			.order_by("sources__source__basis__name")
+			.order_by("sources__source__basis__internal_name")
 		)
 
 		return Response(DynamicSourceSerializer(occurrences, many=True).data)

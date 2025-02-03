@@ -8,8 +8,15 @@ class BasisForm(IdFieldForm, TranslateForm):
 	name = forms.CharField(required=False)
 	# url = forms.URLField(required=False)
 	# description = forms.CharField(required=False)
+	exact = forms.BooleanField(required=False)
 	# authors = forms.CharField(required=False)
 	# citation = forms.CharField(required=False)
+
+	def clean(self):
+		cleaned_data = super().clean()
+		if "exact" not in self.data:
+			del cleaned_data["exact"]
+		return cleaned_data
 
 
 class SourceForm(IdFieldForm, TranslateForm):

@@ -20,7 +20,8 @@ from apps.versioning.serializers import OriginIdSerializer
 from .forms import IdFieldForm, TaxonomicLevelChildrenForm, TaxonomicLevelForm
 from .utils import taxon_checklist_to_csv, generate_csv_taxon_list2
 from common.utils.utils import EchoWriter, PUNCTUATION_TRANSLATE, str_clean_up
-from common.utils.forms import PaginatorFieldForm
+from common.utils.forms import PaginatorFieldForm, TaxonomyForm
+from ..tags.forms import IUCNDataForm, DirectiveForm, SystemForm, TaxonTagForm
 
 
 class TaxonSearch:
@@ -99,10 +100,6 @@ class TaxonFilter(TaxonSearch):
 			except TaxonomicLevel.DoesNotExist:
 				raise CBBAPIException("Ancestor id not found", code=404)
 
-		name = taxon_form.cleaned_data.get("name", None)
-		if name:
-			query = self.search(request).exclude(~Q(id__in=query))
-
 		rank = taxon_form.cleaned_data.get("rank", None)
 		if rank:
 			query = query.filter(rank=rank)
@@ -114,6 +111,50 @@ class TaxonFilter(TaxonSearch):
 		has_image = taxon_form.cleaned_data.get("has_image", None)
 		if has_image is not None:
 			query = query.exclude(images__isnull=has_image)
+
+		filters = Q()
+		filtered_data = {}
+
+		name = taxon_form.cleaned_data.get("name", None)
+		if name:
+			query = self.search(request).exclude(~Q(id__in=query))
+
+		iucn_form = IUCNDataForm(data=request.GET)
+		if not iucn_form.is_valid():
+			raise CBBAPIException(iucn_form.errors, 400)
+		for key, value in iucn_form.cleaned_data.items():
+			if value != "":
+				filtered_data[f"iucndata__{key}"] = value and int(value)
+
+		directive_form = DirectiveForm(data=request.GET)
+		if not directive_form.is_valid():
+			raise CBBAPIException(directive_form.errors, 400)
+		for key, value in directive_form.cleaned_data.items():
+			if value:
+				filtered_data[f"directive__{key}"] = value
+
+		system_form = SystemForm(data=request.GET)
+		if not system_form.is_valid():
+			raise CBBAPIException(system_form.errors, 400)
+		for key, value in system_form.cleaned_data.items():
+			if value:
+				filtered_data[f"system__{key}"] = value
+
+		tag_form = TaxonTagForm(data=request.GET)
+		if not tag_form.is_valid():
+			raise CBBAPIException(tag_form.errors, 400)
+		filtered_data["taxontag__tag__id"] = tag_form.cleaned_data.get("tag")
+
+		print(filtered_data)
+
+		for field, value in filtered_data.items():
+			if value is not None:
+				filters &= Q(**{field: value})
+
+		source = taxon_form.cleaned_data.get("source", None)
+		if source:
+			filters &= Q(sources__source__basis__internal_name__icontains=source)
+		query = query.filter(filters)
 
 		return query
 
@@ -356,6 +397,38 @@ class TaxonChildrenCountView(LoggingMixin, TaxonChildrenBaseView):
 	)
 	def get(self, request):
 		return Response(super().get(request).count())
+
+
+class TaxonSistersView(APIView):
+	@swagger_auto_schema(
+		tags=["Taxonomy"],
+		operation_description="Get the sisters of the given taxon id",
+		manual_parameters=[
+			openapi.Parameter(
+				name="taxonomy",
+				in_=openapi.IN_QUERY,
+				type=openapi.TYPE_INTEGER,
+				description="ID of the taxonomic level",
+				required=True,
+			)
+		],
+		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
+	)
+	def get(self, request, *args, **kwargs):
+		taxon_form = TaxonomyForm(self.request.GET)
+		if not taxon_form.is_valid():
+			raise CBBAPIException(taxon_form.errors, code=400)
+
+		taxon_id = taxon_form.cleaned_data["taxonomy"]
+
+		try:
+			taxon = TaxonomicLevel.objects.get(id=taxon_id)
+		except TaxonomicLevel.DoesNotExist:
+			raise CBBAPIException("Taxonomic level does not exist.", code=404)
+
+		siblings = taxon.get_siblings(include_self=False)
+
+		return Response(BaseTaxonomicLevelSerializer(siblings, many=True).data)
 
 
 class TaxonomicLevelDescendantsCountView(APIView):

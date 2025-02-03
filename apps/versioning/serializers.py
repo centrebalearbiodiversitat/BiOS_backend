@@ -1,7 +1,12 @@
 from rest_framework import serializers
-from rest_framework.fields import SerializerMethodField
 from apps.versioning.models import Basis, Source, OriginId
 from common.utils.serializers import CaseModelSerializer
+
+
+class BasisSerializer(CaseModelSerializer):
+	class Meta:
+		model = Basis
+		fields = "__all__"
 
 
 class SourceSerializer(CaseModelSerializer):
@@ -24,12 +29,6 @@ class SourceSerializer(CaseModelSerializer):
 			"extraction_method",
 			"url",
 		]
-
-
-class BasisSerializer(CaseModelSerializer):
-	class Meta:
-		model = Basis
-		fields = "__all__"
 
 
 class SourceCountSerializer(SourceSerializer):

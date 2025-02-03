@@ -111,7 +111,7 @@ class IUCNData(ReferencedModel):
 	iucn_global = models.PositiveSmallIntegerField(choices=CS_CHOICES, default=NE)
 	iucn_europe = models.PositiveSmallIntegerField(choices=CS_CHOICES, default=NE)
 	iucn_mediterranean = models.PositiveSmallIntegerField(choices=CS_CHOICES, default=NE)
-	habitats = models.ManyToManyField(Habitat, blank=True)
+	habitats = models.ManyToManyField(Habitat, blank=True, default=None)
 
 	def __str__(self):
 		return f"{self.taxonomy} - iucn_global: {self.iucn_global}, iucn_europe: {self.iucn_europe}, iucn_mediterranean: {self.iucn_mediterranean}"
@@ -122,7 +122,7 @@ class IUCNData(ReferencedModel):
 
 
 class Directive(ReferencedModel):
-	taxonomy = models.ForeignKey(TaxonomicLevel, on_delete=models.CASCADE, db_index=True, null=True)
+	taxonomy = models.ForeignKey(TaxonomicLevel, on_delete=models.CASCADE, db_index=True)
 	cites = models.BooleanField(default=None, null=True)
 	ceea = models.BooleanField(default=None, null=True)
 	lespre = models.BooleanField(default=None, null=True)

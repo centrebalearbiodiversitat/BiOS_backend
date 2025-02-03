@@ -141,4 +141,4 @@ class DynamicSourceSerializer(serializers.Serializer):
 	source = serializers.CharField()  # Renamed for clarity
 
 	def to_representation(self, instance):
-		return {"source": instance["sources__source__basis__name"], "count": instance["count"]}
+		return {"source": instance["sources__source__basis__internal_name"], "count": instance["count"]}

@@ -21,7 +21,7 @@ from .forms import IdFieldForm, TaxonomicLevelChildrenForm, TaxonomicLevelForm
 from .utils import taxon_checklist_to_csv, generate_csv_taxon_list2
 from common.utils.utils import EchoWriter, PUNCTUATION_TRANSLATE, str_clean_up
 from common.utils.forms import PaginatorFieldForm, TaxonomyForm
-from ..tags.forms import IUCNDataForm, DirectiveForm, SystemForm, TaxonTagForm
+from apps.tags.forms import IUCNDataForm, DirectiveForm, SystemForm, TaxonTagForm
 
 
 class TaxonSearch:

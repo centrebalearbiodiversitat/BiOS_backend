@@ -48,7 +48,6 @@ class OccurrenceForm(LatLonModelForm):
 	batch = forms.IntegerField(required=False)
 	sources = forms.IntegerField(required=False)
 	add_synonyms = forms.BooleanField(required=False, initial=True)
-	taxon_tag = forms.IntegerField(required=False)
 	source = forms.CharField(required=False)
 
 	TRANSLATE_FIELDS = {

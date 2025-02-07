@@ -42,4 +42,4 @@ class SequenceSerializer(CaseModelSerializer):
 
 	class Meta:
 		model = Sequence
-		exclude = ("batch", )
+		exclude = ("batch",)

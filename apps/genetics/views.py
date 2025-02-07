@@ -218,9 +218,7 @@ class SequenceFilter(APIView):
 		if taxon:
 			try:
 				taxon = TaxonomicLevel.objects.get(id=taxon)
-				filters |= Q(
-					occurrence__taxonomy=taxon
-				) | Q(occurrence__taxonomy__lft__gte=taxon.lft, occurrence__taxonomy__rght__lte=taxon.rght)
+				filters |= Q(occurrence__taxonomy=taxon) | Q(occurrence__taxonomy__lft__gte=taxon.lft, occurrence__taxonomy__rght__lte=taxon.rght)
 			except TaxonomicLevel.DoesNotExist:
 				raise CBBAPIException("Taxonomic level does not exist", 404)
 

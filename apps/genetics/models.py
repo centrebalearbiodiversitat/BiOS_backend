@@ -28,4 +28,4 @@ class Sequence(ReferencedModel):
 			return f"{self.occurrence}"
 
 	class Meta:
-		ordering = ['-published_date']
+		ordering = ["-published_date"]

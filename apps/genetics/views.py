@@ -9,7 +9,7 @@ from apps.taxonomy.models import TaxonomicLevel
 from ..API.exceptions import CBBAPIException
 from .forms import MarkerForm, SequenceForm, SequenceListForm
 from .models import Marker, Sequence
-from .serializers import SuperMarkerSerializer, MarkerSerializer, SequenceSerializer
+from .serializers import MarkerCountSerializer, MarkerSerializer, SequenceSerializer
 
 
 class MarkerCRUDView(APIView):
@@ -134,7 +134,7 @@ class MarkerFilter(APIView):
 
 class MarkerListView(MarkerFilter):
 	def get(self, request):
-		return Response(SuperMarkerSerializer(super().get(request), many=True).data)
+		return Response(MarkerCountSerializer(super().get(request), many=True).data)
 
 
 class MarkerCountView(MarkerFilter):
@@ -213,17 +213,22 @@ class SequenceFilter(APIView):
 		if not seq_form.is_valid():
 			raise CBBAPIException(seq_form.errors, 400)
 
+		filters = Q()
 		taxon = seq_form.cleaned_data.get("taxonomy")
+		if taxon:
+			try:
+				taxon = TaxonomicLevel.objects.get(id=taxon)
+				filters |= Q(
+					occurrence__taxonomy=taxon
+				) | Q(occurrence__taxonomy__lft__gte=taxon.lft, occurrence__taxonomy__rght__lte=taxon.rght)
+			except TaxonomicLevel.DoesNotExist:
+				raise CBBAPIException("Taxonomic level does not exist", 404)
 
-		if not taxon:
-			raise CBBAPIException("Missing taxonomy parameter", code=400)
+		marker = seq_form.cleaned_data.get("marker")
+		if marker:
+			filters &= Q(markers=marker)
 
-		try:
-			taxon = TaxonomicLevel.objects.get(id=taxon)
-		except TaxonomicLevel.DoesNotExist:
-			raise CBBAPIException("Taxonomic level does not exist", 404)
-
-		return Sequence.objects.filter(Q(occurrence__taxonomy=taxon) | Q(occurrence__taxonomy__lft__gte=taxon.lft, occurrence__taxonomy__rght__lte=taxon.rght))
+		return Sequence.objects.filter(filters) if filters else Sequence.objects.none()
 
 
 class SequenceListView(SequenceFilter):
@@ -242,7 +247,7 @@ class SequenceListView(SequenceFilter):
 		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
 	)
 	def get(self, request):
-		return Response(SequenceSerializer(super().get(request), many=True).data)
+		return Response(SequenceSerializer(super().get(request).prefetch_related("sources", "markers").select_related("occurrence", "occurrence__taxonomy"), many=True).data)
 
 
 class SequenceCountView(SequenceFilter):

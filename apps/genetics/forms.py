@@ -31,4 +31,5 @@ class SequenceForm(IdFieldForm, CamelCaseForm):
 
 
 class SequenceListForm(CamelCaseForm):
-	taxonomy = forms.IntegerField()
+	taxonomy = forms.IntegerField(required=False)
+	marker = forms.IntegerField(required=False)

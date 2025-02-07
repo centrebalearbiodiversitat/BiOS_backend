@@ -143,9 +143,8 @@ class TaxonFilter(TaxonSearch):
 		tag_form = TaxonTagForm(data=request.GET)
 		if not tag_form.is_valid():
 			raise CBBAPIException(tag_form.errors, 400)
-		filtered_data["taxontag__tag__id"] = tag_form.cleaned_data.get("tag")
-
-		print(filtered_data)
+		if tag_form.cleaned_data.get("tag", None):
+			filtered_data["taxontag__tag__name__iexact"] = tag_form.cleaned_data.get("tag")
 
 		for field, value in filtered_data.items():
 			if value is not None:

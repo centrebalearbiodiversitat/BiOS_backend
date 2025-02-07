@@ -1,11 +1,11 @@
 from django import forms
 
-from common.utils.forms import IdFieldForm, TranslateForm
+from common.utils.forms import TranslateForm, CamelCaseForm
 
 from .models import IUCNData
 
 
-class DirectiveForm(IdFieldForm):
+class DirectiveForm(CamelCaseForm):
 	cites = forms.BooleanField(required=False)
 	ceea = forms.BooleanField(required=False)
 	lespre = forms.BooleanField(required=False)
@@ -16,7 +16,7 @@ class DirectiveForm(IdFieldForm):
 		fields = "__all__"
 
 
-class IUCNDataForm(IdFieldForm, TranslateForm):
+class IUCNDataForm(TranslateForm):
 	iucn_global = forms.CharField(max_length=100, required=False)
 	iucn_europe = forms.CharField(max_length=100, required=False)
 	iucn_mediterranean = forms.CharField(max_length=100, required=False)
@@ -29,14 +29,14 @@ class IUCNDataForm(IdFieldForm, TranslateForm):
 	}
 
 
-class TaxonTagForm(IdFieldForm):
-	tag = forms.IntegerField(required=False)
+class TaxonTagForm(CamelCaseForm):
+	tag = forms.CharField(required=False)
 
 	class Meta:
 		fields = ["taxonomy", "tag"]
 
 
-class SystemForm(IdFieldForm):
+class SystemForm(CamelCaseForm):
 	freshwater = forms.BooleanField(required=False)
 	marine = forms.BooleanField(required=False)
 	terrestrial = forms.BooleanField(required=False)

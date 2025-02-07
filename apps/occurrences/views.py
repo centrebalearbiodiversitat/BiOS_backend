@@ -117,7 +117,8 @@ class OccurrenceFilter(APIView):
 		tag_form = TaxonTagForm(data=request.GET)
 		if not tag_form.is_valid():
 			raise CBBAPIException(tag_form.errors, 400)
-		filtered_data["taxonomy__taxontag__tag__id"] = tag_form.cleaned_data.get("tag")
+		if tag_form.cleaned_data.get("tag"):
+			filtered_data["taxonomy__taxontag__tag__name__iexact"] = tag_form.cleaned_data.get("tag")
 
 		for field, value in filtered_data.items():
 			if value is not None:
@@ -130,6 +131,10 @@ class OccurrenceFilter(APIView):
 		voucher = occur_form.cleaned_data.get("voucher", None)
 		if voucher:
 			filters &= Q(voucher__icontains=voucher)
+
+		has_sequence = occur_form.cleaned_data.get("has_sequence", None)
+		if has_sequence is not None:
+			filters &= Q(sequence__isnull=not has_sequence)
 
 		range_parameters = ["decimal_latitude", "decimal_longitude", "coordinate_uncertainty_in_meters", "elevation", "depth"]
 

@@ -1,8 +1,5 @@
-from apps.geography.models import GeographicLevel
-from common.utils.forms import TranslateForm, IdFieldForm
 from django import forms
 from common.utils.forms import IdFieldForm, TranslateForm
-from apps.tags.models import IUCNData
 
 
 class LatLonModelForm(IdFieldForm, TranslateForm):
@@ -49,6 +46,7 @@ class OccurrenceForm(LatLonModelForm):
 	sources = forms.IntegerField(required=False)
 	add_synonyms = forms.BooleanField(required=False, initial=True)
 	source = forms.CharField(required=False)
+	has_sequence = forms.NullBooleanField(required=False, initial=None)
 
 	TRANSLATE_FIELDS = {
 		"year": "collection_date_year",

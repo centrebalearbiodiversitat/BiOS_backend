@@ -1,8 +1,5 @@
-import json
-
-from django.core.serializers.json import DjangoJSONEncoder
 from django.db.models import Q, Count, Case, F, When, Value
-from django.http import StreamingHttpResponse, JsonResponse
+from django.http import JsonResponse
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.response import Response
@@ -19,6 +16,7 @@ from .serializers import (
 	DynamicSourceSerializer,
 )
 from ..geography.models import GeographicLevel
+from common.utils.views import CSVDownloadMixin
 
 
 class OccurrenceCRUDView(APIView):
@@ -67,7 +65,7 @@ class OccurrenceFilter(APIView):
 			filters &= Q(**{f"{field_name}__lte": max_value})
 		return filters
 
-	def calculate(self, request, in_cbb_scope=True):
+	def get(self, request, in_cbb_scope=True):
 		occur_form = OccurrenceForm(data=request.GET)
 
 		if not occur_form.is_valid():
@@ -139,9 +137,9 @@ class OccurrenceFilter(APIView):
 
 		if in_cbb_scope:
 			occurrences = occurrences.filter(in_cbb_scope=in_cbb_scope)
-		
-		return occurrences
 
+		return occurrences
+	
 
 class OccurrenceListView(OccurrenceFilter):
 	@swagger_auto_schema(
@@ -238,36 +236,24 @@ class OccurrenceListView(OccurrenceFilter):
 		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
 	)
 	def get(self, request):
-		return Response(BaseOccurrenceSerializer(self.calculate(request), many=True).data)
+		response = super().get(request)
+		return Response(BaseOccurrenceSerializer(response, many=True).data)
 
 
-class OccurrenceListDownloadView(OccurrenceFilter):
-	def stream_json_response(self, occurrences):
-		"""Generator that yields JSON data from a queryset."""
-		yield "["  # Start of the JSON array
-		first = True  # Flag to handle comma placement
+class OccurrenceDownload(OccurrenceFilter):
+	def get(self, request):
+		occurrences = super().get(request)
+		serializer = DownloadOccurrenceSerializer(occurrences, many=True)
+		return Response(serializer.data)
 
-		for occurrence in occurrences:
-			if not first:
-				yield ", "  # Add comma before the next item
-			first = False
 
-			# Serialize the occurrence and convert it to JSON
-			occurrence_data = DownloadOccurrenceSerializer(occurrence).data
-			yield json.dumps(occurrence_data, indent=1, cls=DjangoJSONEncoder)  # Convert to JSON and yield
-
-		yield "]"  # End of the JSON array
+class OccurrenceListDownloadView(OccurrenceDownload):
 
 	def get(self, request):
-		occurrences = self.calculate(request).prefetch_related("sources__source")
-
-		return StreamingHttpResponse(
-			self.stream_json_response(occurrences),
-			content_type="application/json",
-			headers={
-				"Content-Disposition": f'attachment; filename="occurrences.json"',
-			},
-		)
+		response = super().get(request)
+		data = response.data
+		flattened_data = CSVDownloadMixin().flatten_json(data, ["sources"])
+		return CSVDownloadMixin().generate_csv(flattened_data, "occurrences.csv")
 
 
 class OccurrenceCountView(OccurrenceFilter):

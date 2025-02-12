@@ -1,16 +1,17 @@
-from django.db.models import Count, Q, OuterRef
+from django.db.models import Count, Q, OuterRef, Case, When, IntegerField, Subquery
+from django.db.models.functions import Coalesce
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.taxonomy.models import TaxonomicLevel
-
+from apps.versioning.models import Basis
 from ..API.exceptions import CBBAPIException
 from .forms import MarkerForm, SequenceForm, SequenceListForm
 from .models import Marker, Sequence
-from .serializers import SuperMarkerSerializer, MarkerSerializer, SequenceSerializer
-
+from .serializers import SuperMarkerSerializer, MarkerSerializer, SequenceSerializer, SequenceAggregationSerializer
+from common.utils.views import CSVDownloadMixin
 
 class MarkerCRUDView(APIView):
 	@swagger_auto_schema(
@@ -94,6 +95,81 @@ class MarkerSearchView(APIView):
 		return Response(MarkerSerializer(Marker.objects.filter(**filters)[:10], many=True).data)
 
 
+class MarkerOccurFilter(APIView):
+	def get(self, request, in_cbb_scope=False):
+		seq_form = SequenceForm(data=self.request.GET)
+
+		if not seq_form.is_valid():
+			raise CBBAPIException(seq_form.errors, 400)
+
+		taxon_id = seq_form.cleaned_data.get("taxonomy")
+		if not taxon_id:
+			raise CBBAPIException("Missing taxon id parameter", 400)
+
+		all_markers = Marker.objects.all()
+		
+		marker_id = seq_form.cleaned_data.get("marker")
+		if not marker_id:
+			raise CBBAPIException("Missing marker id parameter", 400)
+
+		try:
+			taxon = TaxonomicLevel.objects.get(id=taxon_id)
+		except TaxonomicLevel.DoesNotExist:
+			raise CBBAPIException("Taxonomic level does not exist", 404)
+
+		sequence_count = Sequence.objects.filter(
+			occurrence__taxonomy__in=taxon.get_descendants(include_self=True),
+			markers=OuterRef('pk')
+		).values('markers').distinct().annotate(
+			count=Case(
+				When(markers__pk=marker_id, then=Count('pk')),
+				default=0,
+				output_field=IntegerField()
+			)
+		).values('count')
+
+		queryset = all_markers.annotate(
+			count=Subquery(sequence_count)
+		)
+
+		return queryset
+	
+
+class MarkerOccurListView(MarkerOccurFilter):
+	def get(self, request):
+		return Response(SequenceSerializer(super().get(request), many=True).data)
+	
+
+class MarkerTaxonCountListView(APIView):
+
+	def get(self, request):
+
+		taxon_id = request.GET.get("taxonomy")
+		if not taxon_id:
+			raise CBBAPIException("Missing taxon id parameter", 400)
+
+		try:
+			taxon = TaxonomicLevel.objects.get(id=taxon_id)
+		except TaxonomicLevel.DoesNotExist:
+			raise CBBAPIException("Taxonomic level does not exist", 404)
+
+		all_markers = Marker.objects.all()
+
+		sequence_count = Sequence.objects.filter(
+			occurrence__taxonomy__in=taxon.get_descendants(include_self=True),
+			markers=OuterRef('pk')
+		).values('markers').distinct().annotate(
+			count=Count('pk')
+		).values('count')
+
+		queryset = all_markers.annotate(
+			count=Coalesce(Subquery(sequence_count), 0)
+		)
+
+		serializer = MarkerSerializer(queryset, many=True)
+		return Response(serializer.data)
+	
+
 class MarkerFilter(APIView):
 	def get(self, request):
 		marker_form = MarkerForm(data=self.request.GET)
@@ -110,20 +186,9 @@ class MarkerFilter(APIView):
 		except TaxonomicLevel.DoesNotExist:
 			raise CBBAPIException("Taxonomic level does not exist", 404)
 
-		# Filter all markers by taxon
-		queryset = Marker.objects.filter(sequence__occurrence__taxonomy__in=taxon.get_descendants(include_self=True))
-
-		# Annotate with the accepted id
-		# accepted_marker = Marker.objects.filter(Q(accepted=True, id=OuterRef("id")) | Q(synonyms=OuterRef("id"), accepted=True))
-		#
-		# queryset = queryset.annotate(accepted_marker=accepted_marker.values("id")[:1])
-		#
-		# queryset = Marker.objects.filter(id__in=queryset.values("accepted_marker")).annotate(
-		# 	total=queryset.filter(accepted_marker=OuterRef("id"))
-		# 	.values("accepted_marker")
-		# 	.annotate(total=Count("accepted_marker"))
-		# 	.values("total")[:1]
-		# )
+		queryset = Marker.objects.filter(
+			sequence__occurrence__taxonomy__in=taxon.get_descendants(include_self=True)
+		)
 
 		queryset = queryset.annotate(total=Count("name"))
 
@@ -263,3 +328,95 @@ class SequenceCountView(SequenceFilter):
 	def get(self, request):
 		sequences = super().get(request)
 		return Response(f"{sequences.filter(occurrence__in_cbb_scope=True).count()} / {sequences.count()}")
+
+
+class SequenceSourceCountView(APIView):
+
+	def get(self, request):
+
+		seq_form = SequenceForm(data=self.request.GET)
+
+		if not seq_form.is_valid():
+			raise CBBAPIException(seq_form.errors, 400)
+		
+		taxon_id = seq_form.cleaned_data.get("taxonomy")
+		if not taxon_id:
+			raise CBBAPIException("Missing taxon id parameter", 400)
+
+		try:
+			taxon = TaxonomicLevel.objects.get(id=taxon_id)
+		except TaxonomicLevel.DoesNotExist:
+			raise CBBAPIException("Taxonomic level does not exist", 404)
+		
+		marker_id = seq_form.cleaned_data.get("marker")
+		if not marker_id:
+			raise CBBAPIException("Missing taxon id parameter", 400)
+		try:
+			marker = Marker.objects.get(id=marker_id)
+		except Marker.DoesNotExist:
+			raise CBBAPIException("Taxonomic level does not exist", 404)
+
+		queryset = Sequence.objects.filter(
+					Q(occurrence__taxonomy=taxon) & Q(markers=marker)
+		).values("sources__source__basis__internal_name").annotate(
+			count=Count("id")
+		).order_by("-count")
+
+		serializer = SequenceAggregationSerializer(queryset, many=True)
+
+		return Response(serializer.data)
+	
+
+class SequenceSourceDownload(APIView):
+
+	def get(self, request):
+
+		seq_form = SequenceForm(data=self.request.GET)
+
+		if not seq_form.is_valid():
+			raise CBBAPIException(seq_form.errors, 400)
+		
+		taxon_id = seq_form.cleaned_data.get("taxonomy")
+		if not taxon_id:
+			raise CBBAPIException("Missing taxon id parameter", 400)
+
+		try:
+			taxon = TaxonomicLevel.objects.get(id=taxon_id)
+		except TaxonomicLevel.DoesNotExist:
+			raise CBBAPIException("Taxonomic level does not exist", 404)
+		
+		marker_id = seq_form.cleaned_data.get("marker")
+		if not marker_id:
+			raise CBBAPIException("Missing taxon id parameter", 400)
+		try:
+			marker = Marker.objects.get(id=marker_id)
+		except Marker.DoesNotExist:
+			raise CBBAPIException("Taxonomic level does not exist", 404)
+		
+		source = seq_form.cleaned_data.get("source")
+
+		if not source:
+			raise CBBAPIException("Missing source name parameter", 400)
+		try:
+			src = Basis.objects.get(internal_name__icontains=source)
+		except Marker.DoesNotExist:
+			raise CBBAPIException("Source level does not exist", 404)
+
+
+		queryset = Sequence.objects.filter(
+					Q(occurrence__taxonomy=taxon)
+					& Q(markers=marker)
+					& Q(sources__source__basis=src)
+		)
+
+		serializer = SequenceSerializer(queryset, many=True)
+		return Response(serializer.data)
+
+
+class SequenceSourceCSVDownloadView(SequenceSourceDownload):
+	def get(self, request):
+		response = super().get(request)
+		data = response.data
+		flattened_data = CSVDownloadMixin().flatten_json(data, ["sources", "markers"])
+		return CSVDownloadMixin().generate_csv(flattened_data, filename="sequences.csv")
+	

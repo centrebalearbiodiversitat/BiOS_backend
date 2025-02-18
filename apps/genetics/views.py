@@ -255,9 +255,7 @@ class SequenceListView(SequenceFilter):
 	def get(self, request):
 		query = super().get(request).prefetch_related("sources", "markers").select_related("occurrence", "occurrence__taxonomy")
 
-		return Response(
-			get_paginated_response(request, query, SequenceSerializer)
-		)
+		return Response(get_paginated_response(request, query, SequenceSerializer))
 
 
 class SequenceCountView(SequenceFilter):

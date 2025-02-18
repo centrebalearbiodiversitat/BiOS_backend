@@ -192,13 +192,7 @@ class TaxonListView(APIView, TaxonFilter):
 		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
 	)
 	def get(self, request):
-		return Response(
-			get_paginated_response(
-				request,
-				self.get_taxon_list(request),
-				AncestorsTaxonomicLevelSerializer
-			)
-		)
+		return Response(get_paginated_response(request, self.get_taxon_list(request), AncestorsTaxonomicLevelSerializer))
 
 
 class TaxonListCSVView(APIView, TaxonFilter):

@@ -259,7 +259,7 @@ class Command(BaseCommand):
 						elevation=int(line["elevation"]) if line["elevation"] else None,
 						depth=int(line["depth"]) if line["depth"] else None,
 						recorded_by=line["recordedBy"],
-						in_cbb_scope=cbb_scope_geometry.intersects(location) if location else False,
+						in_geography_scope=cbb_scope_geometry.intersects(location) if location else False,
 					)
 					occ.sources.add(os)
 					occ.save()

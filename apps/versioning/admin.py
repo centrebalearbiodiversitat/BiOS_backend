@@ -7,7 +7,7 @@ admin.site.register(Batch)
 
 class SourceAdmin(admin.ModelAdmin):
 	search_fields = ["source_type"]
-	list_display = ["source_type", "extraction_method", "data_type", "url"]
+	list_display = ["basis", "data_type", "source_type", "extraction_method", "url"]
 	list_filter = ["data_type"]
 
 

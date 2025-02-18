@@ -45,6 +45,10 @@ class CamelCaseForm(forms.Form):
 		super().__init__(*args, **kwargs)
 
 
+class InGeographyScopeForm(CamelCaseForm):
+	in_geography_scope = forms.NullBooleanField(required=False, initial=None)
+
+
 class TranslateForm(CamelCaseForm):
 	CHOICES_FIELD = {}
 

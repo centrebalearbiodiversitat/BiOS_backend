@@ -1,6 +1,5 @@
 import csv
 
-from django.core.paginator import Paginator
 from django.db.models import Count, Q
 from django.db.models.functions import Substr, Lower
 from django.http import StreamingHttpResponse
@@ -17,10 +16,11 @@ from apps.taxonomy.models import Authorship, TaxonomicLevel
 from apps.taxonomy.serializers import AuthorshipSerializer, BaseTaxonomicLevelSerializer, TaxonCompositionSerializer
 
 from apps.versioning.serializers import OriginIdSerializer
+from common.utils.serializers import get_paginated_response
 from .forms import IdFieldForm, TaxonomicLevelChildrenForm, TaxonomicLevelForm
 from .utils import taxon_checklist_to_csv, generate_csv_taxon_list2
 from common.utils.utils import EchoWriter, PUNCTUATION_TRANSLATE, str_clean_up
-from common.utils.forms import PaginatorFieldForm, TaxonomyForm
+from common.utils.forms import TaxonomyForm
 from apps.tags.forms import IUCNDataForm, DirectiveForm, SystemForm, TaxonTagForm
 
 
@@ -192,14 +192,13 @@ class TaxonListView(APIView, TaxonFilter):
 		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
 	)
 	def get(self, request):
-		query = self.get_taxon_list(request)
-
-		paginator = Paginator(query, 15)
-		page = PaginatorFieldForm.get_page(request.GET)
-
-		filter_res = AncestorsTaxonomicLevelSerializer(paginator.page(page), many=True).data
-
-		return Response({"total": paginator.count, "pages": paginator.num_pages, "taxa": filter_res})
+		return Response(
+			get_paginated_response(
+				request,
+				self.get_taxon_list(request),
+				AncestorsTaxonomicLevelSerializer
+			)
+		)
 
 
 class TaxonListCSVView(APIView, TaxonFilter):

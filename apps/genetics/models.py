@@ -1,4 +1,6 @@
 from django.db import models
+from django.db.models import F
+
 from apps.occurrences.models import Occurrence
 from common.utils.models import ReferencedModel, SynonymModel
 
@@ -28,4 +30,4 @@ class Sequence(ReferencedModel):
 			return f"{self.occurrence}"
 
 	class Meta:
-		ordering = ["-published_date"]
+		ordering = [F("published_date").desc(nulls_last=True), "id"]

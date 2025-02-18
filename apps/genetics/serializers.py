@@ -3,7 +3,7 @@ from rest_framework import serializers
 from common.utils.serializers import CaseModelSerializer
 from .models import Marker, Sequence, Product
 from apps.versioning.serializers import OriginIdSerializer
-from apps.occurrences.serializers import BaseOccurrenceSerializer
+from apps.occurrences.serializers import BaseOccurrenceSerializer, OccurrenceSerializer
 
 
 class MarkerCountSerializer(CaseModelSerializer):
@@ -38,7 +38,7 @@ class MarkerSerializer(BaseMarkerSerializer):
 class SequenceSerializer(CaseModelSerializer):
 	sources = OriginIdSerializer(many=True)
 	markers = BaseMarkerSerializer(many=True)
-	occurrence = BaseOccurrenceSerializer()
+	occurrence = OccurrenceSerializer()
 
 	class Meta:
 		model = Sequence

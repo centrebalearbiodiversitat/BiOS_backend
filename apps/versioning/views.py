@@ -277,7 +277,7 @@ class SourceFilter(APIView):
 
 		oq = (
 			OriginId.objects.filter(source=OuterRef("id"))
-			.exclude(source__data_type=Source.OCCURRENCE, occurrence__in_cbb_scope=False)
+			.exclude(source__data_type=Source.OCCURRENCE, occurrence__in_geography_scope=False)
 			.values("source")
 			.annotate(ent_count=Count("id"))
 			.values("ent_count")

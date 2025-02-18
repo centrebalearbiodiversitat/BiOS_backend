@@ -68,7 +68,7 @@ class OccurrenceFilter(APIView):
 			filters &= Q(**{f"{field_name}__lte": max_value})
 		return filters
 
-	def calculate(self, request, in_cbb_scope=True):
+	def calculate(self, request, in_geography_scope=True):
 		occur_form = OccurrenceForm(data=request.GET)
 
 		if not occur_form.is_valid():
@@ -155,8 +155,8 @@ class OccurrenceFilter(APIView):
 			except GeographicLevel.DoesNotExist:
 				raise CBBAPIException("Geographical location does not exist", 404)
 
-		if in_cbb_scope:
-			occurrences = occurrences.filter(in_cbb_scope=in_cbb_scope)
+		if in_geography_scope:
+			occurrences = occurrences.filter(in_geography_scope=in_geography_scope)
 
 		return occurrences
 
@@ -372,7 +372,7 @@ class OccurrenceCountBySourceView(APIView):
 			raise CBBAPIException("Taxonomic level does not exist", 404)
 
 		occurrences = (
-			Occurrence.objects.filter(taxonomy__in=taxonomy, in_cbb_scope=True)
+			Occurrence.objects.filter(taxonomy__in=taxonomy, in_geography_scope=True)
 			.prefetch_related("sources")
 			.values("sources__source__basis__internal_name")
 			.annotate(count=Count("id"))
@@ -461,7 +461,7 @@ class OccurrenceCountByTaxonDateBaseView:
 		except TaxonomicLevel.DoesNotExist:
 			raise CBBAPIException("Taxonomic level does not exist", 404)
 
-		occurrences = Occurrence.objects.filter(taxonomy__in=taxonomy, in_cbb_scope=True).values(date_key).annotate(count=Count("id")).order_by(date_key)
+		occurrences = Occurrence.objects.filter(taxonomy__in=taxonomy, in_geography_scope=True).values(date_key).annotate(count=Count("id")).order_by(date_key)
 
 		return Response(OccurrenceCountByDateSerializer(occurrences, many=True, view_class=view_class).data)
 

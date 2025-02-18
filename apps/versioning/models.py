@@ -148,7 +148,7 @@ class OriginId(models.Model):
 
 	def clean(self):
 		super().clean()
-		if not self.external_id and self.source.source_type in {Source.DATABASE, Source.JOURNAL_ARTICLE, Source.WEB_PAGE}:
+		if not self.external_id and self.source.source_type in {Source.DATABASE, Source.WEB_PAGE}:
 			raise ValidationError(f"External ID is None and is not allowed with origin type '{self.source.translate_source_type().upper()}'")
 
 	def __str__(self):

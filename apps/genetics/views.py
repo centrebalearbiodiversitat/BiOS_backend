@@ -5,6 +5,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.taxonomy.models import TaxonomicLevel
+from common.utils.serializers import get_paginated_response
 
 from ..API.exceptions import CBBAPIException
 from .forms import MarkerForm, SequenceForm, SequenceListForm
@@ -111,7 +112,14 @@ class MarkerFilter(APIView):
 			raise CBBAPIException("Taxonomic level does not exist", 404)
 
 		# Filter all markers by taxon
-		queryset = Marker.objects.filter(sequence__occurrence__taxonomy__in=taxon.get_descendants(include_self=True))
+		seq_queryset = Sequence.objects.filter(occurrence__taxonomy__in=taxon.get_descendants(include_self=True)).distinct()
+
+		in_geography_scope = marker_form.cleaned_data.get("in_geography_scope", None)
+		if in_geography_scope is not None:
+			seq_queryset = seq_queryset.filter(occurrence__in_geography_scope=in_geography_scope)
+
+		queryset = Marker.objects.filter(sequence__in=seq_queryset)
+		queryset = queryset.annotate(total=Count("id")).order_by("-total")
 
 		# Annotate with the accepted id
 		# accepted_marker = Marker.objects.filter(Q(accepted=True, id=OuterRef("id")) | Q(synonyms=OuterRef("id"), accepted=True))
@@ -124,10 +132,6 @@ class MarkerFilter(APIView):
 		# 	.annotate(total=Count("accepted_marker"))
 		# 	.values("total")[:1]
 		# )
-
-		queryset = queryset.annotate(total=Count("name"))
-
-		queryset = queryset.filter(total__gte=0).order_by("-total")
 
 		return queryset
 
@@ -226,6 +230,10 @@ class SequenceFilter(APIView):
 		if marker:
 			filters &= Q(markers=marker)
 
+		in_geography_scope = seq_form.cleaned_data.get("in_geography_scope", None)
+		if in_geography_scope is not None:
+			filters &= Q(occurrence__in_geography_scope=in_geography_scope)
+
 		return Sequence.objects.filter(filters) if filters else Sequence.objects.none()
 
 
@@ -245,7 +253,11 @@ class SequenceListView(SequenceFilter):
 		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
 	)
 	def get(self, request):
-		return Response(SequenceSerializer(super().get(request).prefetch_related("sources", "markers").select_related("occurrence", "occurrence__taxonomy"), many=True).data)
+		query = super().get(request).prefetch_related("sources", "markers").select_related("occurrence", "occurrence__taxonomy")
+
+		return Response(
+			get_paginated_response(request, query, SequenceSerializer)
+		)
 
 
 class SequenceCountView(SequenceFilter):
@@ -265,4 +277,4 @@ class SequenceCountView(SequenceFilter):
 	)
 	def get(self, request):
 		sequences = super().get(request)
-		return Response(f"{sequences.filter(occurrence__in_cbb_scope=True).count()} / {sequences.count()}")
+		return Response(f"{sequences.filter(occurrence__in_geography_scope=True).count()} / {sequences.count()}")

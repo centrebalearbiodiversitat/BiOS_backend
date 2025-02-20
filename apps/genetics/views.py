@@ -11,7 +11,7 @@ from apps.versioning.models import Basis
 
 from .forms import MarkerForm, SequenceForm, SequenceListForm
 from .models import Marker, Sequence
-from .serializers import MarkerCountSerializer, MarkerSerializer, SequenceSerializer
+from .serializers import MarkerCountSerializer, MarkerSerializer, SequenceSerializer, SequenceAggregationSerializer
 from common.utils.views import CSVDownloadMixin
 from common.utils.serializers import get_paginated_response
 

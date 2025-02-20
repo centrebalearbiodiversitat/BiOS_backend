@@ -1,4 +1,4 @@
-from django.db.models import Count, Q, OuterRef
+from django.db.models import Count, Q, OuterRef, Subquery, Prefetch, Case, When, Value, IntegerField
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.response import Response
@@ -118,22 +118,30 @@ class MarkerFilter(APIView):
 		if in_geography_scope is not None:
 			seq_queryset = seq_queryset.filter(occurrence__in_geography_scope=in_geography_scope)
 
+		# queryset = Marker.objects.filter(sequence__in=seq_queryset)
+		# queryset = queryset.annotate(total=Count("id")).order_by("-total")
+
+		accepted_marker = Marker.objects.filter(
+			Q(accepted=True, id=OuterRef("id")) | Q(synonyms=OuterRef("id"), accepted=True)
+		)
+
 		queryset = Marker.objects.filter(sequence__in=seq_queryset)
-		queryset = queryset.annotate(total=Count("id")).order_by("-total")
+		queryset = queryset.annotate(accepted_id=accepted_marker.values("id")[:1]).annotate(total=Count("id"))
 
-		# Annotate with the accepted id
-		# accepted_marker = Marker.objects.filter(Q(accepted=True, id=OuterRef("id")) | Q(synonyms=OuterRef("id"), accepted=True))
-		#
-		# queryset = queryset.annotate(accepted_marker=accepted_marker.values("id")[:1])
-		#
-		# queryset = Marker.objects.filter(id__in=queryset.values("accepted_marker")).annotate(
-		# 	total=queryset.filter(accepted_marker=OuterRef("id"))
-		# 	.values("accepted_marker")
-		# 	.annotate(total=Count("accepted_marker"))
-		# 	.values("total")[:1]
-		# )
+		acc_count = {}
+		for marker in queryset:
+			if marker.accepted_id not in acc_count:
+				acc_count[marker.accepted_id] = 0
+			acc_count[marker.accepted_id] += marker.total
 
-		return queryset
+		total_case = Case(
+			*[When(id=key, then=Value(value)) for key, value in acc_count.items()],
+			default=Value(0),  # Default value if not in the map
+			output_field=IntegerField()
+		)
+		queryset = Marker.objects.filter(id__in=acc_count.keys()).annotate(total=total_case)
+
+		return queryset.order_by("-total")
 
 
 class MarkerListView(MarkerFilter):
@@ -228,13 +236,13 @@ class SequenceFilter(APIView):
 
 		marker = seq_form.cleaned_data.get("marker")
 		if marker:
-			filters &= Q(markers=marker)
+			filters &= (Q(markers=marker) | Q(markers__synonyms=marker))
 
 		in_geography_scope = seq_form.cleaned_data.get("in_geography_scope", None)
 		if in_geography_scope is not None:
 			filters &= Q(occurrence__in_geography_scope=in_geography_scope)
 
-		return Sequence.objects.filter(filters) if filters else Sequence.objects.none()
+		return Sequence.objects.filter(filters).distinct() if filters else Sequence.objects.none()
 
 
 class SequenceListView(SequenceFilter):

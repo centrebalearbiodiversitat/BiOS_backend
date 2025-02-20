@@ -9,7 +9,8 @@ class ProductAdmin(admin.ModelAdmin):
 
 class MarkerAdmin(admin.ModelAdmin):
 	search_fields = ["unidecode_name"]
-	autocomplete_fields = ["synonyms", "sources", "products"]
+	readonly_fields = ["sources"]
+	autocomplete_fields = ["synonyms", "products"]
 
 
 class SequenceAdmin(admin.ModelAdmin):

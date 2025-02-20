@@ -46,7 +46,7 @@ class SequenceSerializer(CaseModelSerializer):
 
 
 class SequenceAggregationSerializer(CaseModelSerializer):
-	source = serializers.CharField(source='sources__source__basis__internal_name')
+	source = serializers.CharField(source="sources__source__basis__internal_name")
 	count = serializers.IntegerField()
 
 	class Meta:

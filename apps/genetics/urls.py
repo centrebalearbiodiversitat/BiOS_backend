@@ -4,14 +4,14 @@ from .views import (
 	MarkerCRUDView,
 	MarkerSearchView,
 	MarkerListView,
-    MarkerTaxonCountListView,
+	MarkerTaxonCountListView,
 	MarkerCountView,
 	SequenceCRUDView,
 	SequenceCountView,
 	SequenceListView,
 	SequenceSearchView,
-    SequenceSourceCountView,
-    SequenceSourceCSVDownloadView
+	SequenceSourceCountView,
+	SequenceSourceCSVDownloadView,
 )
 
 app_name = "genetics"
@@ -27,5 +27,4 @@ urlpatterns = [
 	path("/sequence/list/count", SequenceCountView.as_view(), name="sequence_list_count"),
 	path("/sequence/source/count", SequenceSourceCountView.as_view(), name="sequence_occur_tax"),
 	path("/sequence/source/download", SequenceSourceCSVDownloadView.as_view(), name="sequence_occur_tax"),
-
 ]

@@ -120,20 +120,15 @@ class MarkerOccurFilter(APIView):
 		except TaxonomicLevel.DoesNotExist:
 			raise CBBAPIException("Taxonomic level does not exist", 404)
 
-		sequence_count = Sequence.objects.filter(
-			occurrence__taxonomy__in=taxon.get_descendants(include_self=True),
-			markers=OuterRef('pk')
-		).values('markers').distinct().annotate(
-			count=Case(
-				When(markers__pk=marker_id, then=Count('pk')),
-				default=0,
-				output_field=IntegerField()
-			)
-		).values('count')
-
-		queryset = all_markers.annotate(
-			count=Subquery(sequence_count)
+		sequence_count = (
+			Sequence.objects.filter(occurrence__taxonomy__in=taxon.get_descendants(include_self=True), markers=OuterRef("pk"))
+			.values("markers")
+			.distinct()
+			.annotate(count=Case(When(markers__pk=marker_id, then=Count("pk")), default=0, output_field=IntegerField()))
+			.values("count")
 		)
+
+		queryset = all_markers.annotate(count=Subquery(sequence_count))
 
 		return queryset
 
@@ -144,9 +139,7 @@ class MarkerOccurListView(MarkerOccurFilter):
 
 
 class MarkerTaxonCountListView(APIView):
-
 	def get(self, request):
-
 		taxon_id = request.GET.get("taxonomy")
 		if not taxon_id:
 			raise CBBAPIException("Missing taxon id parameter", 400)
@@ -158,16 +151,15 @@ class MarkerTaxonCountListView(APIView):
 
 		all_markers = Marker.objects.all()
 
-		sequence_count = Sequence.objects.filter(
-			occurrence__taxonomy__in=taxon.get_descendants(include_self=True),
-			markers=OuterRef('pk')
-		).values('markers').distinct().annotate(
-			count=Count('pk')
-		).values('count')
-
-		queryset = all_markers.annotate(
-			count=Coalesce(Subquery(sequence_count), 0)
+		sequence_count = (
+			Sequence.objects.filter(occurrence__taxonomy__in=taxon.get_descendants(include_self=True), markers=OuterRef("pk"))
+			.values("markers")
+			.distinct()
+			.annotate(count=Count("pk"))
+			.values("count")
 		)
+
+		queryset = all_markers.annotate(count=Coalesce(Subquery(sequence_count), 0))
 
 		serializer = MarkerSerializer(queryset, many=True)
 		return Response(serializer.data)
@@ -363,7 +355,6 @@ class SequenceCountView(SequenceFilter):
 
 
 class SequenceSourceCountView(APIView):
-
 	def get(self, request):
 		seq_form = SequenceForm(data=self.request.GET)
 
@@ -387,11 +378,7 @@ class SequenceSourceCountView(APIView):
 		except Marker.DoesNotExist:
 			raise CBBAPIException("Taxonomic level does not exist", 404)
 
-		queryset = Sequence.objects.filter(
-					Q(occurrence__taxonomy=taxon) & Q(markers=marker)
-		).values("sources__source__basis__internal_name").annotate(
-			count=Count("id")
-		).order_by("-count")
+		queryset = Sequence.objects.filter(Q(occurrence__taxonomy=taxon) & Q(markers=marker)).values("sources__source__basis__internal_name").annotate(count=Count("id")).order_by("-count")
 
 		return Response(SequenceAggregationSerializer(queryset, many=True).data)
 
@@ -428,11 +415,7 @@ class SequenceSourceDownload(APIView):
 		except Marker.DoesNotExist:
 			raise CBBAPIException("Source level does not exist", 404)
 
-		queryset = Sequence.objects.filter(
-			Q(occurrence__taxonomy=taxon)
-				& Q(markers=marker)
-				& Q(sources__source__basis=src)
-		)
+		queryset = Sequence.objects.filter(Q(occurrence__taxonomy=taxon) & Q(markers=marker) & Q(sources__source__basis=src))
 
 		return Response(SequenceSerializer(queryset, many=True).data)
 

@@ -1,5 +1,8 @@
+from django.core.paginator import Paginator
 from rest_framework import serializers
 from humps import camelize, decamelize
+
+from common.utils.forms import PaginatorFieldForm
 
 
 class BaseSerializer(serializers.ModelSerializer):
@@ -22,3 +25,20 @@ class CaseModelSerializer(BaseSerializer):
 	def to_internal_value(self, data):
 		data = decamelize(data)
 		return super().to_internal_value(data)
+
+
+def get_paginated_response(request, queryset, serializer_class, page_size=15):
+	"""
+	Generalized function to paginate and serialize a queryset.
+
+	:param request: The HTTP request object
+	:param queryset: The queryset to be paginated
+	:param serializer_class: The serializer class to use
+	:param page_size: Number of items per page (default: 15)
+	:return: Response object with paginated data
+	"""
+	paginator = Paginator(queryset, page_size)
+	page = PaginatorFieldForm.get_page(request.GET)
+	serialized_data = serializer_class(paginator.page(page), many=True).data
+
+	return {"total": paginator.count, "pages": paginator.num_pages, "data": serialized_data}

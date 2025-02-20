@@ -3,7 +3,7 @@ import geopandas as gpd
 
 from django.core.management.base import BaseCommand
 from django.db import transaction
-from django.utils.dateparse import parse_datetime
+from dateutil import parser
 from django.contrib.gis.geos import Point, GEOSGeometry
 from apps.genetics.models import Sequence, Marker, Product
 from apps.occurrences.models import Occurrence
@@ -114,7 +114,7 @@ def genetic_sources(line: dict, batch, occ):
 			batch=batch,
 			isolate=line["isolate"],
 			definition=line["definition"],
-			published_date=parse_datetime(line["date"]) if line["date"] else None,
+			published_date=parser.parse(line["date"]) if line["date"] else None,
 		)
 		seq.sources.add(os)
 
@@ -259,7 +259,7 @@ class Command(BaseCommand):
 						elevation=int(line["elevation"]) if line["elevation"] else None,
 						depth=int(line["depth"]) if line["depth"] else None,
 						recorded_by=line["recordedBy"],
-						in_cbb_scope=cbb_scope_geometry.intersects(location) if location else False,
+						in_geography_scope=cbb_scope_geometry.intersects(location) if location else False,
 					)
 					occ.sources.add(os)
 					occ.save()
@@ -268,4 +268,3 @@ class Command(BaseCommand):
 
 				if "genetic_features" in line:
 					genetic_sources(line, batch, occ)
-			raise Exception()

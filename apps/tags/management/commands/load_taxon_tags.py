@@ -35,7 +35,11 @@ def load_taxon_tags(line, taxonomy, batch):
 		batch=batch,
 		internal_name=line[INTERNAL_NAME],
 	)
-	system = System.objects.get(taxonomy=taxonomy)
+
+	try:
+		system = System.objects.get(taxonomy=taxonomy)
+	except System.DoesNotExist:
+		raise Exception(f"Taxon systems not found. Taxon data (iucn) not loaded yet?\n{line}")
 
 	os, _ = OriginId.objects.get_or_create(source=source)
 	# if the 3 systems are None, it means IUCN has no available data
@@ -97,8 +101,8 @@ class Command(BaseCommand):
 					exception = True
 					print(traceback.format_exc(), line)
 		except FileNotFoundError:
+			exception = True
 			print("No such file or directory")
-			batch.delete()
 
 		if exception:
 			raise Exception(f"Errors found: Rollback control")

@@ -33,9 +33,9 @@ class ReferencedModel(models.Model):
 		if kwargs and kwargs["action"] == "post_add":
 			obj = kwargs["instance"]
 			if hasattr(obj, "sources"):
-				sources = [(s.source.basis, s.external_id) for s in obj.sources.all()]
+				sources = [s.source.basis for s in obj.sources.all()]
 				if len(sources) != len(set(sources)):
-					raise ValidationError(f"Sources must be unique.\n{obj}\n{sources}")
+					raise ValidationError(f"Sources must be unique.\n{obj}\n{obj.sources.all()}")
 
 	@staticmethod
 	def pre_delete(sender, instance, *args, **kwargs):

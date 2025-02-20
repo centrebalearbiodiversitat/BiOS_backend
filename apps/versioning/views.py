@@ -109,8 +109,7 @@ class BasisFilter(APIView):
 			elif value or isinstance(value, int):
 				filters[param] = value
 
-		basis = Basis.objects.filter(**filters)
-		return basis
+		return Basis.objects.filter(**filters)
 
 
 class BasisListView(BasisFilter):
@@ -179,7 +178,6 @@ class BasisCountView(BasisFilter):
 	)
 	def get(self, request):
 		return Response(super().get(request).count())
-
 
 
 class SourceSearchView(APIView):
@@ -255,7 +253,7 @@ class SourceCRUDView(APIView):
 		source_id = source_form.cleaned_data.get("id")
 		if not source_id:
 			raise CBBAPIException("Missing id parameter", 400)
-		
+
 		try:
 			occurrence = Source.objects.get(id=source_id)
 		except Source.DoesNotExist:
@@ -279,7 +277,7 @@ class SourceFilter(APIView):
 
 		oq = (
 			OriginId.objects.filter(source=OuterRef("id"))
-			.exclude(source__data_type=Source.OCCURRENCE, occurrence__in_cbb_scope=False)
+			.exclude(source__data_type=Source.OCCURRENCE, occurrence__in_geography_scope=False)
 			.values("source")
 			.annotate(ent_count=Count("id"))
 			.values("ent_count")
@@ -393,4 +391,3 @@ class OriginIdCRUDView(APIView):
 			raise CBBAPIException("Source does not exist", 404)
 
 		return Response(OriginIdSerializer(os).data)
-

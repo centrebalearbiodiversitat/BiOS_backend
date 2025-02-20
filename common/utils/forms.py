@@ -8,6 +8,10 @@ class IdFieldForm(forms.Form):
 	id = forms.IntegerField(required=False)
 
 
+class TaxonomyForm(forms.Form):
+	taxonomy = forms.IntegerField(required=False)
+
+
 class PaginatorFieldForm(forms.Form):
 	page = forms.IntegerField(required=False, min_value=1, initial=1)
 
@@ -39,6 +43,10 @@ class CamelCaseForm(forms.Form):
 		kwargs["data"] = pre_parsed_data
 
 		super().__init__(*args, **kwargs)
+
+
+class InGeographyScopeForm(CamelCaseForm):
+	in_geography_scope = forms.NullBooleanField(required=False, initial=None)
 
 
 class TranslateForm(CamelCaseForm):

@@ -3,8 +3,10 @@ import csv
 
 
 class CSVDownloadMixin:
-    def flatten_json(self, data, keys_to_flatten):
+    @staticmethod
+    def flatten_json(data, keys_to_flatten):
         flattened_data = []
+
         for item in data:
             new_item = item.copy()
             for key in keys_to_flatten:
@@ -19,9 +21,11 @@ class CSVDownloadMixin:
                         else:
                             new_item[f"{key}_{k}"] = v
             flattened_data.append(new_item)
+
         return flattened_data
 
-    def generate_csv(self, flattened_data, filename="data.csv"):
+    @staticmethod
+    def generate_csv(flattened_data, filename="data.csv"):
         response = HttpResponse(content_type='text/csv')
         response['Content-Disposition'] = f'attachment; filename="{filename}"'
 
@@ -29,4 +33,5 @@ class CSVDownloadMixin:
             writer = csv.DictWriter(response, fieldnames=flattened_data[0].keys())
             writer.writeheader()
             writer.writerows(flattened_data)
+
         return response

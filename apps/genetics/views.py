@@ -333,7 +333,6 @@ class SequenceCountView(SequenceFilter):
 class SequenceSourceCountView(APIView):
 
 	def get(self, request):
-
 		seq_form = SequenceForm(data=self.request.GET)
 
 		if not seq_form.is_valid():
@@ -362,17 +361,12 @@ class SequenceSourceCountView(APIView):
 			count=Count("id")
 		).order_by("-count")
 
-		serializer = SequenceAggregationSerializer(queryset, many=True)
-
-		return Response(serializer.data)
+		return Response(SequenceAggregationSerializer(queryset, many=True).data)
 	
 
 class SequenceSourceDownload(APIView):
-
 	def get(self, request):
-
 		seq_form = SequenceForm(data=self.request.GET)
-
 		if not seq_form.is_valid():
 			raise CBBAPIException(seq_form.errors, 400)
 		
@@ -391,32 +385,30 @@ class SequenceSourceDownload(APIView):
 		try:
 			marker = Marker.objects.get(id=marker_id)
 		except Marker.DoesNotExist:
-			raise CBBAPIException("Taxonomic level does not exist", 404)
+			raise CBBAPIException("Marker does not exist", 404)
 		
 		source = seq_form.cleaned_data.get("source")
-
 		if not source:
 			raise CBBAPIException("Missing source name parameter", 400)
+
 		try:
 			src = Basis.objects.get(internal_name__icontains=source)
 		except Marker.DoesNotExist:
 			raise CBBAPIException("Source level does not exist", 404)
 
-
 		queryset = Sequence.objects.filter(
-					Q(occurrence__taxonomy=taxon)
-					& Q(markers=marker)
-					& Q(sources__source__basis=src)
+			Q(occurrence__taxonomy=taxon)
+				& Q(markers=marker)
+				& Q(sources__source__basis=src)
 		)
 
-		serializer = SequenceSerializer(queryset, many=True)
-		return Response(serializer.data)
+		return Response(SequenceSerializer(queryset, many=True).data)
 
 
 class SequenceSourceCSVDownloadView(SequenceSourceDownload):
 	def get(self, request):
 		response = super().get(request)
-		data = response.data
-		flattened_data = CSVDownloadMixin().flatten_json(data, ["sources", "markers"])
-		return CSVDownloadMixin().generate_csv(flattened_data, filename="sequences.csv")
+		flattened_data = CSVDownloadMixin.flatten_json(response.data, ["sources", "markers"])
+
+		return CSVDownloadMixin.generate_csv(flattened_data, filename="sequences.csv")
 	

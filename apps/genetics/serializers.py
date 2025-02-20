@@ -14,34 +14,36 @@ class SuperMarkerSerializer(CaseModelSerializer):
 
 
 class MarkerSerializer(CaseModelSerializer):
-
 	class Meta:
 		model = Marker
 		fields = "__all__"
 
+
 class MarkerCountSerializer(CaseModelSerializer):
 	count = serializers.IntegerField()
+
 	class Meta:
 		model = Marker
 		fields = "__all__"
 
 
 class SequenceSerializer(CaseModelSerializer):
-    sources = OriginIdSerializer(many=True)
-    markers = MarkerSerializer(many=True)
+	sources = OriginIdSerializer(many=True)
+	markers = MarkerSerializer(many=True)
 
-    class Meta:
-        model = Sequence
-        fields = "__all__"
+	class Meta:
+		model = Sequence
+		fields = "__all__"
 
-		
+
 class SequenceAggregationSerializer(CaseModelSerializer):
-    source = serializers.CharField(source='sources__source__basis__internal_name')
-    count = serializers.IntegerField()   
+	source = serializers.CharField(source='sources__source__basis__internal_name')
+	count = serializers.IntegerField()
 
-    class Meta:
-        model = Sequence
-        fields = ["source", "count"]
-		
+	class Meta:
+		model = Sequence
+		fields = ["source", "count"]
+
+
 class DownloadSequenceSourceSerializer(SequenceSerializer):
 	taxonomy = serializers.PrimaryKeyRelatedField(read_only=True)

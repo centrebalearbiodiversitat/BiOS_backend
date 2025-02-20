@@ -121,9 +121,7 @@ class MarkerFilter(APIView):
 		# queryset = Marker.objects.filter(sequence__in=seq_queryset)
 		# queryset = queryset.annotate(total=Count("id")).order_by("-total")
 
-		accepted_marker = Marker.objects.filter(
-			Q(accepted=True, id=OuterRef("id")) | Q(synonyms=OuterRef("id"), accepted=True)
-		)
+		accepted_marker = Marker.objects.filter(Q(accepted=True, id=OuterRef("id")) | Q(synonyms=OuterRef("id"), accepted=True))
 
 		queryset = Marker.objects.filter(sequence__in=seq_queryset)
 		queryset = queryset.annotate(accepted_id=accepted_marker.values("id")[:1]).annotate(total=Count("id"))
@@ -137,7 +135,7 @@ class MarkerFilter(APIView):
 		total_case = Case(
 			*[When(id=key, then=Value(value)) for key, value in acc_count.items()],
 			default=Value(0),  # Default value if not in the map
-			output_field=IntegerField()
+			output_field=IntegerField(),
 		)
 		queryset = Marker.objects.filter(id__in=acc_count.keys()).annotate(total=total_case)
 
@@ -236,7 +234,7 @@ class SequenceFilter(APIView):
 
 		marker = seq_form.cleaned_data.get("marker")
 		if marker:
-			filters &= (Q(markers=marker) | Q(markers__synonyms=marker))
+			filters &= Q(markers=marker) | Q(markers__synonyms=marker)
 
 		in_geography_scope = seq_form.cleaned_data.get("in_geography_scope", None)
 		if in_geography_scope is not None:

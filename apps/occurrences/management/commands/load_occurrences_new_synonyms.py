@@ -5,7 +5,7 @@ from django.core.management.base import BaseCommand
 from django.db import transaction
 from dateutil import parser
 from django.contrib.gis.geos import Point, GEOSGeometry
-from apps.genetics.models import Sequence, Marker, Product
+from apps.genetics.models import Sequence, Marker
 from apps.occurrences.models import Occurrence
 from apps.taxonomy.models import TaxonomicLevel
 from apps.versioning.models import Batch, OriginId, Source
@@ -121,27 +121,15 @@ def genetic_sources(line: dict, batch, occ):
 	for production in line["genetic_features"]:
 		if production["gene"]:
 			# if production["gene"] and production["gene"].lower() in BIO_MARKERS:
-			product = None
-			if production["product"]:
-				product, _ = Product.objects.get_or_create(
-					name__iexact=production["product"],
-					defaults={
-						"name": production["product"],
-					},
-				)
-
 			marker, is_new = Marker.objects.get_or_create(
 				name__iexact=production["gene"],
 				defaults={
 					"name": production["gene"],
+					"product": production["product"],
 					"batch": batch,
 					"accepted": True,
 				},
 			)
-
-			if product and not marker.products.all().filter(name=product).exists():
-				marker.products.add(product)
-
 			# if not marker.sources.filter(id=os.id).exists():
 			# 	marker.sources.add(os)
 

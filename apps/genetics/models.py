@@ -5,15 +5,9 @@ from apps.occurrences.models import Occurrence
 from common.utils.models import ReferencedModel, SynonymModel
 
 
-class Product(models.Model):
-	name = models.CharField(max_length=512, null=True, blank=True, default=None)
-
-	def __str__(self):
-		return self.name
-
-
 class Marker(ReferencedModel, SynonymModel):
-	products = models.ManyToManyField(Product, blank=True, symmetrical=False)
+	name = models.CharField(max_length=512, null=True, blank=True, default=None)
+	product = models.CharField(max_length=512, null=True, blank=True, default=None)
 
 
 class Sequence(ReferencedModel):
@@ -30,4 +24,8 @@ class Sequence(ReferencedModel):
 			return f"{self.occurrence}"
 
 	class Meta:
+		indexes = [
+			models.Index(fields=["occurrence"]),
+			models.Index(fields=["published_date"]),
+		]
 		ordering = [F("published_date").desc(nulls_last=True), "id"]

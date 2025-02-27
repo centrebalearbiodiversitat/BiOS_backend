@@ -25,6 +25,9 @@ class SequenceForm(IdFieldForm, CamelCaseForm):
 	molecule_type = forms.CharField(required=False)
 	sequence_version = forms.CharField(required=False)
 	products = forms.CharField(required=False)
+	marker = forms.IntegerField(required=False)
+	taxonomy = forms.IntegerField(required=False)
+	source = forms.CharField(required=False)
 
 
 class SequenceListForm(InGeographyScopeForm):

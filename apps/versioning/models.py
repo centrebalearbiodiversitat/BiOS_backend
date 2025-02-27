@@ -33,8 +33,11 @@ class Basis(models.Model):
 	contact = models.CharField(max_length=255, null=True, blank=True)
 	batch = models.ForeignKey(Batch, on_delete=models.CASCADE)
 
+	def get_name(self):
+		return self.acronym or self.name or self.internal_name
+
 	def __str__(self):
-		return f"{self.internal_name}"
+		return f"{self.get_name()}"
 
 	class Meta:
 		verbose_name_plural = "Bases"

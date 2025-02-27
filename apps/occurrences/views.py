@@ -260,7 +260,7 @@ class OccurrenceListView(OccurrenceFilter):
 class OccurrenceListDownloadView(OccurrenceFilter):
 	def get(self, request):
 		response = self.calculate(request)
-		flattened_data = CSVDownloadMixin.flatten_json(response.data, ["sources"])
+		flattened_data = CSVDownloadMixin.flatten_json(DownloadOccurrenceSerializer(response, many=True).data, ["sources"])
 
 		return CSVDownloadMixin.generate_csv(flattened_data, "occurrences.csv")
 

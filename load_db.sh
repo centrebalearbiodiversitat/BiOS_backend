@@ -15,8 +15,6 @@ echo "Populating tags..."
 python manage.py populate_tags
 echo "Populating habitats..."
 python manage.py populate_habitats
-echo "Populating directives..."
-python manage.py populate_directives
 
 
 for folder in data/groups/*/

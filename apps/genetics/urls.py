@@ -9,6 +9,7 @@ from .views import (
 	SequenceCRUDView,
 	SequenceCountView,
 	SequenceListView,
+	SequenceListCSVView,
 	SequenceSearchView,
 	SequenceSourceCountView,
 	SequenceSourceCSVDownloadView,
@@ -25,6 +26,7 @@ urlpatterns = [
 	path("/sequence/search", SequenceSearchView.as_view(), name="sequence_search"),
 	path("/sequence/list", SequenceListView.as_view(), name="sequence_list"),
 	path("/sequence/list/count", SequenceCountView.as_view(), name="sequence_list_count"),
+	path("/sequence/list/csv", SequenceListCSVView.as_view(), name="sequence_list_csv"),
 	path("/sequence/source/count", SequenceSourceCountView.as_view(), name="sequence_occur_tax"),
 	path("/sequence/source/download", SequenceSourceCSVDownloadView.as_view(), name="sequence_occur_tax"),
 ]

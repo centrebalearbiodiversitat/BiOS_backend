@@ -97,6 +97,7 @@ class Command(BaseCommand):
 
 			for line in json_data:
 				try:
+					transform_iucn_status(line)
 					taxonomy = check_taxon(line)
 					load_taxon_data_from_json(line, taxonomy, batch)
 				except:

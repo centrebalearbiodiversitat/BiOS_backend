@@ -11,7 +11,8 @@ from apps.versioning.models import Basis
 
 from .forms import MarkerForm, SequenceForm, SequenceListForm
 from .models import Marker, Sequence
-from .serializers import MarkerCountSerializer, MarkerSerializer, SequenceSerializer, SequenceAggregationSerializer
+from .serializers import MarkerCountSerializer, MarkerSerializer, SequenceSerializer, SequenceAggregationSerializer, \
+	SequenceCSVSerializer
 from common.utils.views import CSVDownloadMixin
 from common.utils.serializers import get_paginated_response
 
@@ -99,7 +100,7 @@ class MarkerSearchView(APIView):
 
 
 class MarkerOccurFilter(APIView):
-	def get(self, request, in_cbb_scope=False):
+	def get(self, request, in_geography_scope=False):
 		seq_form = SequenceForm(data=self.request.GET)
 
 		if not seq_form.is_valid():
@@ -350,8 +351,28 @@ class SequenceCountView(SequenceFilter):
 		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
 	)
 	def get(self, request):
-		sequences = super().get(request)
-		return Response(f"{sequences.filter(occurrence__in_geography_scope=True).count()} / {sequences.count()}")
+		return Response(super().get(request).count())
+
+
+class SequenceListCSVView(SequenceFilter):
+	@swagger_auto_schema(
+		tags=["Genetic"],
+		operation_description="Retrieve the sequences of a taxonomic level by its id",
+		manual_parameters=[
+			openapi.Parameter(
+				"taxonomy",
+				openapi.IN_QUERY,
+				description="ID of the taxon from which all its sequences will be retrieved",
+				type=openapi.TYPE_INTEGER,
+				required=True,
+			)
+		],
+		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
+	)
+	def get(self, request):
+		query = super().get(request).prefetch_related("sources", "markers").select_related("occurrence", "occurrence__taxonomy")
+
+		return CSVDownloadMixin.generate_csv(SequenceCSVSerializer(query, many=True).data, filename="sequences.csv")
 
 
 class SequenceSourceCountView(APIView):

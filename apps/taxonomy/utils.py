@@ -39,7 +39,7 @@ class ObjectTaxon(object):
 def generate_csv_taxon_list2(checklist):
 	checklist_ids = {t.id for t in checklist}
 
-	return taxon_checklist_to_csv(TaxonomicLevel.objects.get(id=1), checklist_ids)
+	return taxon_checklist_to_csv(TaxonomicLevel.objects.get(rank=TaxonomicLevel.LIFE), checklist_ids)
 
 
 def generate_csv_taxon_list(checklist):
@@ -90,8 +90,8 @@ def generate_csv_taxon_list(checklist):
 
 
 def taxon_checklist_to_csv(head, ids: set = None):
-	if ids is None:
-		ids = set()
+	# if ids is None:
+	# 	ids = set()
 	ranks = [rank[1] for rank in TaxonomicLevel.RANK_CHOICES]
 	ranks_map = [rank[0] for rank in TaxonomicLevel.RANK_CHOICES]
 	to_csv = [
@@ -115,7 +115,7 @@ def taxon_checklist_to_csv(head, ids: set = None):
 			current_taxon = current_taxon[: len(current_taxon) - (last_level - taxon.level + 1)]
 
 		current_taxon.append(taxon)
-		if taxon.id in ids:
+		if ids is None or taxon.id in ids:
 			taxa_map = map_taxa_to_rank(ranks_map, upper_taxon + current_taxon)
 			to_csv.append([taxon.id, taxa_map[-2], taxon.readable_status(), taxon.readable_rank(), *taxa_map])
 		last_level = taxon.level

@@ -74,4 +74,5 @@ class Occurrence(ReferencedModel, LatLonModel):
 	class Meta:
 		indexes = [
 			models.Index(fields=["in_geography_scope"]),
+			models.Index(fields=['taxonomy']),
 		]

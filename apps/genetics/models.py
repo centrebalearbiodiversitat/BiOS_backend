@@ -25,7 +25,7 @@ class Sequence(ReferencedModel):
 
 	class Meta:
 		indexes = [
-			models.Index(fields=['occurrence']),
-			models.Index(fields=['published_date']),
+			models.Index(fields=["occurrence"]),
+			models.Index(fields=["published_date"]),
 		]
 		ordering = [F("published_date").desc(nulls_last=True), "id"]

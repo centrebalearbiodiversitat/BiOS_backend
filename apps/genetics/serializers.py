@@ -24,7 +24,10 @@ class MarkerSerializer(BaseMarkerSerializer):
 	synonyms = BaseMarkerSerializer(many=True)
 
 	class Meta(BaseMarkerSerializer.Meta):
-		fields = BaseMarkerSerializer.Meta.fields + ("product", "synonyms",)
+		fields = BaseMarkerSerializer.Meta.fields + (
+			"product",
+			"synonyms",
+		)
 
 
 class SequenceSerializer(CaseModelSerializer):
@@ -53,7 +56,7 @@ class SequenceCSVSerializer(CaseModelSerializer):
 		return obj.sources.all()[0].external_id
 
 	def get_markers(self, obj):
-		return list(obj.markers.values_list('name', flat=True))
+		return list(obj.markers.values_list("name", flat=True))
 
 	class Meta:
 		model = Sequence

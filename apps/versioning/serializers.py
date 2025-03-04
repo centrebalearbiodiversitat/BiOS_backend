@@ -8,7 +8,7 @@ class BasisSerializer(CaseModelSerializer):
 		model = Basis
 		fields = "__all__"
 
-		
+
 class SourceSerializer(CaseModelSerializer):
 	id = serializers.CharField(source="basis.id")
 	name = serializers.SerializerMethodField()
@@ -35,7 +35,7 @@ class SourceCountSerializer(SourceSerializer):
 	count = serializers.IntegerField()
 
 	class Meta(SourceSerializer.Meta):
-		fields = "count"
+		fields = SourceSerializer.Meta.fields + ["count"]
 
 
 class OriginIdSerializer(CaseModelSerializer):

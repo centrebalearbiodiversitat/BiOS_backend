@@ -5,7 +5,7 @@ from drf_yasg.utils import swagger_auto_schema
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from apps.taxonomy.models import TaxonomicLevel
-from ..API.exceptions import CBBAPIException
+from apps.API.exceptions import CBBAPIException
 from .forms import OccurrenceForm
 from .models import Occurrence
 from .serializers import (
@@ -15,7 +15,8 @@ from .serializers import (
 	OccurrenceCountByDateSerializer,
 	DynamicSourceSerializer,
 )
-from ..geography.models import GeographicLevel
+from apps.geography.models import GeographicLevel
+from apps.tags.forms import IUCNDataForm, DirectiveForm, SystemForm, TaxonTagForm
 from common.utils.views import CSVDownloadMixin
 
 
@@ -65,7 +66,7 @@ class OccurrenceFilter(APIView):
 			filters &= Q(**{f"{field_name}__lte": max_value})
 		return filters
 
-	def get(self, request, in_cbb_scope=True):
+	def calculate(self, request, in_geography_scope=True):
 		occur_form = OccurrenceForm(data=request.GET)
 
 		if not occur_form.is_valid():
@@ -79,7 +80,7 @@ class OccurrenceFilter(APIView):
 		if taxonomy:
 			taxon_query = Q(id=taxonomy)
 			if add_synonyms:
-				taxon_query |= Q(synonyms=taxonomy, accepted=True)	
+				taxon_query |= Q(synonyms=taxonomy, accepted=True)
 			taxa = TaxonomicLevel.objects.filter(taxon_query).distinct()
 
 			if not taxa:
@@ -88,25 +89,38 @@ class OccurrenceFilter(APIView):
 			for taxon in taxa:
 				filters |= Q(taxonomy__id=taxon.id) | Q(taxonomy__lft__gte=taxon.lft, taxonomy__rght__lte=taxon.rght)
 
-		else:
-			filter_data = {
-				"taxonomy__iucndata__iucn_global": occur_form.cleaned_data.get("iucn_global", None),
-				"taxonomy__iucndata__iucn_europe": occur_form.cleaned_data.get("iucn_europe", None),
-				"taxonomy__iucndata__iucn_mediterranean": occur_form.cleaned_data.get("iucn_mediterranean", None),
-				"taxonomy__directive__cites": occur_form.cleaned_data.get("cites", None),
-				"taxonomy__directive__ceea": occur_form.cleaned_data.get("ceea", None),
-				"taxonomy__directive__lespre": occur_form.cleaned_data.get("lespre", None),
-				"taxonomy__directive__directiva_aves": occur_form.cleaned_data.get("directiva_aves", None),
-				"taxonomy__directive__directiva_habitats": occur_form.cleaned_data.get("directiva_habitats", None),
-				"taxonomy__system__freshwater": occur_form.cleaned_data.get("freshwater", None),
-				"taxonomy__system__marine": occur_form.cleaned_data.get("marine", None),
-				"taxonomy__system__terrestrial": occur_form.cleaned_data.get("terrestrial", None),
-				"taxonomy__taxontag__tag__id": occur_form.cleaned_data.get("taxon_tag", None),
-			}
+		filtered_data = {}
 
-			for field, value in filter_data.items():
-				if value is not None:
-					filters &= Q(**{field: value})
+		iucn_form = IUCNDataForm(data=request.GET)
+		if not iucn_form.is_valid():
+			raise CBBAPIException(iucn_form.errors, 400)
+		for key, value in iucn_form.cleaned_data.items():
+			if value != "":
+				filtered_data[f"taxonomy__iucndata__{key}"] = value and int(value)
+
+		directive_form = DirectiveForm(data=request.GET)
+		if not directive_form.is_valid():
+			raise CBBAPIException(directive_form.errors, 400)
+		for key, value in directive_form.cleaned_data.items():
+			if value:
+				filtered_data[f"taxonomy__directive__{key}"] = value
+
+		system_form = SystemForm(data=request.GET)
+		if not system_form.is_valid():
+			raise CBBAPIException(system_form.errors, 400)
+		for key, value in system_form.cleaned_data.items():
+			if value:
+				filtered_data[f"taxonomy__system__{key}"] = value
+
+		tag_form = TaxonTagForm(data=request.GET)
+		if not tag_form.is_valid():
+			raise CBBAPIException(tag_form.errors, 400)
+		if tag_form.cleaned_data.get("tag"):
+			filtered_data["taxonomy__taxontag__tag__name__iexact"] = tag_form.cleaned_data.get("tag")
+
+		for field, value in filtered_data.items():
+			if value is not None:
+				filters &= Q(**{field: value})
 
 		source = occur_form.cleaned_data.get("source", None)
 		if source:
@@ -115,6 +129,10 @@ class OccurrenceFilter(APIView):
 		voucher = occur_form.cleaned_data.get("voucher", None)
 		if voucher:
 			filters &= Q(voucher__icontains=voucher)
+
+		has_sequence = occur_form.cleaned_data.get("has_sequence", None)
+		if has_sequence is not None:
+			filters &= Q(sequence__isnull=not has_sequence)
 
 		range_parameters = ["decimal_latitude", "decimal_longitude", "coordinate_uncertainty_in_meters", "elevation", "depth"]
 
@@ -135,11 +153,11 @@ class OccurrenceFilter(APIView):
 			except GeographicLevel.DoesNotExist:
 				raise CBBAPIException("Geographical location does not exist", 404)
 
-		if in_cbb_scope:
-			occurrences = occurrences.filter(in_cbb_scope=in_cbb_scope)
+		if in_geography_scope:
+			occurrences = occurrences.filter(in_geography_scope=in_geography_scope)
 
 		return occurrences
-	
+
 
 class OccurrenceListView(OccurrenceFilter):
 	@swagger_auto_schema(
@@ -236,24 +254,15 @@ class OccurrenceListView(OccurrenceFilter):
 		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
 	)
 	def get(self, request):
-		response = super().get(request)
-		return Response(BaseOccurrenceSerializer(response, many=True).data)
+		return Response(BaseOccurrenceSerializer(self.calculate(request), many=True).data)
 
 
-class OccurrenceDownload(OccurrenceFilter):
+class OccurrenceListDownloadView(OccurrenceFilter):
 	def get(self, request):
-		occurrences = super().get(request)
-		serializer = DownloadOccurrenceSerializer(occurrences, many=True)
-		return Response(serializer.data)
+		response = self.calculate(request)
+		flattened_data = CSVDownloadMixin.flatten_json(DownloadOccurrenceSerializer(response, many=True).data, ["sources"])
 
-
-class OccurrenceListDownloadView(OccurrenceDownload):
-
-	def get(self, request):
-		response = super().get(request)
-		data = response.data
-		flattened_data = CSVDownloadMixin().flatten_json(data, ["sources"])
-		return CSVDownloadMixin().generate_csv(flattened_data, "occurrences.csv")
+		return CSVDownloadMixin.generate_csv(flattened_data, "occurrences.csv")
 
 
 class OccurrenceCountView(OccurrenceFilter):
@@ -340,11 +349,11 @@ class OccurrenceCountBySourceView(APIView):
 			raise CBBAPIException("Taxonomic level does not exist", 404)
 
 		occurrences = (
-			Occurrence.objects.filter(taxonomy__in=taxonomy, in_cbb_scope=True)
+			Occurrence.objects.filter(taxonomy__in=taxonomy, in_geography_scope=True)
 			.prefetch_related("sources")
-			.values("sources__source__basis__name")
+			.values("sources__source__basis__internal_name")
 			.annotate(count=Count("id"))
-			.order_by("sources__source__basis__name")
+			.order_by("sources__source__basis__internal_name")
 		)
 
 		return Response(DynamicSourceSerializer(occurrences, many=True).data)
@@ -429,7 +438,7 @@ class OccurrenceCountByTaxonDateBaseView:
 		except TaxonomicLevel.DoesNotExist:
 			raise CBBAPIException("Taxonomic level does not exist", 404)
 
-		occurrences = Occurrence.objects.filter(taxonomy__in=taxonomy, in_cbb_scope=True).values(date_key).annotate(count=Count("id")).order_by(date_key)
+		occurrences = Occurrence.objects.filter(taxonomy__in=taxonomy, in_geography_scope=True).values(date_key).annotate(count=Count("id")).order_by(date_key)
 
 		return Response(OccurrenceCountByDateSerializer(occurrences, many=True, view_class=view_class).data)
 

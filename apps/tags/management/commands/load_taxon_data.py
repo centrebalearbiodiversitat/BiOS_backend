@@ -37,20 +37,16 @@ def transform_iucn_status(line):
 
 
 def load_taxon_data_from_json(line, taxonomy, batch):
-	source = get_or_create_source(
-		source_type=Source.DATABASE,
-		extraction_method=Source.API,
-		data_type=Source.TAXON_DATA,
-		batch=batch,
-		internal_name=IUCN,
-	)
-	os, new_source = OriginId.objects.get_or_create(external_id=line[EXTERNAL_ID], source=source)
-
-	habitat_ids = set(line["habitat"] or [])
-	valid_habitats = Habitat.objects.filter(sources__external_id__in=habitat_ids)
-	if len(valid_habitats) != len(habitat_ids):
-		invalid_ids = habitat_ids - set(valid_habitats.values_list("sources__external_id", flat=True))
-		raise Exception(f"Invalid habitat IDs: {invalid_ids}")
+	os = None
+	if line[EXTERNAL_ID]:
+		source = get_or_create_source(
+			source_type=Source.DATABASE,
+			extraction_method=Source.API,
+			data_type=Source.TAXON_DATA,
+			batch=batch,
+			internal_name=IUCN,
+		)
+		os, new_source = OriginId.objects.get_or_create(external_id=line[EXTERNAL_ID], source=source)
 
 	iucn_data, _ = IUCNData.objects.update_or_create(
 		taxonomy=taxonomy,
@@ -62,8 +58,14 @@ def load_taxon_data_from_json(line, taxonomy, batch):
 		},
 	)
 
-	iucn_data.habitats.set(valid_habitats)
-	iucn_data.sources.add(os)
+	if os:  # if there is data available
+		habitat_ids = set(line["habitat"] or [])
+		valid_habitats = Habitat.objects.filter(sources__external_id__in=habitat_ids)
+		if len(valid_habitats) != len(habitat_ids):
+			invalid_ids = habitat_ids - set(valid_habitats.values_list("sources__external_id", flat=True))
+			raise Exception(f"Invalid habitat IDs: {invalid_ids}")
+		iucn_data.habitats.set(valid_habitats)
+		iucn_data.sources.add(os)
 
 	system, _ = System.objects.update_or_create(
 		taxonomy=taxonomy,
@@ -74,7 +76,8 @@ def load_taxon_data_from_json(line, taxonomy, batch):
 			"batch": batch,
 		},
 	)
-	system.sources.add(os)
+	if os:  # if there is data available
+		system.sources.add(os)
 
 
 class Command(BaseCommand):
@@ -94,6 +97,7 @@ class Command(BaseCommand):
 
 			for line in json_data:
 				try:
+					transform_iucn_status(line)
 					taxonomy = check_taxon(line)
 					load_taxon_data_from_json(line, taxonomy, batch)
 				except:

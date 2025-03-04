@@ -6,9 +6,7 @@ from rest_framework.views import APIView
 from apps.API.exceptions import CBBAPIException
 from apps.tags.models import Directive, Habitat, IUCNData, System, TaxonomicLevel, TaxonTag
 from apps.tags.serializers import HabitatSerializer, IUCNDataSerializer, TaxonTagSerializer, DirectiveSerializer
-
-from .forms import DirectiveForm, IUCNDataForm, SystemForm, TaxonTagForm
-
+from common.utils.forms import TaxonomyForm
 
 # class TagListView(APIView):
 # 	@swagger_auto_schema(
@@ -59,7 +57,7 @@ class TaxonTagListView(APIView):
 		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
 	)
 	def get(self, request):
-		taxon_form = TaxonTagForm(self.request.GET)
+		taxon_form = TaxonomyForm(self.request.GET)
 
 		if not taxon_form.is_valid():
 			raise CBBAPIException(taxon_form.errors, code=400)
@@ -228,7 +226,7 @@ class HabitatsListView(APIView):
 		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
 	)
 	def get(self, request):
-		taxon_form = IUCNDataForm(data=request.GET)
+		taxon_form = TaxonomyForm(data=request.GET)
 
 		if not taxon_form.is_valid():
 			raise CBBAPIException(taxon_form.errors, 400)
@@ -246,6 +244,9 @@ class HabitatsListView(APIView):
 		descendants = taxon_parent.get_descendants(include_self=True)
 
 		iucn_data = IUCNData.objects.filter(taxonomy__in=descendants)
+
+		if not iucn_data.exists():
+			return Response(data=None)
 
 		habitats = Habitat.objects.filter(iucndata__in=iucn_data).distinct()
 
@@ -268,7 +269,7 @@ class IUCNDataListView(APIView):
 		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
 	)
 	def get(self, request):
-		iucn_form = IUCNDataForm(self.request.GET)
+		iucn_form = TaxonomyForm(self.request.GET)
 
 		if not iucn_form.is_valid():
 			raise CBBAPIException(iucn_form.errors, code=400)
@@ -415,7 +416,7 @@ class SystemListView(APIView):
 		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
 	)
 	def get(self, request):
-		system_form = SystemForm(data=request.GET)
+		system_form = TaxonomyForm(data=request.GET)
 
 		if not system_form.is_valid():
 			raise CBBAPIException(system_form.errors, 400)
@@ -435,7 +436,7 @@ class SystemListView(APIView):
 		try:
 			system = System.objects.get(taxonomy=taxonomy)
 		except System.DoesNotExist:
-			raise CBBAPIException("Taxonomic level does not exist", 404)
+			system = None
 
 		return Response(SystemSerializer(system).data)
 
@@ -487,7 +488,7 @@ class DirectiveListView(APIView):
 		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
 	)
 	def get(self, request):
-		directive_form = DirectiveForm(self.request.GET)
+		directive_form = TaxonomyForm(self.request.GET)
 
 		if not directive_form.is_valid():
 			raise CBBAPIException(directive_form.errors, code=400)
@@ -498,8 +499,8 @@ class DirectiveListView(APIView):
 			raise CBBAPIException("Missing taxonomy id parameter", code=400)
 
 		try:
-			taxon = Directive.objects.get(taxonomy=taxon_id)
-		except TaxonTag.DoesNotExist:
-			raise CBBAPIException("Taxonomic tags does not exist", code=404)
+			directives = Directive.objects.get(taxonomy=taxon_id)
+		except Directive.DoesNotExist:
+			directives = None
 
-		return Response(DirectiveSerializer(taxon).data)
+		return Response(DirectiveSerializer(directives).data)

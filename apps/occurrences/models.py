@@ -53,7 +53,7 @@ class Occurrence(ReferencedModel, LatLonModel):
 	collection_date_month = models.PositiveSmallIntegerField(null=True, blank=True)
 	collection_date_day = models.PositiveSmallIntegerField(null=True, blank=True)
 	basis_of_record = models.PositiveSmallIntegerField(choices=BASIS_OF_RECORD)
-	in_cbb_scope = models.BooleanField()
+	in_geography_scope = models.BooleanField()
 
 	def clean(self):
 		super().clean()
@@ -73,5 +73,6 @@ class Occurrence(ReferencedModel, LatLonModel):
 
 	class Meta:
 		indexes = [
-			models.Index(fields=["in_cbb_scope"]),
+			models.Index(fields=["in_geography_scope"]),
+			models.Index(fields=["taxonomy"]),
 		]

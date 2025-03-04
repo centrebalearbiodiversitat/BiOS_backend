@@ -9,14 +9,12 @@ echo "Loading Populations..."
 python manage.py load_gadm data/GIS/CNIG_poblaciones/*uncertainess*/*.shp
 
 #Populate
-#echo "Populating sources..."
-#python manage.py populate_sources data/sources.csv
+echo "Populating sources..."
+python manage.py populate_sources data/sources.csv
 echo "Populating tags..."
 python manage.py populate_tags
 echo "Populating habitats..."
 python manage.py populate_habitats
-echo "Populating directives..."
-python manage.py populate_directives
 
 
 for folder in data/groups/*/

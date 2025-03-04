@@ -11,7 +11,7 @@ class APIStatus(APIView):
 		return Response(
 			{
 				"status": "If you are seeing this, everything should be working OK. Enjoy life!",
-				"version": "0.0.1-alpha",
+				"version": "1.0.0",
 				"email": "centre.biodiversitat@uib.cat",
 			}
 		)

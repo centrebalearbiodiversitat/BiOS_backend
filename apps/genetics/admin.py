@@ -1,15 +1,12 @@
 from django.contrib import admin
 
-from apps.genetics.models import Marker, Sequence, Product
-
-
-class ProductAdmin(admin.ModelAdmin):
-	search_fields = ["unidecode_name"]
+from apps.genetics.models import Marker, Sequence
 
 
 class MarkerAdmin(admin.ModelAdmin):
 	search_fields = ["unidecode_name"]
-	autocomplete_fields = ["synonyms", "sources", "products"]
+	readonly_fields = ["sources"]
+	autocomplete_fields = ["synonyms"]
 
 
 class SequenceAdmin(admin.ModelAdmin):
@@ -17,6 +14,5 @@ class SequenceAdmin(admin.ModelAdmin):
 	autocomplete_fields = ["sources", "markers"]
 
 
-admin.site.register(Product, ProductAdmin)
 admin.site.register(Marker, MarkerAdmin)
 admin.site.register(Sequence, SequenceAdmin)

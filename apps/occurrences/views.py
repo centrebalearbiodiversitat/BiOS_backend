@@ -159,6 +159,202 @@ class OccurrenceFilter(APIView):
 		return occurrences
 
 
+class OccurrenceMapView(OccurrenceFilter):
+	@swagger_auto_schema(
+		tags=["Occurrences"],
+		operation_description="Filter occurrences based on query parameters.",
+		manual_parameters=[
+			openapi.Parameter(
+				"taxonomy",
+				openapi.IN_QUERY,
+				description="Filter occurrences by taxon id.",
+				type=openapi.TYPE_INTEGER,
+			),
+			openapi.Parameter(
+				"voucher",
+				openapi.IN_QUERY,
+				description="Filter occurrences by voucher field.",
+				type=openapi.TYPE_STRING,
+			),
+			openapi.Parameter(
+				"geographicalLocation",
+				openapi.IN_QUERY,
+				description="Filter occurrences by geographical location id.",
+				type=openapi.TYPE_INTEGER,
+			),
+			openapi.Parameter(
+				"year",
+				openapi.IN_QUERY,
+				description="Filter occurrences by year field.",
+				type=openapi.TYPE_INTEGER,
+			),
+			openapi.Parameter(
+				"month",
+				openapi.IN_QUERY,
+				description="Filter occurrences by month field.",
+				type=openapi.TYPE_INTEGER,
+			),
+			openapi.Parameter(
+				"day",
+				openapi.IN_QUERY,
+				description="Filter occurrences by day field.",
+				type=openapi.TYPE_INTEGER,
+			),
+			openapi.Parameter(
+				"basisOfRecord",
+				openapi.IN_QUERY,
+				description="Filter occurrences by basis of record field.",
+				type=openapi.TYPE_STRING,
+			),
+			openapi.Parameter(
+				"decimal_latitude_min",
+				openapi.IN_QUERY,
+				description="Minimum latitude",
+				type=openapi.TYPE_NUMBER,
+				format=openapi.FORMAT_DECIMAL,
+			),
+			openapi.Parameter(
+				"decimal_latitude_max",
+				openapi.IN_QUERY,
+				description="Maximum latitude",
+				type=openapi.TYPE_NUMBER,
+				format=openapi.FORMAT_DECIMAL,
+			),
+			openapi.Parameter(
+				"decimal_longitude_min",
+				openapi.IN_QUERY,
+				description="Minimum longitude",
+				type=openapi.TYPE_NUMBER,
+				format=openapi.FORMAT_DECIMAL,
+			),
+			openapi.Parameter(
+				"decimal_longitude_max",
+				openapi.IN_QUERY,
+				description="Maximum longitude",
+				type=openapi.TYPE_NUMBER,
+				format=openapi.FORMAT_DECIMAL,
+			),
+			openapi.Parameter(
+				"coordinate_uncertainty_in_meters_min",
+				openapi.IN_QUERY,
+				description="Minimum coordinate uncertainty in meters",
+				type=openapi.TYPE_INTEGER,
+			),
+			openapi.Parameter(
+				"coordinate_uncertainty_in_meters_max",
+				openapi.IN_QUERY,
+				description="Maximum coordinate uncertainty in meters",
+				type=openapi.TYPE_INTEGER,
+			),
+			openapi.Parameter("elevation_min", openapi.IN_QUERY, description="Minimum elevation", type=openapi.TYPE_INTEGER),
+			openapi.Parameter("elevation_max", openapi.IN_QUERY, description="Maximum elevation", type=openapi.TYPE_INTEGER),
+			openapi.Parameter("depth_min", openapi.IN_QUERY, description="Minimum depth", type=openapi.TYPE_INTEGER),
+			openapi.Parameter("depth_max", openapi.IN_QUERY, description="Maximum depth", type=openapi.TYPE_INTEGER),
+		],
+		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
+	)
+	def get(self, request):
+		return Response(BaseOccurrenceSerializer(self.calculate(request).distinct("location"), many=True).data)
+
+
+class OccurrenceMapCountView(OccurrenceFilter):
+	@swagger_auto_schema(
+		tags=["Occurrences"],
+		operation_description="Filter occurrences based on query parameters.",
+		manual_parameters=[
+			openapi.Parameter(
+				"taxonomy",
+				openapi.IN_QUERY,
+				description="Filter occurrences by taxon id.",
+				type=openapi.TYPE_INTEGER,
+			),
+			openapi.Parameter(
+				"voucher",
+				openapi.IN_QUERY,
+				description="Filter occurrences by voucher field.",
+				type=openapi.TYPE_STRING,
+			),
+			openapi.Parameter(
+				"geographicalLocation",
+				openapi.IN_QUERY,
+				description="Filter occurrences by geographical location id.",
+				type=openapi.TYPE_INTEGER,
+			),
+			openapi.Parameter(
+				"year",
+				openapi.IN_QUERY,
+				description="Filter occurrences by year field.",
+				type=openapi.TYPE_INTEGER,
+			),
+			openapi.Parameter(
+				"month",
+				openapi.IN_QUERY,
+				description="Filter occurrences by month field.",
+				type=openapi.TYPE_INTEGER,
+			),
+			openapi.Parameter(
+				"day",
+				openapi.IN_QUERY,
+				description="Filter occurrences by day field.",
+				type=openapi.TYPE_INTEGER,
+			),
+			openapi.Parameter(
+				"basisOfRecord",
+				openapi.IN_QUERY,
+				description="Filter occurrences by basis of record field.",
+				type=openapi.TYPE_STRING,
+			),
+			openapi.Parameter(
+				"decimal_latitude_min",
+				openapi.IN_QUERY,
+				description="Minimum latitude",
+				type=openapi.TYPE_NUMBER,
+				format=openapi.FORMAT_DECIMAL,
+			),
+			openapi.Parameter(
+				"decimal_latitude_max",
+				openapi.IN_QUERY,
+				description="Maximum latitude",
+				type=openapi.TYPE_NUMBER,
+				format=openapi.FORMAT_DECIMAL,
+			),
+			openapi.Parameter(
+				"decimal_longitude_min",
+				openapi.IN_QUERY,
+				description="Minimum longitude",
+				type=openapi.TYPE_NUMBER,
+				format=openapi.FORMAT_DECIMAL,
+			),
+			openapi.Parameter(
+				"decimal_longitude_max",
+				openapi.IN_QUERY,
+				description="Maximum longitude",
+				type=openapi.TYPE_NUMBER,
+				format=openapi.FORMAT_DECIMAL,
+			),
+			openapi.Parameter(
+				"coordinate_uncertainty_in_meters_min",
+				openapi.IN_QUERY,
+				description="Minimum coordinate uncertainty in meters",
+				type=openapi.TYPE_INTEGER,
+			),
+			openapi.Parameter(
+				"coordinate_uncertainty_in_meters_max",
+				openapi.IN_QUERY,
+				description="Maximum coordinate uncertainty in meters",
+				type=openapi.TYPE_INTEGER,
+			),
+			openapi.Parameter("elevation_min", openapi.IN_QUERY, description="Minimum elevation", type=openapi.TYPE_INTEGER),
+			openapi.Parameter("elevation_max", openapi.IN_QUERY, description="Maximum elevation", type=openapi.TYPE_INTEGER),
+			openapi.Parameter("depth_min", openapi.IN_QUERY, description="Minimum depth", type=openapi.TYPE_INTEGER),
+			openapi.Parameter("depth_max", openapi.IN_QUERY, description="Maximum depth", type=openapi.TYPE_INTEGER),
+		],
+		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
+	)
+	def get(self, request):
+		return Response(self.calculate(request).distinct("location").count())
+
+
 class OccurrenceListView(OccurrenceFilter):
 	@swagger_auto_schema(
 		tags=["Occurrences"],

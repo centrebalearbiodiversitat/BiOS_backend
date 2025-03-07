@@ -310,7 +310,7 @@ class SequenceFilter(APIView):
 		if in_geography_scope is not None:
 			filters &= Q(occurrence__in_geography_scope=in_geography_scope)
 
-		return Sequence.objects.filter(filters).distinct() if filters else Sequence.objects.none()
+		return Sequence.objects.filter(filters).order_by("id").distinct("id") if filters else Sequence.objects.none()
 
 
 class SequenceListView(SequenceFilter):

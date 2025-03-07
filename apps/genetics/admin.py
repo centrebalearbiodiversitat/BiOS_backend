@@ -5,7 +5,8 @@ from apps.genetics.models import Marker, Sequence
 
 class MarkerAdmin(admin.ModelAdmin):
 	search_fields = ["unidecode_name"]
-	autocomplete_fields = ["synonyms", "sources"]
+	readonly_fields = ["sources"]
+	autocomplete_fields = ["synonyms"]
 
 
 class SequenceAdmin(admin.ModelAdmin):

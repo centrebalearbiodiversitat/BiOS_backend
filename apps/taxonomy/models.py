@@ -6,7 +6,7 @@ from django.db.models.functions import Substr, Lower, Upper
 
 from mptt.fields import TreeForeignKey
 from mptt.models import MPTTModel, TreeManager
-from apps.versioning.models import Batch, OriginSource
+from apps.versioning.models import Batch, OriginId
 from common.utils.models import ReferencedModel, SynonymManager, SynonymModel
 from common.utils.utils import str_clean_up
 
@@ -19,9 +19,7 @@ class TaxonomicLevelManager(SynonymManager, TreeManager):
 	def get_queryset(self):
 		qs = super().get_queryset()
 
-		return qs.prefetch_related(
-			models.Prefetch("parent__parent", to_attr="parent__parent"),
-		)
+		return qs.prefetch_related("parent__parent")
 
 	def find(self, taxon):
 		# regex for properly split handle when hybrids or
@@ -102,7 +100,7 @@ class TaxonomicLevel(SynonymModel, MPTTModel, ReferencedModel):
 	parsed_year = models.PositiveIntegerField(null=True, default=None, blank=True)
 	authorship = models.ManyToManyField(Authorship, blank=True, symmetrical=False)
 	parent = TreeForeignKey("self", on_delete=models.CASCADE, null=True, default=None, blank=True)
-	images = models.ManyToManyField(OriginSource, blank=True, symmetrical=False, related_name="images_os")
+	images = models.ManyToManyField(OriginId, blank=True, symmetrical=False, related_name="images_os")
 
 	def clean(self):
 		if self.verbatim_authorship:
@@ -155,6 +153,7 @@ class TaxonomicLevel(SynonymModel, MPTTModel, ReferencedModel):
 			("tree_id", "lft", "rght"),
 			("tree_id", "rght"),
 			("tree_id", "lft"),
+			("rght", "lft", "rank"),
 			("rght", "lft"),
 			("rght",),
 			("lft",),
@@ -163,69 +162,3 @@ class TaxonomicLevel(SynonymModel, MPTTModel, ReferencedModel):
 
 	class MPTTMeta:
 		order_insertion_by = ["name"]
-
-
-class Habitat(ReferencedModel):
-	name = models.CharField(max_length=50, unique=True)
-
-	def __str__(self):
-		return self.name
-
-
-class TaxonData(models.Model):
-	NE = 0
-	DD = 1
-	LC = 2
-	NT = 3
-	VU = 4
-	EN = 5
-	CR = 6
-	EW = 7
-	EX = 8
-
-	CS_CHOICES = (
-		(NE, "ne"),
-		(DD, "dd"),
-		(LC, "lc"),
-		(NT, "nt"),
-		(VU, "vu"),
-		(EN, "en"),
-		(CR, "cr"),
-		(EW, "ew"),
-		(EX, "ex"),
-	)
-
-	TRANSLATE_CS = {
-		NE: "ne",
-		"ne": NE,
-		DD: "dd",
-		"dd": DD,
-		LC: "lc",
-		"lc": LC,
-		NT: "nt",
-		"nt": NT,
-		VU: "vu",
-		"vu": VU,
-		EN: "en",
-		"en": EN,
-		CR: "cr",
-		"cr": CR,
-		EW: "ew",
-		"ew": EW,
-		EX: "ex",
-		"ex": EX,
-	}
-
-	taxonomy = models.ForeignKey(TaxonomicLevel, on_delete=models.CASCADE, db_index=True)
-	iucn_global = models.PositiveSmallIntegerField(choices=CS_CHOICES, default=NE)
-	iucn_europe = models.PositiveSmallIntegerField(choices=CS_CHOICES, default=NE)
-	iucn_mediterranean = models.PositiveSmallIntegerField(choices=CS_CHOICES, default=NE)
-	habitat = models.ManyToManyField(Habitat, blank=True)  # global scale
-	invasive = models.BooleanField(default=False)  # degreeOfEstablishment:
-	domesticated = models.BooleanField(default=False)
-	freshwater = models.BooleanField(default=False)
-	marine = models.BooleanField(default=False)
-	terrestrial = models.BooleanField(default=False)
-
-	class Meta:
-		verbose_name_plural = "Taxon data"

@@ -1,42 +1,51 @@
 # Geography
-echo "Loading gadm"
-python manage.py load_gadm data/NO_BORRAR/GIS/IDEIB_AC/*uncertainess*/*.shp
-python manage.py load_gadm data/NO_BORRAR/GIS/IDEIB_islands/*uncertainess*/*.shp
-python manage.py load_gadm data/NO_BORRAR/GIS/IDEIB_municipalities/*uncertainess*/*.shp
-python manage.py load_gadm data/NO_BORRAR/GIS/CNIG_poblaciones/*uncertainess*/*.shp
+echo "Loading Autonomous communities..."
+python manage.py load_gadm data/GIS/IDEIB_AC/*uncertainess*/*.shp
+echo "Loading Islands..."
+python manage.py load_gadm data/GIS/IDEIB_islands/*uncertainess*/*.shp
+echo "Loading Municipalities..."
+python manage.py load_gadm data/GIS/IDEIB_municipalities/*uncertainess*/*.shp
+echo "Loading Populations..."
+python manage.py load_gadm data/GIS/CNIG_poblaciones/*uncertainess*/*.shp
 
-# Taxonomy
-for file in data/NO_BORRAR/taxonomy_2/*/*.csv
-do
-  echo "$file"
-  python manage.py load_taxonomy_new "$file"
-done
-
-# Taxon data
+#Populate
+echo "Populating sources..."
+python manage.py populate_sources data/sources.csv
+echo "Populating tags..."
+python manage.py populate_tags
+echo "Populating habitats..."
 python manage.py populate_habitats
-for file in data/NO_BORRAR/iucn/*/*.json
-do
-  echo "$file"
-  python manage.py load_taxon_data "$file"
-done
 
-# Occurrences
-for file in data/NO_BORRAR/occurrences/*/*.json
-do
-  echo "$file"
-  python manage.py load_occurrences_new "$file"
-done
 
-# Images
-for file in data/NO_BORRAR/images/*/*.json
+for folder in data/groups/*/
 do
-  echo "$file"
-  python manage.py load_images "$file"
-done
+  # Taxonomy
+  echo "$folder/taxonomy.csv"
+  python manage.py load_taxonomy_new "$folder/taxonomy.csv"
 
-# genetics
-for file in data/NO_BORRAR/genetics/*/*.json
-do
-  echo "$file"
-  python manage.py load_occurrences_new "$file"
+  # Images
+  echo "$folder/images.json"
+  python manage.py load_images "$folder/images.json"
+
+  # IUCN
+  echo "$folder/iucn.json"
+  python manage.py load_taxon_data "$folder/iucn.json"
+
+  # Tags
+  echo "$folder/tags.xlsx"
+  python manage.py load_taxon_tags "$folder/tags.xlsx"
+
+  # Occurrences
+  for file in "$folder/occurrences/"*.json
+  do
+    echo "$file"
+    python manage.py load_occurrences_new_synonyms "$file"
+  done
+
+  # Genetics
+  for file in "$folder/genetics/"*.json
+  do
+    echo "$file"
+    python manage.py load_occurrences_new_synonyms "$file"
+  done
 done

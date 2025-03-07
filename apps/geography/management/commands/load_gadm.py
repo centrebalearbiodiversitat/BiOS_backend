@@ -1,5 +1,4 @@
 import geopandas as gpd
-import shapely
 from django.contrib.gis.geos import Point, GEOSGeometry, MultiPolygon
 
 from django.core.management.base import BaseCommand

@@ -5,9 +5,9 @@ import traceback
 from django.core.management.base import BaseCommand
 from django.db import transaction
 
-from apps.taxonomy.models import Authorship, TaxonomicLevel, TaxonData, Habitat
-from apps.versioning.models import Batch, Source, OriginSource
-from common.utils.utils import str_clean_up
+from apps.taxonomy.models import Authorship, TaxonomicLevel
+from apps.versioning.models import Batch, OriginId, Source
+from common.utils.utils import str_clean_up, get_or_create_source
 
 KINGDOM = "kingdom"
 PHYLUM = "phylum"
@@ -18,14 +18,6 @@ GENUS = "genus"
 SPECIES = "species"
 SUBSPECIES = "subspecies"
 VARIETY = "variety"
-RANK = "rank"
-ORIGIN_TAXON = "origin_taxon"
-ACCEPTED_TAXON = "accepted_taxon"
-AUTHOR_ACCEPTED = "author_accepted"
-STATUS = "status"
-TAXON_ID = "taxon_id"
-SOURCE = "source"
-ORIGIN = "origin"
 
 LEVELS = [KINGDOM, PHYLUM, CLASS, ORDER, FAMILY, GENUS, SPECIES, SUBSPECIES, VARIETY]
 
@@ -40,6 +32,15 @@ LEVELS_PARAMS = {
 	SUBSPECIES: TaxonomicLevel.SUBSPECIES,
 	VARIETY: TaxonomicLevel.VARIETY,
 }
+
+ACCEPTED_TAXON = "accepted_taxon"
+AUTHOR_ACCEPTED = "author_accepted"
+ORIGIN_TAXON = "origin_taxon"
+RANK = "rank"
+SOURCE = "source"
+SOURCE_TYPE = "origin"
+STATUS = "status"
+TAXON_ID = "taxon_id"
 
 
 @transaction.atomic
@@ -65,13 +66,22 @@ def create_taxonomic_level(line, parent, batch, idx_name, rank):
 		else:
 			raise Exception(f'{STATUS} must be either "accepted", "misapplied" or "synonym" but was "{line[STATUS]}"\n{line}')
 
-		if line[ORIGIN_TAXON].split()[-1] != line[idx_name].replace("x ", ""):
+		if rank in {TaxonomicLevel.SPECIES, TaxonomicLevel.SUBSPECIES, TaxonomicLevel.VARIETY}:
+			if line[ORIGIN_TAXON] != " ".join(filter(lambda x: x, [line[GENUS], line[SPECIES], line[SUBSPECIES], line[VARIETY]])):
+				raise Exception(f"Taxonomy mismatch with accepted taxon name.\n{line}")
+		elif line[ORIGIN_TAXON].split()[-1] != line[idx_name]:
 			raise Exception(f"Taxonomy mismatch with accepted taxon name.\n{line}")
 
 		if line[idx_name][0].isupper() and rank in [TaxonomicLevel.SPECIES, TaxonomicLevel.SUBSPECIES, TaxonomicLevel.VARIETY]:
 			raise Exception(f"Epithet cant be upper cased.\n{line}")
 
-		source = get_or_create_source(line)
+		source = get_or_create_source(
+			source_type=Source.TRANSLATE_SOURCE_TYPE[line[SOURCE_TYPE]],
+			extraction_method=Source.API,
+			data_type=Source.TAXON,
+			batch=batch,
+			internal_name=line[SOURCE],
+		)
 		verb_auth, auths, parsed_year = get_or_create_authorship(line, batch)
 
 		child, new_taxon = TaxonomicLevel.objects.get_or_create(
@@ -88,14 +98,20 @@ def create_taxonomic_level(line, parent, batch, idx_name, rank):
 			},
 		)
 
-		os, new_source = OriginSource.objects.get_or_create(origin_id=line[TAXON_ID], source=source)
+		os, new_source = OriginId.objects.get_or_create(
+			external_id__iexact=line[TAXON_ID],
+			source=source,
+			defaults={
+				"external_id": line[TAXON_ID],
+			},
+		)
 		if new_source:
-			if child.sources.filter(source=os.source, origin_id=os.origin_id).exists():
-				raise Exception(f"Origin source id already existing. {os}\n{line}")
+			if child.sources.filter(source=os.source, external_id__iexact=os.external_id).exists():
+				raise Exception(f"Origin ID already existing. {os}\n{line}")
 			child.sources.add(os)
 			child.save()
 		elif not child.sources.filter(id=os.id).exists():
-			raise Exception(f"Origin source id already existing. {os}\n{line}")
+			raise Exception(f"Origin ID already existing. {os}\n{line}")
 
 		if auths:
 			child.authorship.add(*auths)
@@ -114,9 +130,7 @@ def create_taxonomic_level(line, parent, batch, idx_name, rank):
 			accepted_tl = accepted_candidates.first()
 
 			if not accepted_tl:
-				raise Exception(
-					f"{parent} {rank} Accepted taxonomic level not found for {line[ACCEPTED_TAXON]}. Accepted taxon must be inserted first.\n{line}"
-				)
+				raise Exception(f"{parent} {rank} Accepted taxonomic level not found for {line[ACCEPTED_TAXON]}. Accepted taxon must be inserted first.\n{line}")
 
 			accepted_tl.synonyms.add(child)
 			accepted_tl.save()
@@ -124,9 +138,7 @@ def create_taxonomic_level(line, parent, batch, idx_name, rank):
 		child = TaxonomicLevel.objects.filter(parent=parent, rank=rank, name__iexact=line[idx_name])
 
 		if child.count() == 0:
-			raise Exception(
-				f"Higher taxonomy must exist before loading a new taxon parent={parent} rank={TaxonomicLevel.TRANSLATE_RANK[rank]} name={line[idx_name]}\n{line}"
-			)
+			raise Exception(f"Higher taxonomy must exist before loading a new taxon parent={parent} rank={TaxonomicLevel.TRANSLATE_RANK[rank]} name={line[idx_name]}\n{line}")
 		elif child.count() > 1:
 			raise Exception(f"Found {child.count()} possible parent nodes {child} when loading a new taxon\n{line}")
 
@@ -185,32 +197,17 @@ def get_or_create_authorship(line, batch):
 	return line[AUTHOR_ACCEPTED], auths, parsed_year
 
 
-def get_or_create_source(line):
-	if not line[SOURCE]:
-		raise Exception(f"All records must have a source\n{line}")
-
-	source, _ = Source.objects.get_or_create(
-		name__iexact=line[SOURCE],
-		data_type=Source.TAXON,  # Filter out 2 sources with the same name and data_type
-		defaults={
-			"name": line[SOURCE],
-			"accepted": True,
-			"origin": Source.TRANSLATE_CHOICES[line[ORIGIN]],
-			"data_type": Source.TAXON,
-			"url": None,
-		},
-	)
-
-	return source
-
-
 def clean_up_input_line(line):
 	for key in line.keys():
 		line[key] = str_clean_up(line[key])
+		try:
+			line[key] = line[key].encode("latin-1").decode("utf-8")
+		except:
+			pass
 
 
 class Command(BaseCommand):
-	help = "Loads from taxonomy from csv"
+	help = "Loads taxonomy from csv"
 
 	def add_arguments(self, parser):
 		parser.add_argument("file", type=str)
@@ -234,6 +231,7 @@ class Command(BaseCommand):
 					"parent": None,
 				},
 			)
+
 			with TaxonomicLevel.objects.delay_mptt_updates():
 				for line in csv_file:
 					parent = biota

@@ -1,18 +1,15 @@
 from django import forms
 
-from common.utils.forms import CamelCaseForm, IdFieldForm
+from common.utils.forms import CamelCaseForm, IdFieldForm, InGeographyScopeForm
 
 
-class MarkerForm(IdFieldForm, CamelCaseForm):
+class MarkerForm(IdFieldForm, InGeographyScopeForm):
 	sources = forms.IntegerField(required=False)
 	exact = forms.BooleanField(required=False)
 	batch = forms.CharField(required=False)
 	name = forms.CharField(required=False)
 	unidecode_name = forms.CharField(required=False)
 	taxonomy = forms.IntegerField(required=False)
-
-	def __init__(self, *args, **kwargs):
-		super().__init__(*args, **kwargs)
 
 
 class SequenceForm(IdFieldForm, CamelCaseForm):
@@ -28,7 +25,11 @@ class SequenceForm(IdFieldForm, CamelCaseForm):
 	molecule_type = forms.CharField(required=False)
 	sequence_version = forms.CharField(required=False)
 	products = forms.CharField(required=False)
+	marker = forms.IntegerField(required=False)
+	taxonomy = forms.IntegerField(required=False)
+	source = forms.CharField(required=False)
 
 
-class SequenceListForm(CamelCaseForm):
-	taxonomy = forms.IntegerField()
+class SequenceListForm(InGeographyScopeForm):
+	taxonomy = forms.IntegerField(required=False)
+	marker = forms.IntegerField(required=False)

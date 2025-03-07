@@ -1,5 +1,3 @@
-from apps.geography.models import GeographicLevel
-from common.utils.forms import TranslateForm, IdFieldForm
 from django import forms
 from common.utils.forms import IdFieldForm, TranslateForm
 
@@ -25,11 +23,7 @@ class LatLonModelForm(IdFieldForm, TranslateForm):
 		longitude_min = cleaned_data.get("longitude_min")
 		longitude_max = cleaned_data.get("longitude_max")
 
-		if (
-			coordinate_uncertainty_in_meters_min
-			and coordinate_uncertainty_in_meters_max
-			and coordinate_uncertainty_in_meters_min > coordinate_uncertainty_in_meters_max
-		):
+		if coordinate_uncertainty_in_meters_min and coordinate_uncertainty_in_meters_max and coordinate_uncertainty_in_meters_min > coordinate_uncertainty_in_meters_max:
 			raise forms.ValidationError("Minimum coordinate uncertainty cannot be greater than maximum coordinate uncertainty.")
 		if latitude_min and latitude_max and latitude_min > latitude_max:
 			raise forms.ValidationError("Minimum latitude cannot be greater than maximum latitude.")
@@ -51,6 +45,8 @@ class OccurrenceForm(LatLonModelForm):
 	batch = forms.IntegerField(required=False)
 	sources = forms.IntegerField(required=False)
 	add_synonyms = forms.BooleanField(required=False, initial=True)
+	source = forms.CharField(required=False)
+	has_sequence = forms.NullBooleanField(required=False, initial=None)
 
 	TRANSLATE_FIELDS = {
 		"year": "collection_date_year",

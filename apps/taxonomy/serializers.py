@@ -1,8 +1,23 @@
 from rest_framework import serializers
 
-from apps.taxonomy.models import Authorship, TaxonData, TaxonomicLevel, Habitat
-from apps.versioning.serializers import OriginSourceSerializer
+from apps.taxonomy.models import Authorship, TaxonomicLevel
+from apps.versioning.serializers import OriginIdSerializer
 from common.utils.serializers import CaseModelSerializer
+
+
+class MinimalTaxonomicLevelSerializer(CaseModelSerializer):
+	taxon_rank = serializers.SerializerMethodField()
+	name = serializers.SerializerMethodField()
+
+	def get_name(self, obj):
+		return str(obj)
+
+	def get_taxon_rank(self, obj):
+		return obj.readable_rank()
+
+	class Meta:
+		model = TaxonomicLevel
+		fields = ["id", "name", "taxon_rank"]
 
 
 class BaseTaxonomicLevelSerializer(CaseModelSerializer):
@@ -10,7 +25,7 @@ class BaseTaxonomicLevelSerializer(CaseModelSerializer):
 	taxon_rank = serializers.SerializerMethodField()
 	name = serializers.SerializerMethodField()
 	accepted_modifier = serializers.SerializerMethodField()
-	images = OriginSourceSerializer(many=True)
+	images = OriginIdSerializer(many=True)
 	parent = serializers.SerializerMethodField()
 
 	def get_accepted_modifier(self, obj):
@@ -30,7 +45,26 @@ class BaseTaxonomicLevelSerializer(CaseModelSerializer):
 
 	class Meta:
 		model = TaxonomicLevel
-		fields = ["id", "name", "taxon_rank", "scientific_name_authorship", "accepted", "accepted_modifier", "images", "parent"]
+		fields = [
+			"id",
+			"name",
+			"taxon_rank",
+			"scientific_name_authorship",
+			"accepted",
+			"accepted_modifier",
+			"images",
+			"parent",
+		]
+
+
+class AncestorsTaxonomicLevelSerializer(BaseTaxonomicLevelSerializer):
+	ancestors = serializers.SerializerMethodField()
+
+	def get_ancestors(self, obj):
+		return MinimalTaxonomicLevelSerializer(obj.get_ancestors(), many=True).data
+
+	class Meta(BaseTaxonomicLevelSerializer.Meta):
+		fields = BaseTaxonomicLevelSerializer.Meta.fields + ["ancestors"]
 
 
 class SearchTaxonomicLevelSerializer(CaseModelSerializer):
@@ -38,7 +72,7 @@ class SearchTaxonomicLevelSerializer(CaseModelSerializer):
 	taxon_rank = serializers.SerializerMethodField()
 	name = serializers.SerializerMethodField()
 	accepted_modifier = serializers.SerializerMethodField()
-	# images = OriginSourceSerializer(many=True)
+	# images = OriginIdSerializer(many=True)
 
 	def get_accepted_modifier(self, obj):
 		return obj.readable_accepted_modifier()
@@ -66,37 +100,3 @@ class AuthorshipSerializer(serializers.ModelSerializer):
 	class Meta:
 		model = Authorship
 		fields = ["id", "name", "accepted"]
-
-
-class HabitatSerializer(serializers.ModelSerializer):
-	sources = OriginSourceSerializer(many=True)
-
-	class Meta:
-		model = Habitat
-		fields = ["sources", "name"]
-
-
-class BaseTaxonDataSerializer(CaseModelSerializer):
-	iucn_global = serializers.SerializerMethodField()
-	iucn_europe = serializers.SerializerMethodField()
-	iucn_mediterranean = serializers.SerializerMethodField()
-	habitat = HabitatSerializer(many=True)
-
-	def get_iucn_global(self, obj):
-		return obj.get_iucn_global_display()
-
-	def get_iucn_europe(self, obj):
-		return obj.get_iucn_europe_display()
-
-	def get_iucn_mediterranean(self, obj):
-		return obj.get_iucn_mediterranean_display()
-
-	class Meta:
-		model = TaxonData
-		# exclude = ["taxonomy"]
-
-
-class TaxonDataSerializer(BaseTaxonDataSerializer):
-	class Meta:
-		model = TaxonData
-		exclude = ["taxonomy"]

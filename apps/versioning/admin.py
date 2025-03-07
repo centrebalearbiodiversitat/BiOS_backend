@@ -28,4 +28,5 @@ class OriginIdAdmin(admin.ModelAdmin):
 	list_filter = ["source"]
 	list_display = ["external_id", "source", "source_id"]
 
+
 admin.site.register(OriginId, OriginIdAdmin)

@@ -10,7 +10,7 @@ def populate_basis(line, batch):
 	Basis.objects.update_or_create(
 		internal_name__iexact=line.get("internal_name", "").lower(),
 		defaults={
-			"internal_name":line.get("internal_name", "").lower(),
+			"internal_name": line.get("internal_name", "").lower(),
 			"name": line.get("name", ""),
 			"acronym": line.get("acronym", ""),
 			"url": line.get("url", ""),

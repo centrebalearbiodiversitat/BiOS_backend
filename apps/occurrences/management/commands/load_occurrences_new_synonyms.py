@@ -83,56 +83,56 @@ def parse_line(line: dict):
 
 	return line
 
+
 def genetic_sources(line: dict, batch, occ):
-    source = get_or_create_source(
-        source_type=Source.TRANSLATE_SOURCE_TYPE[line[SOURCE_TYPE]],
-        extraction_method=Source.API,
-        data_type=Source.SEQUENCE,
-        batch=batch,
-        internal_name=line[INTERNAL_NAME],
-    )
+	source = get_or_create_source(
+		source_type=Source.TRANSLATE_SOURCE_TYPE[line[SOURCE_TYPE]],
+		extraction_method=Source.API,
+		data_type=Source.SEQUENCE,
+		batch=batch,
+		internal_name=line[INTERNAL_NAME],
+	)
 
-    os, new = OriginId.objects.get_or_create(
-        external_id=line[EXTERNAL_ID],
-        source=source,
-        defaults={
-            "attribution": line["attribution"],
-        },
-    )
-    if not new and not Sequence.objects.filter(sources=os, occurrence=occ).exists():
-        raise Exception(f"OriginId already exists\n{line}")
+	os, new = OriginId.objects.get_or_create(
+		external_id=line[EXTERNAL_ID],
+		source=source,
+		defaults={
+			"attribution": line["attribution"],
+		},
+	)
+	if not new and not Sequence.objects.filter(sources=os, occurrence=occ).exists():
+		raise Exception(f"OriginId already exists\n{line}")
 
-    seq = None
+	seq = None
 
-    for production in line["genetic_features"]:
-        if production["gene"]:
-            normalized_gene_name = re.sub(r"[-\s_]", "", production["gene"].lower())
-            if normalized_gene_name in BIO_MARKERS:
+	for production in line["genetic_features"]:
+		if production["gene"]:
+			normalized_gene_name = re.sub(r"[-\s_]", "", production["gene"].lower())
+			if normalized_gene_name in BIO_MARKERS:
+				marker, is_new = Marker.objects.get_or_create(
+					name__iexact=production["gene"],
+					defaults={
+						"name": production["gene"],
+						"batch": batch,
+						"accepted": True,
+						"product": production["product"],
+					},
+				)
 
-                marker, is_new = Marker.objects.get_or_create(
-                    name__iexact=production["gene"],
-                    defaults={
-                        "name": production["gene"],
-                        "batch": batch,
-                        "accepted": True,
-                        "product": production["product"],
-                    },
-                )
+				marker.save()
 
-                marker.save()
+				if seq is None:
+					seq = Sequence.objects.create(
+						occurrence=occ,
+						batch=batch,
+						isolate=line["isolate"],
+						definition=line["definition"],
+						published_date=parser.parse(line["date"]) if line["date"] else None,
+					)
+					seq.sources.add(os)
 
-                if seq is None:
-                    seq = Sequence.objects.create(
-                        occurrence=occ,
-                        batch=batch,
-                        isolate=line["isolate"],
-                        definition=line["definition"],
-                        published_date=parser.parse(line["date"]) if line["date"] else None,
-                    )
-                    seq.sources.add(os)
-
-                seq.markers.add(marker)
-                seq.save()
+				seq.markers.add(marker)
+				seq.save()
 
 
 def create_origin_id(ref_model_elem, external_id, source):
@@ -175,7 +175,7 @@ class Command(BaseCommand):
 					batch=batch,
 					internal_name=line[INTERNAL_NAME],
 				)
-					
+
 				parent_level = ""
 				for taxon_key, taxon_id_key, taxon_rank in TAXON_KEYS:
 					if line[taxon_key] and line[taxon_id_key]:
@@ -221,7 +221,7 @@ class Command(BaseCommand):
 
 				if source.basis.internal_name == GBIF:
 					internal_name = line[INTERNAL_NAME]
-					dataset_key = line['datasetKey']
+					dataset_key = line["datasetKey"]
 
 					os_new = get_or_create_source_with_dataset_key(internal_name, dataset_key, batch)
 
@@ -232,7 +232,7 @@ class Command(BaseCommand):
 						"attribution": line["attribution"],
 					},
 				)
-				
+
 				if new:
 					location = (Point(list(reversed(line["lat_lon"])), srid=4326)) if line.get("lat_lon", None) else None
 					occ = Occurrence.objects.create(
@@ -250,7 +250,7 @@ class Command(BaseCommand):
 						recorded_by=line["recordedBy"],
 						in_geography_scope=cbb_scope_geometry.intersects(location) if location else False,
 					)
-					
+
 					if source.basis.internal_name == GBIF:
 						if os_new:
 							occ.sources.add(os_new)
@@ -258,7 +258,6 @@ class Command(BaseCommand):
 						occ.sources.add(os)
 					occ.save()
 				else:
-
 					occ = Occurrence.objects.get(sources=os)
 
 					if source.basis.internal_name == GBIF:

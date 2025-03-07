@@ -106,12 +106,14 @@ class Source(models.Model):
 	SEQUENCE = 2
 	IMAGE = 3
 	TAXON_DATA = 4
+	DATASET_KEY = 5
 	DATA_TYPE_CHOICES = (
 		(TAXON, "taxon"),
 		(TAXON_DATA, "taxon_data"),
 		(OCCURRENCE, "occurrence"),
 		(SEQUENCE, "sequence"),
 		(IMAGE, "image"),
+		(DATASET_KEY, "dataset_key"),
 	)
 	TRANSLATE_DATA_TYPE = {
 		TAXON: "taxon",
@@ -119,11 +121,13 @@ class Source(models.Model):
 		SEQUENCE: "sequence",
 		IMAGE: "image",
 		TAXON_DATA: "taxon_data",
+		DATASET_KEY: "dataset_key",
 		"taxon": TAXON,
 		"occurrence": OCCURRENCE,
 		"sequence": SEQUENCE,
 		"image": IMAGE,
 		"taxon_data": TAXON_DATA,
+		"dataset_key": DATASET_KEY,
 	}
 
 	source_type = models.PositiveSmallIntegerField(choices=SOURCE_TYPE_CHOICES)

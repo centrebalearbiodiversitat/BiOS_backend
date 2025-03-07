@@ -1,6 +1,5 @@
-import json
+import json, re
 import geopandas as gpd
-
 from django.core.management.base import BaseCommand
 from django.db import transaction
 from dateutil import parser
@@ -9,8 +8,9 @@ from apps.genetics.models import Sequence, Marker
 from apps.occurrences.models import Occurrence
 from apps.taxonomy.models import TaxonomicLevel
 from apps.versioning.models import Batch, OriginId, Source
-from common.utils.utils import get_or_create_source
+from common.utils.utils import get_or_create_source, get_or_create_source_with_dataset_key
 
+GBIF = "gbif"
 EXTERNAL_ID = "sample_id"
 INTERNAL_NAME = "occurrenceSource"
 SOURCE_TYPE = "occurrenceOrigin"
@@ -79,63 +79,60 @@ def parse_line(line: dict):
 		try:
 			line[key] = json.loads(value)
 		except:
-			pass  # is not json format
+			pass
 
 	return line
 
-
 def genetic_sources(line: dict, batch, occ):
-	source = get_or_create_source(
-		source_type=Source.TRANSLATE_SOURCE_TYPE[line[SOURCE_TYPE]],
-		extraction_method=Source.API,
-		data_type=Source.SEQUENCE,
-		batch=batch,
-		internal_name=line[INTERNAL_NAME],
-	)
+    source = get_or_create_source(
+        source_type=Source.TRANSLATE_SOURCE_TYPE[line[SOURCE_TYPE]],
+        extraction_method=Source.API,
+        data_type=Source.SEQUENCE,
+        batch=batch,
+        internal_name=line[INTERNAL_NAME],
+    )
 
-	os, new = OriginId.objects.get_or_create(
-		external_id=line[EXTERNAL_ID],
-		source=source,
-		defaults={
-			"attribution": line["attribution"],
-		},
-	)
-	if not new and not Sequence.objects.filter(sources=os, occurrence=occ).exists():
-		raise Exception(f"OriginId already exists\n{line}")
+    os, new = OriginId.objects.get_or_create(
+        external_id=line[EXTERNAL_ID],
+        source=source,
+        defaults={
+            "attribution": line["attribution"],
+        },
+    )
+    if not new and not Sequence.objects.filter(sources=os, occurrence=occ).exists():
+        raise Exception(f"OriginId already exists\n{line}")
 
-	seq = Sequence.objects.filter(sources=os, occurrence=occ)
-	if seq.exists():
-		if seq.count() > 1:
-			raise Exception(f"Found more than one sequence\n{line}")
-		seq = seq.first()
-	else:
-		seq = Sequence.objects.create(
-			occurrence=occ,
-			batch=batch,
-			isolate=line["isolate"],
-			definition=line["definition"],
-			published_date=parser.parse(line["date"]) if line["date"] else None,
-		)
-		seq.sources.add(os)
+    seq = None
 
-	for production in line["genetic_features"]:
-		if production["gene"]:
-			# if production["gene"] and production["gene"].lower() in BIO_MARKERS:
-			marker, is_new = Marker.objects.get_or_create(
-				name__iexact=production["gene"],
-				defaults={
-					"name": production["gene"],
-					"product": production["product"],
-					"batch": batch,
-					"accepted": True,
-				},
-			)
-			# if not marker.sources.filter(id=os.id).exists():
-			# 	marker.sources.add(os)
+    for production in line["genetic_features"]:
+        if production["gene"]:
+            normalized_gene_name = re.sub(r"[-\s_]", "", production["gene"].lower())
+            if normalized_gene_name in BIO_MARKERS:
 
-			marker.save()
-			seq.markers.add(marker)
-	seq.save()
+                marker, is_new = Marker.objects.get_or_create(
+                    name__iexact=production["gene"],
+                    defaults={
+                        "name": production["gene"],
+                        "batch": batch,
+                        "accepted": True,
+                        "product": production["product"],
+                    },
+                )
+
+                marker.save()
+
+                if seq is None:
+                    seq = Sequence.objects.create(
+                        occurrence=occ,
+                        batch=batch,
+                        isolate=line["isolate"],
+                        definition=line["definition"],
+                        published_date=parser.parse(line["date"]) if line["date"] else None,
+                    )
+                    seq.sources.add(os)
+
+                seq.markers.add(marker)
+                seq.save()
 
 
 def create_origin_id(ref_model_elem, external_id, source):
@@ -143,6 +140,7 @@ def create_origin_id(ref_model_elem, external_id, source):
 	if new:
 		ref_model_elem.sources.add(os)
 		ref_model_elem.save()
+
 	# else:
 	# 	if not ref_model_elem.sources.filter(id=os.id).exists():
 	# 		raise Exception(f"Origin id already assigned to another model. {ref_model_elem}, {ref_model_elem.sources}, {os}")
@@ -167,9 +165,7 @@ class Command(BaseCommand):
 			line: dict
 			for line in data:
 				line = parse_line(line)
-
 				if OriginId.objects.filter(external_id=line[EXTERNAL_ID], source__basis__name__icontains="NCBI").exists():
-					# print(f"OriginId already exists in NCBI\n{line['sample_id']}")
 					continue
 
 				source = get_or_create_source(
@@ -179,12 +175,11 @@ class Command(BaseCommand):
 					batch=batch,
 					internal_name=line[INTERNAL_NAME],
 				)
-
+					
 				parent_level = ""
 				for taxon_key, taxon_id_key, taxon_rank in TAXON_KEYS:
 					if line[taxon_key] and line[taxon_id_key]:
 						taxon = TaxonomicLevel.objects.find(taxon=line[taxon_key]).filter(rank=taxon_rank)
-
 						taxon_count = taxon.count()
 						# If there are taxon collisions, then try again with the parent
 						if taxon_count > 1:
@@ -216,7 +211,6 @@ class Command(BaseCommand):
 						raise Exception(f"Bad formatting for lat_lon field\n{line}")
 				else:
 					del line["lat_lon"]
-
 				source = get_or_create_source(
 					source_type=Source.TRANSLATE_SOURCE_TYPE[line[SOURCE_TYPE]],
 					extraction_method=Source.API,
@@ -225,6 +219,12 @@ class Command(BaseCommand):
 					internal_name=line[INTERNAL_NAME],
 				)
 
+				if source.basis.internal_name == GBIF:
+					internal_name = line[INTERNAL_NAME]
+					dataset_key = line['datasetKey']
+
+					os_new = get_or_create_source_with_dataset_key(internal_name, dataset_key, batch)
+
 				os, new = OriginId.objects.get_or_create(
 					external_id=line[EXTERNAL_ID],
 					source=source,
@@ -232,6 +232,7 @@ class Command(BaseCommand):
 						"attribution": line["attribution"],
 					},
 				)
+				
 				if new:
 					location = (Point(list(reversed(line["lat_lon"])), srid=4326)) if line.get("lat_lon", None) else None
 					occ = Occurrence.objects.create(
@@ -249,10 +250,20 @@ class Command(BaseCommand):
 						recorded_by=line["recordedBy"],
 						in_geography_scope=cbb_scope_geometry.intersects(location) if location else False,
 					)
-					occ.sources.add(os)
+					
+					if source.basis.internal_name == GBIF:
+						if os_new:
+							occ.sources.add(os_new)
+					else:
+						occ.sources.add(os)
 					occ.save()
 				else:
+
 					occ = Occurrence.objects.get(sources=os)
+
+					if source.basis.internal_name == GBIF:
+						if os_new:
+							occ.sources.add(os_new)
 
 				if "genetic_features" in line:
 					genetic_sources(line, batch, occ)

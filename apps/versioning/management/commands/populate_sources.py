@@ -1,44 +1,44 @@
-import json
-import traceback
-
+import csv
 from django.core.management.base import BaseCommand
-from django.db import transaction
-from apps.versioning.models import Batch, Basis
+from apps.versioning.models import Source, Basis, Batch
 
-
-def populate_basis(line, batch):
-	Basis.objects.update_or_create(
-		internal_name=line.get("internal_name", ""),
-		defaults={
-			"name": line.get("name", ""),
-			"acronym": line.get("acronym", ""),
-			"url": line.get("url", ""),
-			"description": line.get("description", ""),
-			"citation": line.get("citation", ""),
-			"contact": line.get("contact", ""),
-			"authors": line.get("authors", ""),
-			"batch": batch,
-		},
-	)
+from django.core.exceptions import ObjectDoesNotExist
 
 
 class Command(BaseCommand):
-	help = "Populates the Source table with data from a JSON file."
+	help = "Load data into the Source model from a CSV file."
 
 	def add_arguments(self, parser):
-		parser.add_argument("json_file", type=str, help="Path to the JSON file containing source data.")
+		parser.add_argument("csv_file", type=str, help="Path to the CSV file")
 
-	@transaction.atomic
 	def handle(self, *args, **options):
-		json_file = options["json_file"]
+		csv_file = options["csv_file"]
 
-		with open(json_file, "r") as f:
-			json_file = json.load(f)
-			batch = Batch.objects.create()
+		batch = Batch.objects.create()
 
-		try:
-			for line in json_file:
-				populate_basis(line, batch)
-		except Exception as e:
-			print(traceback.format_exc())
-			raise e
+		with open(csv_file, "r") as file:
+			reader = csv.DictReader(file, delimiter=";")
+			for row in reader:
+				try:
+					internal_name = row["internal_name"].lower()
+					print(f"Buscando Basis con internal_name: {internal_name}")  # add this line
+					basis = Basis.objects.get(
+						internal_name__iexact=internal_name,
+					)
+
+					source, _ = Source.objects.get_or_create(
+						source_type=Source.DATABASE,
+						extraction_method=Source.API,
+						data_type=Source.TRANSLATE_DATA_TYPE[row["data_type"]],
+						url=row["url"],
+						basis=basis,
+						defaults={
+							"batch": batch,
+						},
+					)
+					if _:
+						self.stdout.write(self.style.SUCCESS(f'Created Source "{source}"'))
+				except ObjectDoesNotExist:
+					self.stdout.write(self.style.ERROR(f"Basis matching query does not exist for internal_name: {internal_name} and row: {row}"))
+				except Exception as e:
+					self.stdout.write(self.style.ERROR(f"Error processing row: {row} - {e}"))

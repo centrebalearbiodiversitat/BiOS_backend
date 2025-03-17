@@ -5,6 +5,7 @@ services:
   postgis:
     image: postgis/postgis:12-3.0-alpine
     volumes:
+      - .:/code
       - db-data:/var/lib/postgresql/data
     ports:
       - "5432:5432"

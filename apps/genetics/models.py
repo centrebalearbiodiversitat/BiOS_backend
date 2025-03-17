@@ -1,3 +1,4 @@
+from django.contrib.postgres.indexes import GinIndex
 from django.db import models
 from django.db.models import F
 
@@ -6,7 +7,7 @@ from common.utils.models import ReferencedModel, SynonymModel
 
 
 class Marker(ReferencedModel, SynonymModel):
-	name = models.CharField(max_length=512, null=True, blank=True, default=None)
+	name = models.CharField(max_length=512, null=True, blank=True, default=None, db_index=True)
 	product = models.CharField(max_length=512, null=True, blank=True, default=None)
 
 

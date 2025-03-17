@@ -3,8 +3,7 @@ from django.db import transaction
 
 from apps.tags.models import Habitat
 from apps.versioning.models import Batch, OriginId, Source
-from common.utils.utils import get_or_create_source
-
+from common.utils.utils import get_or_create_source, is_batch_referenced
 
 IUCN = "IUCN"
 
@@ -59,4 +58,6 @@ class Command(BaseCommand):
 
 	@transaction.atomic
 	def handle(self, *args, **kwargs):
-		self.populate_habitat(Batch.objects.create())
+		batch = Batch.objects.create()
+		self.populate_habitat(batch)
+		is_batch_referenced(batch)

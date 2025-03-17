@@ -5,8 +5,7 @@ from apps.tags.models import Directive
 from apps.versioning.models import Batch, OriginId, Source
 from django.core.management.base import BaseCommand
 from django.db import transaction
-from common.utils.utils import get_or_create_source
-
+from common.utils.utils import get_or_create_source, is_batch_referenced
 
 BOOL_DICT = {"verdadero": True, "falso": False}
 
@@ -50,5 +49,7 @@ class Command(BaseCommand):
 					},
 				)
 				directive.sources.add(os)
+
+		is_batch_referenced(batch)
 
 		self.stdout.write(self.style.SUCCESS("Successfully created directives"))

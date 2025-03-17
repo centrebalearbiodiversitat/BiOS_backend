@@ -280,9 +280,7 @@ class Command(BaseCommand):
 					occ.sources.add(os_dk)
 				occ.save()
 
-				if "genetic_features" in line and not OriginId.objects.filter(
-						Q(sequence__sources__external_id__iexact=line[EXTERNAL_ID])
-					).exists():
+				if "genetic_features" in line and not OriginId.objects.filter(Q(sequence__sources__external_id__iexact=line[EXTERNAL_ID])).exists():
 					genetic_sources(line, batch, occ)
 			raise Exception(datetime.datetime.now() - tik)
 			is_batch_referenced(batch)

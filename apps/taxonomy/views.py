@@ -41,18 +41,16 @@ class TaxonSearch:
 
 		queryset = None
 		query = unidecode(str_clean_up(query).translate(PUNCTUATION_TRANSLATE))
-		for query in re.split(r'(?<=\S{2}) ', query):
+		for query in re.split(r"(?<=\S{2}) ", query):
 			print(query)
 			filters["name__istartswith"] = query
 			if queryset is None:
-				queryset = TaxonomicLevel.objects.annotate(
-					prefix=Lower(Substr("unidecode_name", 1, min(3, len(query))))
-				).filter(prefix=query[:3].lower()).filter(**filters)
+				queryset = TaxonomicLevel.objects.annotate(prefix=Lower(Substr("unidecode_name", 1, min(3, len(query))))).filter(prefix=query[:3].lower()).filter(**filters)
 			else:
 				queryset = (
 					TaxonomicLevel.objects.annotate(prefix=Lower(Substr("unidecode_name", 1, min(3, len(query)))))
-						.filter(prefix=query[:3].lower())
-						.filter(**filters, rank__in=[TaxonomicLevel.SPECIES, TaxonomicLevel.SUBSPECIES, TaxonomicLevel.VARIETY], parent__in=queryset)
+					.filter(prefix=query[:3].lower())
+					.filter(**filters, rank__in=[TaxonomicLevel.SPECIES, TaxonomicLevel.SUBSPECIES, TaxonomicLevel.VARIETY], parent__in=queryset)
 				)
 
 		if not exact and queryset.count() < limit:

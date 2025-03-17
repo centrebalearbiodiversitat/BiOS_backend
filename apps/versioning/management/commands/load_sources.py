@@ -25,8 +25,6 @@ class Command(BaseCommand):
 					Source.objects.filter(
 						basis__internal_name__iexact=internal_name,
 						data_type=Source.TRANSLATE_DATA_TYPE[row["data_type"]],
-					).update(
-						url=row["url"]
-					)
+					).update(url=row["url"])
 				except Source.DoesNotExist:
 					print(f"Source does not exist.\n{row}")

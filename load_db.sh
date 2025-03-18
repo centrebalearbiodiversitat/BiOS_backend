@@ -48,7 +48,7 @@ do
   done
 done
 
-echo "Loading sources..."
+echo "Loading basis..."
 python manage.py load_basis data/basis.json
 echo "Loading sources..."
 python manage.py load_sources data/sources.csv

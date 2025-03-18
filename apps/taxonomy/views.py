@@ -56,7 +56,6 @@ class TaxonSearch:
 		if not exact and queryset.count() < limit:
 			for instance in queryset.filter(rank__in=[TaxonomicLevel.GENUS, TaxonomicLevel.SPECIES])[:limit]:
 				queryset |= instance.get_descendants()
-		print(queryset)
 
 		return queryset.distinct()
 

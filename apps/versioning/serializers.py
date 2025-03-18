@@ -10,7 +10,7 @@ class BasisSerializer(CaseModelSerializer):
 
 
 class SourceSerializer(CaseModelSerializer):
-	id = serializers.CharField(source="basis.id")
+	# id = serializers.CharField(source="basis.id")
 	name = serializers.SerializerMethodField()
 	source_type = serializers.CharField(source="get_source_type_display")
 	extraction_method = serializers.CharField(source="get_extraction_method_display")

@@ -4,11 +4,12 @@ import traceback
 from django.core.management.base import BaseCommand
 from django.db import transaction
 from apps.versioning.models import Batch, Basis
+from common.utils.utils import is_batch_referenced
 
 
 def populate_basis(line, batch):
 	Basis.objects.update_or_create(
-		internal_name=line.get("internal_name", ""),
+		internal_name__iexact=line.get("internal_name", ""),
 		defaults={
 			"name": line.get("name", ""),
 			"acronym": line.get("acronym", ""),
@@ -42,3 +43,5 @@ class Command(BaseCommand):
 		except Exception as e:
 			print(traceback.format_exc())
 			raise e
+
+		is_batch_referenced(batch)

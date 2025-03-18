@@ -26,6 +26,7 @@ admin.site.register(Basis, BasisAdmin)
 class OriginIdAdmin(admin.ModelAdmin):
 	search_fields = ["external_id"]
 	list_filter = ["source"]
+	list_display = ["external_id", "source"]
 
 
 admin.site.register(OriginId, OriginIdAdmin)

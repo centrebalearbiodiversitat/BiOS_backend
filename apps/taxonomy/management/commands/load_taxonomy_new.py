@@ -7,7 +7,7 @@ from django.db import transaction
 
 from apps.taxonomy.models import Authorship, TaxonomicLevel
 from apps.versioning.models import Batch, OriginId, Source
-from common.utils.utils import str_clean_up, get_or_create_source
+from common.utils.utils import str_clean_up, get_or_create_source, is_batch_referenced
 
 KINGDOM = "kingdom"
 PHYLUM = "phylum"
@@ -246,3 +246,5 @@ class Command(BaseCommand):
 
 			if exception:
 				raise Exception("Errors found: Rollback control")
+
+			is_batch_referenced(batch)

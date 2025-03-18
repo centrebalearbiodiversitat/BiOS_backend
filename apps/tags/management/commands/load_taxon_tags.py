@@ -6,7 +6,7 @@ from django.db import transaction
 from apps.taxonomy.models import TaxonomicLevel
 from apps.tags.models import Tag, TaxonTag, System, Directive
 from apps.versioning.models import Batch, OriginId, Source
-from common.utils.utils import get_or_create_source
+from common.utils.utils import get_or_create_source, is_batch_referenced
 
 EXTERNAL_ID = "origin_id"
 INTERNAL_NAME = "source"
@@ -106,3 +106,5 @@ class Command(BaseCommand):
 
 		if exception:
 			raise Exception(f"Errors found: Rollback control")
+
+		is_batch_referenced(batch)

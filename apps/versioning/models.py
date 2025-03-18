@@ -82,6 +82,12 @@ class Source(models.Model):
 		EXPERT: "expert",
 		"expert": EXPERT,
 	}
+	SOURCE_TYPE_EXEMPT_OF_IDS = {
+		JOURNAL_ARTICLE,
+		BOOK,
+		DOCUMENT,
+		EXPERT,
+	}
 
 	API = 0
 	AI = 1
@@ -106,12 +112,15 @@ class Source(models.Model):
 	SEQUENCE = 2
 	IMAGE = 3
 	TAXON_DATA = 4
+	DATASET_KEY = 5
+
 	DATA_TYPE_CHOICES = (
 		(TAXON, "taxon"),
 		(TAXON_DATA, "taxon_data"),
 		(OCCURRENCE, "occurrence"),
 		(SEQUENCE, "sequence"),
 		(IMAGE, "image"),
+		(DATASET_KEY, "dataset_key"),
 	)
 	TRANSLATE_DATA_TYPE = {
 		TAXON: "taxon",
@@ -119,11 +128,13 @@ class Source(models.Model):
 		SEQUENCE: "sequence",
 		IMAGE: "image",
 		TAXON_DATA: "taxon_data",
+		DATASET_KEY: "dataset_key",
 		"taxon": TAXON,
 		"occurrence": OCCURRENCE,
 		"sequence": SEQUENCE,
 		"image": IMAGE,
 		"taxon_data": TAXON_DATA,
+		"dataset_key": DATASET_KEY,
 	}
 
 	source_type = models.PositiveSmallIntegerField(choices=SOURCE_TYPE_CHOICES)
@@ -133,11 +144,26 @@ class Source(models.Model):
 	batch = models.ForeignKey(Batch, on_delete=models.CASCADE, null=True, blank=True, default=None)
 	basis = models.ForeignKey(Basis, on_delete=models.CASCADE, related_name="source", null=True, blank=True, default=None)
 
+	def clean(self):
+		super().clean()
+		if self.url and "{id}" not in self.url:
+			raise ValidationError("Source: URL bad formatting. Missing '{id}'")
+
+	def save(self, force_insert=False, force_update=False, using=None, update_fields=None):
+		self.full_clean()
+		super().save(force_insert, force_update, using, update_fields)
+
 	def translate_source_type(self):
 		return Source.TRANSLATE_SOURCE_TYPE[self.source_type]
 
+	def translate_data_type(self):
+		return Source.TRANSLATE_DATA_TYPE[self.data_type]
+
 	def __str__(self):
-		return self.basis.name
+		return f"{self.translate_data_type()}:{self.basis.get_name()}"
+
+	class Meta:
+		unique_together = ["basis", "data_type"]
 
 
 class OriginId(models.Model):
@@ -151,7 +177,7 @@ class OriginId(models.Model):
 
 	def clean(self):
 		super().clean()
-		if not self.external_id and self.source.source_type in {Source.DATABASE, Source.WEB_PAGE}:
+		if not self.external_id and self.source.source_type not in Source.SOURCE_TYPE_EXEMPT_OF_IDS:
 			raise ValidationError(f"External ID is None and is not allowed with origin type '{self.source.translate_source_type().upper()}'")
 
 	def __str__(self):

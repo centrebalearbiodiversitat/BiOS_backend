@@ -5,7 +5,7 @@ from django.db import transaction
 
 from apps.taxonomy.models import TaxonomicLevel
 from apps.versioning.models import OriginId, Batch, Source
-from common.utils.utils import get_or_create_source
+from common.utils.utils import get_or_create_source, is_batch_referenced
 
 EXTERNAL_ID = "image_id"
 INATURALIST = "INaturalist"
@@ -45,13 +45,11 @@ class Command(BaseCommand):
 
 	@transaction.atomic
 	def handle(self, *args, **options):
-		file_name = options["file"]
 		exception = False
-
+		file_name = options["file"]
 		with open(file_name, encoding="utf-8") as file:
 			data = json.load(file)
 			batch = Batch.objects.create()
-
 			for line in data:
 				try:
 					add_taxonomic_image(line, batch)
@@ -61,3 +59,5 @@ class Command(BaseCommand):
 
 			if exception:
 				raise Exception("Errors found: Rollback control")
+
+			is_batch_referenced(batch)

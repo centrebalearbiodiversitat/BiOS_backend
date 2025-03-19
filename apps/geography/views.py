@@ -37,7 +37,7 @@ class GeographicLevelDetailView(APIView):
 		exact = geographic_form.cleaned_data.get("exact", False)
 
 		if not query:
-			raise CBBAPIException("You must specify a name", 400)
+			return Response([])
 
 		filters["name__iexact" if exact else "name__icontains"] = query
 

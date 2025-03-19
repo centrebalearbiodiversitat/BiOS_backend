@@ -41,7 +41,7 @@ class TaxonSearch:
 
 		queryset = None
 		query = unidecode(str_clean_up(query).translate(PUNCTUATION_TRANSLATE))
-		for query in re.findall(r'(?:[x|X] \S+)|\S+', query):
+		for query in re.findall(r"(?:[x|X] \S+)|\S+", query):
 			filters["name__istartswith"] = query
 			if queryset is None:
 				queryset = TaxonomicLevel.objects.annotate(prefix=Lower(Substr("unidecode_name", 1, min(3, len(query))))).filter(prefix=query[:3].lower()).filter(**filters)

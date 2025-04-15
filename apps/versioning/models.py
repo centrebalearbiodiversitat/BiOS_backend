@@ -59,6 +59,7 @@ class Source(models.Model):
 	WEB_PAGE = 3
 	DOCUMENT = 4
 	EXPERT = 5
+	MUSEUM = 6
 
 	SOURCE_TYPE_CHOICES = (
 		(DATABASE, "database"),
@@ -67,6 +68,7 @@ class Source(models.Model):
 		(WEB_PAGE, "web_page"),
 		(DOCUMENT, "document"),
 		(EXPERT, "expert"),
+		(MUSEUM, "museum"),
 	)
 	TRANSLATE_SOURCE_TYPE = {
 		DATABASE: "database",
@@ -81,22 +83,27 @@ class Source(models.Model):
 		"document": DOCUMENT,
 		EXPERT: "expert",
 		"expert": EXPERT,
+		MUSEUM: "museum",
+		"museum": MUSEUM,
 	}
 	SOURCE_TYPE_EXEMPT_OF_IDS = {
 		JOURNAL_ARTICLE,
 		BOOK,
 		DOCUMENT,
 		EXPERT,
+		MUSEUM,
 	}
 
 	API = 0
 	AI = 1
 	EXPERT = 2
+	PROVIDED = 3
 
 	EXTRACTION_METHOD_CHOICES = (
 		(API, "api"),
 		(AI, "ai"),
 		(EXPERT, "expert"),
+		(PROVIDED, "provided"),
 	)
 	TRANSLATE_EXTRACTION_METHOD = {
 		API: "api",
@@ -105,6 +112,8 @@ class Source(models.Model):
 		"ai": AI,
 		EXPERT: "expert",
 		"expert": EXPERT,
+		PROVIDED: "provided",
+		"provided": PROVIDED,
 	}
 
 	TAXON = 0

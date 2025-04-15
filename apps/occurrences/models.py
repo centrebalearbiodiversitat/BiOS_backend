@@ -64,7 +64,7 @@ class Occurrence(ReferencedModel, LatLonModel):
 	collection_date_year = models.PositiveSmallIntegerField(null=True, blank=True)
 	collection_date_month = models.PositiveSmallIntegerField(null=True, blank=True)
 	collection_date_day = models.PositiveSmallIntegerField(null=True, blank=True)
-	basis_of_record = models.PositiveSmallIntegerField(choices=BASIS_OF_RECORD)
+	basis_of_record = models.PositiveSmallIntegerField(choices=BASIS_OF_RECORD, null=True, blank=True)
 	in_geography_scope = models.BooleanField()
 
 	def clean(self):

@@ -2,8 +2,7 @@ import csv
 from django.core.management.base import BaseCommand
 from django.db import transaction
 
-from apps.versioning.models import Source, Basis, Batch
-from common.utils.utils import is_batch_referenced
+from apps.versioning.models import Source
 
 
 class Command(BaseCommand):
@@ -21,7 +20,6 @@ class Command(BaseCommand):
 				internal_name = row["internal_name"]
 
 				try:
-					print(row)
 					Source.objects.filter(
 						basis__internal_name__iexact=internal_name,
 						data_type=Source.TRANSLATE_DATA_TYPE[row["data_type"]],

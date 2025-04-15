@@ -261,7 +261,7 @@ class Command(BaseCommand):
 						taxonomy=taxonomy.first(),
 						batch=batch,
 						voucher=line["voucher"] if line["voucher"] else None,
-						basis_of_record=Occurrence.TRANSLATE_BASIS_OF_RECORD.get(line["basisOfRecord"].lower() if line["basisOfRecord"] else "unknown", Occurrence.INVALID),
+						basis_of_record=Occurrence.TRANSLATE_BASIS_OF_RECORD.get(line["basisOfRecord"].lower() if line["basisOfRecord"] else None),
 						collection_date_year=(int(line["year"]) if line["year"] and 1500 < line["year"] < 3000 else None),
 						collection_date_month=(int(line["month"]) if line["month"] and 0 < line["month"] <= 12 else None),
 						collection_date_day=int(line["day"]) if line["day"] and 0 < line["month"] <= 31 else None,
@@ -282,5 +282,5 @@ class Command(BaseCommand):
 
 				if "genetic_features" in line and not OriginId.objects.filter(Q(sequence__sources__external_id__iexact=line[EXTERNAL_ID])).exists():
 					genetic_sources(line, batch, occ)
-			raise Exception(datetime.datetime.now() - tik)
+
 			is_batch_referenced(batch)

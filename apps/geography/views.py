@@ -12,19 +12,27 @@ from .serializers import GeographicLevelSerializer
 
 class GeographicLevelDetailView(APIView):
 	@swagger_auto_schema(
-		tags=["Geography"],
-		operation_description="Retrieve a geographic level by rank and name",
-		manual_parameters=[
-			openapi.Parameter(
-				name="name",
-				in_=openapi.IN_QUERY,
-				type=openapi.TYPE_STRING,
-				description="Name of the geographic level",
-				required=False,
-			)
-		],
-		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
-	)
+        tags=["Geography"],
+        operation_id="Search geographic level by name",
+        operation_description="Retrieve a geographic level by name (supports exact and partial match)",
+        manual_parameters=[
+            openapi.Parameter(
+                name="name",
+                in_=openapi.IN_QUERY,
+                type=openapi.TYPE_STRING,
+                description="Name of the geographic level to search for",
+                required=True,
+            ),
+            openapi.Parameter(
+                name="exact",
+                in_=openapi.IN_QUERY,
+                type=openapi.TYPE_BOOLEAN,
+                description="Search for an exact match (case-insensitive)",
+                required=False,
+            ),
+        ],
+        responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
+    )
 	def get(self, request):
 		geographic_form = GeographicLevelForm(data=self.request.GET)
 
@@ -47,6 +55,7 @@ class GeographicLevelDetailView(APIView):
 class GeographicLevelIdView(APIView):
 	@swagger_auto_schema(
 		tags=["Geography"],
+		operation_id= "Search geographic level by id",
 		operation_description="Retrieve a specific geographic level instance by its id",
 		manual_parameters=[
 			openapi.Parameter(
@@ -106,101 +115,59 @@ class GeographicLevelFilter(APIView):
 			query = GeographicLevel.objects.filter(**filters)
 		else:
 			query = GeographicLevel.objects.none()
-
 		return query
 
 
 class GeographicLevelListView(GeographicLevelFilter):
 	@swagger_auto_schema(
-		tags=["Geography"],
-		operation_description="List geographic levels with optional filters",
-		manual_parameters=[
-			openapi.Parameter(name="rank", in_=openapi.IN_QUERY, description="Rank of the geographic level", type=openapi.TYPE_STRING, required=False),
-			openapi.Parameter(
-				name="parent",
-				in_=openapi.IN_QUERY,
-				description="Parent ID of the geographic level",
-				type=openapi.TYPE_INTEGER,
-				required=False,
-			),
-			openapi.Parameter(
-				name="decimalLatitude",
-				in_=openapi.IN_QUERY,
-				description="Decimal latitude of the geographic level",
-				type=openapi.TYPE_NUMBER,
-				required=False,
-			),
-			openapi.Parameter(
-				name="decimalLongitude",
-				in_=openapi.IN_QUERY,
-				description="Decimal longitude of the geographic level",
-				type=openapi.TYPE_NUMBER,
-				required=False,
-			),
-			openapi.Parameter(
-				name="coordinateUncertaintyInMeters",
-				in_=openapi.IN_QUERY,
-				description="Coordinate uncertainty in meters of the geographic level",
-				type=openapi.TYPE_INTEGER,
-				required=False,
-			),
-		],
-		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
-	)
+        tags=["Geography"],
+        operation_id="List geographic levels",
+        operation_description="List geographic levels with optional filters",
+        manual_parameters=[
+            openapi.Parameter(name="name", in_=openapi.IN_QUERY, type=openapi.TYPE_STRING, description="Filter by name", required=False),
+            openapi.Parameter(name="parent", in_=openapi.IN_QUERY, type=openapi.TYPE_INTEGER, description="Filter by parent ID", required=False),
+            openapi.Parameter(name="rank", in_=openapi.IN_QUERY, type=openapi.TYPE_STRING, description="Filter by rank", required=False),
+            openapi.Parameter(name="decimalLatitude", in_=openapi.IN_QUERY, type=openapi.TYPE_NUMBER, description="Filter by decimal latitude", required=False),
+            openapi.Parameter(name="decimalLongitude", in_=openapi.IN_QUERY, type=openapi.TYPE_NUMBER, description="Filter by decimal longitude", required=False),
+            openapi.Parameter(name="coordinateUncertaintyInMeters", in_=openapi.IN_QUERY, type=openapi.TYPE_INTEGER, description="Filter by coordinate uncertainty", required=False),
+            openapi.Parameter(name="exact", in_=openapi.IN_QUERY, type=openapi.TYPE_BOOLEAN, description="Use exact match for 'name' parameter (case-insensitive)", required=False),
+        ],
+        responses={200: "Success", 400: "Bad Request"},
+    )
 	def get(self, request):
 		return Response(GeographicLevelSerializer(super().get(request), many=True).data)
 
 
 class GeographicLevelCountView(GeographicLevelFilter):
 	@swagger_auto_schema(
-		tags=["Geography"],
-		operation_description="List geographic levels with optional filters",
-		manual_parameters=[
-			openapi.Parameter(name="rank", in_=openapi.IN_QUERY, description="Rank of the geographic level", type=openapi.TYPE_STRING, required=False),
-			openapi.Parameter(
-				name="parent",
-				in_=openapi.IN_QUERY,
-				description="Parent ID of the geographic level",
-				type=openapi.TYPE_INTEGER,
-				required=False,
-			),
-			openapi.Parameter(
-				name="decimalLatitude",
-				in_=openapi.IN_QUERY,
-				description="Decimal latitude of the geographic level",
-				type=openapi.TYPE_NUMBER,
-				required=False,
-			),
-			openapi.Parameter(
-				name="decimalLongitude",
-				in_=openapi.IN_QUERY,
-				description="Decimal longitude of the geographic level",
-				type=openapi.TYPE_NUMBER,
-				required=False,
-			),
-			openapi.Parameter(
-				name="coordinateUncertaintyInMeters",
-				in_=openapi.IN_QUERY,
-				description="Coordinate uncertainty in meters of the geographic level",
-				type=openapi.TYPE_INTEGER,
-				required=False,
-			),
-		],
-		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
-	)
+        tags=["Geography"],
+        operation_id="Count geographic levels",
+        operation_description="Get the count of geographic levels based on optional filters",
+        manual_parameters=[
+            openapi.Parameter(name="name", in_=openapi.IN_QUERY, type=openapi.TYPE_STRING, description="Filter by name", required=False),
+            openapi.Parameter(name="parent", in_=openapi.IN_QUERY, type=openapi.TYPE_INTEGER, description="Filter by parent ID", required=False),
+            openapi.Parameter(name="rank", in_=openapi.IN_QUERY, type=openapi.TYPE_STRING, description="Filter by rank", required=False),
+            openapi.Parameter(name="decimalLatitude", in_=openapi.IN_QUERY, type=openapi.TYPE_NUMBER, description="Filter by decimal latitude", required=False),
+            openapi.Parameter(name="decimalLongitude", in_=openapi.IN_QUERY, type=openapi.TYPE_NUMBER, description="Filter by decimal longitude", required=False),
+            openapi.Parameter(name="coordinateUncertaintyInMeters", in_=openapi.IN_QUERY, type=openapi.TYPE_INTEGER, description="Filter by coordinate uncertainty", required=False),
+            openapi.Parameter(name="exact", in_=openapi.IN_QUERY, type=openapi.TYPE_BOOLEAN, description="Use exact match for 'name' parameter (case-insensitive)", required=False),
+        ],
+        responses={200: "Success", 400: "Bad Request"},
+    )
 	def get(self, request):
 		return Response(super().get(request).count())
 
 
 class GeographicLevelParent(APIView):
 	@swagger_auto_schema(
-		tags=["Geography"],
-		operation_description="Get the parents of the geographic level given its ID",
-		manual_parameters=[
-			openapi.Parameter(name="id", in_=openapi.IN_QUERY, description="ID of the geographic level", type=openapi.TYPE_INTEGER, required=True),
-		],
-		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
-	)
+        tags=["Geography"],
+        operation_id="Get parents of a geographic level",
+        operation_description="Retrieve the ancestors (parents) of a specific geographic level given its ID",
+        manual_parameters=[
+            openapi.Parameter(name="id", in_=openapi.IN_QUERY, description="ID of the geographic level", type=openapi.TYPE_INTEGER, required=True),
+        ],
+        responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
+    )
 	def get(self, request):
 		geographic_form = GeographicLevelForm(self.request.GET)
 
@@ -221,19 +188,20 @@ class GeographicLevelParent(APIView):
 
 class GeographicLevelChildren(APIView):
 	@swagger_auto_schema(
-		tags=["Geography"],
-		operation_description="Get the direct children of the geographic level given its ID",
-		manual_parameters=[
-			openapi.Parameter(
-				name="id",
-				in_=openapi.IN_QUERY,
-				type=openapi.TYPE_INTEGER,
-				description="ID of the geographic level",
-				required=True,
-			)
-		],
-		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
-	)
+        tags=["Geography"],
+        operation_id="Get children of a geographic level",
+        operation_description="Retrieve the direct children of a specific geographic level given its ID",
+        manual_parameters=[
+            openapi.Parameter(
+                name="id",
+                in_=openapi.IN_QUERY,
+                type=openapi.TYPE_INTEGER,
+                description="ID of the geographic level",
+                required=True,
+            )
+        ],
+        responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
+    )
 	def get(self, request):
 		geographic_form = GeographicLevelForm(self.request.GET)
 

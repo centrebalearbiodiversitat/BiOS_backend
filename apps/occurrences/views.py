@@ -23,7 +23,8 @@ from common.utils.views import CSVDownloadMixin
 class OccurrenceCRUDView(APIView):
 	@swagger_auto_schema(
 		tags=["Occurrences"],
-		operation_description="Get details of a specific occurrence.",
+		operation_id="Get occurrence by id",
+		operation_description="Get details of a specific Occurrence.",
 		manual_parameters=[
 			openapi.Parameter(
 				"id",
@@ -162,6 +163,7 @@ class OccurrenceFilter(APIView):
 class OccurrenceListView(OccurrenceFilter):
 	@swagger_auto_schema(
 		tags=["Occurrences"],
+		operation_id="Get filtered occurrences",
 		operation_description="Filter occurrences based on query parameters.",
 		manual_parameters=[
 			openapi.Parameter(
@@ -258,6 +260,111 @@ class OccurrenceListView(OccurrenceFilter):
 
 
 class OccurrenceListDownloadView(OccurrenceFilter):
+	@swagger_auto_schema(
+        tags=["Occurrences"],
+        operation_id="Download Occurrences as CSV",
+        operation_description="Download filtered occurrences as a CSV file.",
+        manual_parameters=[
+            openapi.Parameter(
+                "taxonomy",
+                openapi.IN_QUERY,
+                description="Filter occurrences by taxon id.",
+                type=openapi.TYPE_INTEGER,
+                required=False,
+            ),
+            openapi.Parameter(
+                "voucher",
+                openapi.IN_QUERY,
+                description="Filter occurrences by voucher field.",
+                type=openapi.TYPE_STRING,
+                required=False,
+            ),
+            openapi.Parameter(
+                "geographicalLocation",
+                openapi.IN_QUERY,
+                description="Filter occurrences by geographical location id.",
+                type=openapi.TYPE_INTEGER,
+                required=False,
+            ),
+            openapi.Parameter(
+                "year",
+                openapi.IN_QUERY,
+                description="Filter occurrences by year field.",
+                type=openapi.TYPE_INTEGER,
+                required=False,
+            ),
+            openapi.Parameter(
+                "month",
+                openapi.IN_QUERY,
+                description="Filter occurrences by month field.",
+                type=openapi.TYPE_INTEGER,
+                required=False,
+            ),
+            openapi.Parameter(
+                "day",
+                openapi.IN_QUERY,
+                description="Filter occurrences by day field.",
+                type=openapi.TYPE_INTEGER,
+                required=False,
+            ),
+            openapi.Parameter(
+                "basisOfRecord",
+                openapi.IN_QUERY,
+                description="Filter occurrences by basis of record field.",
+                type=openapi.TYPE_STRING,
+                required=False,
+            ),
+            openapi.Parameter(
+                "decimal_latitude_min",
+                openapi.IN_QUERY,
+                description="Minimum latitude",
+                type=openapi.TYPE_NUMBER,
+                format=openapi.FORMAT_DECIMAL,
+                required=False,
+            ),
+            openapi.Parameter(
+                "decimal_latitude_max",
+                openapi.IN_QUERY,
+                description="Maximum latitude",
+                type=openapi.TYPE_NUMBER,
+                format=openapi.FORMAT_DECIMAL,
+                required=False,
+            ),
+            openapi.Parameter(
+                "decimal_longitude_min",
+                openapi.IN_QUERY,
+                description="Minimum longitude",
+                type=openapi.TYPE_NUMBER,
+                format=openapi.FORMAT_DECIMAL,
+                required=False,
+            ),
+            openapi.Parameter(
+                "decimal_longitude_max",
+                openapi.IN_QUERY,
+                description="Maximum longitude",
+                type=openapi.TYPE_NUMBER,
+                format=openapi.FORMAT_DECIMAL,
+                required=False,
+            ),
+            openapi.Parameter(
+				"coordinate_uncertainty_in_meters_min",
+				openapi.IN_QUERY,
+				description="Minimum coordinate uncertainty in meters",
+				type=openapi.TYPE_INTEGER,
+			),
+			openapi.Parameter(
+				"coordinate_uncertainty_in_meters_max",
+				openapi.IN_QUERY,
+				description="Maximum coordinate uncertainty in meters",
+				type=openapi.TYPE_INTEGER,
+			),
+			openapi.Parameter("elevation_min", openapi.IN_QUERY, description="Minimum elevation", type=openapi.TYPE_INTEGER),
+			openapi.Parameter("elevation_max", openapi.IN_QUERY, description="Maximum elevation", type=openapi.TYPE_INTEGER),
+			openapi.Parameter("depth_min", openapi.IN_QUERY, description="Minimum depth", type=openapi.TYPE_INTEGER),
+			openapi.Parameter("depth_max", openapi.IN_QUERY, description="Maximum depth", type=openapi.TYPE_INTEGER),
+		],
+	)
+
 	def get(self, request):
 		response = self.calculate(request)
 		flattened_data = CSVDownloadMixin.flatten_json(DownloadOccurrenceSerializer(response, many=True).data, ["sources"])
@@ -268,8 +375,9 @@ class OccurrenceListDownloadView(OccurrenceFilter):
 class OccurrenceCountView(OccurrenceFilter):
 	@swagger_auto_schema(
 		tags=["Occurrences"],
-		operation_description="Counts the filtered occurrences based on the query parameters.",
-		manual_parameters=[
+        operation_id="Count filtered occurrences",
+        operation_description="Counts the filtered occurrences based on the provided query parameters.",
+        manual_parameters=[
 			openapi.Parameter(
 				"taxonomy",
 				openapi.IN_QUERY,
@@ -322,14 +430,16 @@ class OccurrenceCountView(OccurrenceFilter):
 class OccurrenceCountBySourceView(APIView):
 	@swagger_auto_schema(
 		tags=["Occurrences"],
-		operation_description="Get counts of occurrences grouped by Source name.",
-		manual_parameters=[
-			openapi.Parameter(
-				"source_name",
-				openapi.IN_QUERY,
-				description="Filter occurrences by Source name",
-				type=openapi.TYPE_STRING,
-			),
+        operation_id="Count occurrences by source",
+        operation_description="Get counts of occurrences grouped by source.",
+        manual_parameters=[
+            openapi.Parameter(
+                "taxonomy",
+                openapi.IN_QUERY,
+                description="Filter occurrences by taxon ID",
+                type=openapi.TYPE_INTEGER,
+                required=True,
+            ),
 		],
 		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
 	)
@@ -360,10 +470,24 @@ class OccurrenceCountBySourceView(APIView):
 
 
 class OccurrenceCountByTaxonAndChildrenView(APIView):
+	def check_ancestors(self, children_id, parents_list, count):
+		taxon_children = TaxonomicLevel.objects.get(id=children_id)
+		ancestors = taxon_children.get_ancestors()
+
+		for parent in parents_list:
+			if ancestors.filter(id=parent.id).exists():
+				ancestor = ancestors.get(id=parent.id)
+				context = {
+					"taxonomy": ancestor.name,
+					"count": count,
+				}
+				return context
+			
 	@swagger_auto_schema(
-		tags=["Occurrences"],
-		operation_description="Get count of occurrence grouped by the children of a taxon according to its ID.",
-		manual_parameters=[
+		 tags=["Occurrences"],
+        operation_id="Count occurrences by taxon children",
+        operation_description="Get count of occurrence grouped by the children of a taxon according to its ID.",
+        manual_parameters=[
 			openapi.Parameter(
 				"taxonomy",
 				openapi.IN_QUERY,
@@ -380,12 +504,17 @@ class OccurrenceCountByTaxonAndChildrenView(APIView):
 			raise CBBAPIException(occur_form.errors, 400)
 
 		taxonomy = occur_form.cleaned_data.get("taxonomy", None)
-
 		if not taxonomy:
 			raise CBBAPIException("Missing taxonomy id parameter", 400)
+		
 
 		try:
 			taxon_parent = TaxonomicLevel.objects.get(id=taxonomy)
+			if taxon_parent.rank >= 6:
+				raise CBBAPIException(
+					f"{TaxonomicLevel.TRANSLATE_RANK[taxon_parent.rank].upper()} is not valid for children stats, try genus or greater taxonomic levels",
+					400
+				)
 		except TaxonomicLevel.DoesNotExist:
 			raise CBBAPIException("Taxonomic level does not exist", 404)
 		childrens = taxon_parent.get_children()
@@ -408,46 +537,146 @@ class OccurrenceCountByTaxonAndChildrenView(APIView):
 
 		return JsonResponse(response, safe=False)
 
-	def check_ancestors(self, children_id, parents_list, count):
-		taxon_children = TaxonomicLevel.objects.get(id=children_id)
-		ancestors = taxon_children.get_ancestors()
 
-		for parent in parents_list:
-			if ancestors.filter(id=parent.id).exists():
-				ancestor = ancestors.get(id=parent.id)
-				context = {
-					"taxonomy": ancestor.name,
-					"count": count,
-				}
-				return context
+# class OccurrenceCountByTaxonDateBaseView:
+# 	def calculate(self, request, date_key, view_class):
+# 		occur_form = OccurrenceForm(data=request.GET)
 
+# 		if not occur_form.is_valid():
+# 			raise CBBAPIException(occur_form.errors, 400)
+
+# 		taxonomy = occur_form.cleaned_data.get("taxonomy", None)
+# 		if not taxonomy:
+# 			raise CBBAPIException("Missing taxonomy id parameter", 400)
+
+# 		try:
+# 			taxonomy = TaxonomicLevel.objects.get(id=taxonomy).get_descendants(include_self=True)
+# 		except TaxonomicLevel.DoesNotExist:
+# 			raise CBBAPIException("Taxonomic level does not exist", 404)
+
+# 		occurrences = Occurrence.objects.filter(taxonomy__in=taxonomy, in_geography_scope=True).values(date_key).annotate(count=Count("id")).order_by(date_key)
+
+# 		return Response(OccurrenceCountByDateSerializer(occurrences, many=True, view_class=view_class).data)
+
+
+# class OccurrenceCountByTaxonMonthView(APIView, OccurrenceCountByTaxonDateBaseView):
+# 	@swagger_auto_schema(
+# 		tags=["Occurrences"],
+# 		operation_description="Get counts of occurrences grouped by month for a given Taxon ID.",
+# 		manual_parameters=[
+# 			openapi.Parameter(
+# 				"taxonomy",
+# 				openapi.IN_QUERY,
+# 				description="Filter occurrences by Taxon ID",
+# 				type=openapi.TYPE_INTEGER,
+# 			),
+# 		],
+# 		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
+# 	)
+# 	def get(self, request):
+# 		return self.calculate(request, "collection_date_month", self.__class__)
+
+
+# class OccurrenceCountByTaxonYearView(APIView, OccurrenceCountByTaxonDateBaseView):
+# 	@swagger_auto_schema(
+# 		tags=["Occurrences"],
+# 		operation_description="Get counts of occurrences grouped by year for a given Taxon ID.",
+# 		manual_parameters=[
+# 			openapi.Parameter(
+# 				"taxonomy",
+# 				openapi.IN_QUERY,
+# 				description="Filter occurrences by Taxon ID",
+# 				type=openapi.TYPE_INTEGER,
+# 			),
+# 		],
+# 		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
+# 	)
+# 	def get(self, request):
+# 		return self.calculate(request, "collection_date_year", self.__class__)
 
 class OccurrenceCountByTaxonDateBaseView:
-	def calculate(self, request, date_key, view_class):
-		occur_form = OccurrenceForm(data=request.GET)
-
-		if not occur_form.is_valid():
-			raise CBBAPIException(occur_form.errors, 400)
-
-		taxonomy = occur_form.cleaned_data.get("taxonomy", None)
-		if not taxonomy:
-			raise CBBAPIException("Missing taxonomy id parameter", 400)
+	def get_occurrences_by_taxonomy(self, taxonomy):		
 
 		try:
 			taxonomy = TaxonomicLevel.objects.get(id=taxonomy).get_descendants(include_self=True)
 		except TaxonomicLevel.DoesNotExist:
 			raise CBBAPIException("Taxonomic level does not exist", 404)
+		
+		return Occurrence.objects.filter(taxonomy__in=taxonomy, in_geography_scope=True)
+		
+	def get_occurrence_counts_by_month(self, occurrences):
+		annotated_counts = (
+			occurrences.values('collection_date_month')
+			.annotate(count=Count('id'))
+			.order_by('collection_date_month')
+		)
+		counts_dict = {
+			item['collection_date_month']: item['count']
+			for item in annotated_counts
+		}
+		months = {month: 0 for month in range(1, 13)}
+		months.update(counts_dict)
+		result = [{"month": month, "count": count} for month, count in months.items()]
 
-		occurrences = Occurrence.objects.filter(taxonomy__in=taxonomy, in_geography_scope=True).values(date_key).annotate(count=Count("id")).order_by(date_key)
+		return result
 
-		return Response(OccurrenceCountByDateSerializer(occurrences, many=True, view_class=view_class).data)
+	def get_occurrence_counts_by_year(self, occurrences):
+		min_year = occurrences.order_by('collection_date_year').first().collection_date_year if occurrences.exists() else None
+		max_year = occurrences.exclude(collection_date_year=None).order_by('-collection_date_year').first().collection_date_year if occurrences.exists() else None
 
+		if not min_year or not max_year:
+			return []
+
+		all_years = list(range(min_year, max_year + 1))
+
+		annotated_counts = (
+			occurrences.values('collection_date_year')
+			.annotate(count=Count('id'))
+			.order_by('collection_date_year')
+		)
+
+		counts_dict = {
+			item['collection_date_year']: item['count']
+			for item in annotated_counts
+		}
+
+		response = []
+		for year in all_years:
+			count = counts_dict.get(year, 0)
+			response.append({"count": count, "year": year})
+
+		return response
+	
+	def calculate(self, request, date_key, view_class):
+		occur_form = OccurrenceForm(data=request.GET)
+
+		if not occur_form.is_valid():
+			raise CBBAPIException(occur_form.errors, 400)
+		
+		taxonomy = occur_form.cleaned_data.get("taxonomy", None)
+
+		if not taxonomy:
+			raise CBBAPIException("Missing taxonomy id parameter", 400)
+	
+		occurrences = self.get_occurrences_by_taxonomy(taxonomy)
+
+		if date_key == "collection_date_month":
+			result = self.get_occurrence_counts_by_month(occurrences)
+		elif date_key == "collection_date_year":
+			result = self.get_occurrence_counts_by_year(occurrences)
+		else:
+			raise CBBAPIException("Invalid date_key", 400)
+
+		return Response(OccurrenceCountByDateSerializer(result, many=True, view_class=view_class).data)
+
+	
 
 class OccurrenceCountByTaxonMonthView(APIView, OccurrenceCountByTaxonDateBaseView):
 	@swagger_auto_schema(
-		tags=["Occurrences"],
-		operation_description="Get counts of occurrences grouped by month for a given Taxon ID.",
-		manual_parameters=[
+        tags=["Occurrences"],
+        operation_id="Count occurrences by taxon and month",
+        operation_description="Get counts of occurrences grouped by month for a given Taxon ID.",
+        manual_parameters=[
 			openapi.Parameter(
 				"taxonomy",
 				openapi.IN_QUERY,
@@ -464,8 +693,9 @@ class OccurrenceCountByTaxonMonthView(APIView, OccurrenceCountByTaxonDateBaseVie
 class OccurrenceCountByTaxonYearView(APIView, OccurrenceCountByTaxonDateBaseView):
 	@swagger_auto_schema(
 		tags=["Occurrences"],
-		operation_description="Get counts of occurrences grouped by year for a given Taxon ID.",
-		manual_parameters=[
+        operation_id="Count occurrences by taxon and year",
+        operation_description="Get counts of occurrences grouped by year for a given Taxon ID.",
+        manual_parameters=[
 			openapi.Parameter(
 				"taxonomy",
 				openapi.IN_QUERY,

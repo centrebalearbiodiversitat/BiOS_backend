@@ -62,6 +62,7 @@ class TaxonSearch:
 class TaxonSearchView(APIView, TaxonSearch):
 	@swagger_auto_schema(
 		tags=["Taxonomy"],
+		operation_id="Search taxon by name",
 		operation_description="Search for a taxon by name.",
 		manual_parameters=[
 			openapi.Parameter(
@@ -161,41 +162,43 @@ class TaxonFilter(TaxonSearch):
 class TaxonListView(APIView, TaxonFilter):
 	@swagger_auto_schema(
 		tags=["Taxonomy"],
+		operation_id="List taxa",
 		operation_description="Get a list of taxa, with optional filtering.",
 		manual_parameters=[
 			openapi.Parameter("name", openapi.IN_QUERY, description="Name of the taxon to search for.", type=openapi.TYPE_STRING),
-			openapi.Parameter(
-				"taxonRank",
-				openapi.IN_QUERY,
-				description="Rank id of the taxon to search for.",
-				type=openapi.TYPE_STRING,
-			),
-			openapi.Parameter(
-				"scientificNameAuthorship",
-				openapi.IN_QUERY,
-				description="Authorship id of the taxon to search for.",
-				type=openapi.TYPE_STRING,
-			),
-			openapi.Parameter(
-				"parent",
-				openapi.IN_QUERY,
-				description="Parent id of the taxon to search for.",
-				type=openapi.TYPE_INTEGER,
-			),
-			openapi.Parameter(
-				"exact",
-				openapi.IN_QUERY,
-				description="Indicates whether to search for an exact match. Defaults to False.",
-				type=openapi.TYPE_BOOLEAN,
-			),
+			openapi.Parameter("ancestor_id", openapi.IN_QUERY, description="Filter taxa by the ID of their ancestor.", type=openapi.TYPE_INTEGER),
+			openapi.Parameter("rank", openapi.IN_QUERY, description="Filter taxa by their taxonomic rank.", type=openapi.TYPE_INTEGER),
+			openapi.Parameter("accepted", openapi.IN_QUERY, description="Filter by accepted/unaccepted taxa.", type=openapi.TYPE_BOOLEAN),
+			openapi.Parameter("has_image", openapi.IN_QUERY, description="Filter taxa with or without images.", type=openapi.TYPE_BOOLEAN),
+			openapi.Parameter("source", openapi.IN_QUERY, description="Filter taxa by the source of information.", type=openapi.TYPE_STRING),
+			openapi.Parameter("tag", openapi.IN_QUERY, description="Filter taxa by a specific tag name.", type=openapi.TYPE_STRING),
+			openapi.Parameter("iucnStatus", openapi.IN_QUERY, description="Filter taxa by IUCN status.", type=openapi.TYPE_INTEGER),
+			openapi.Parameter("directive", openapi.IN_QUERY, description="Filter taxa by a specific directive.", type=openapi.TYPE_BOOLEAN),
+			openapi.Parameter("system", openapi.IN_QUERY, description="Filter taxa by a specific system.", type=openapi.TYPE_BOOLEAN),
 		],
-		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
+		responses={200: "Success", 400: "Bad Request"},
 	)
 	def get(self, request):
 		return Response(get_paginated_response(request, self.get_taxon_list(request), AncestorsTaxonomicLevelSerializer))
 
 
 class TaxonListCSVView(APIView, TaxonFilter):
+	@swagger_auto_schema(
+		tags=["Taxonomy"],
+		operation_id="Download taxon list (CSV)",
+		operation_description="Get a list of taxa as a CSV file, with optional filtering.",
+		manual_parameters=[
+			openapi.Parameter("name", openapi.IN_QUERY, description="Name of the taxon to search for.", type=openapi.TYPE_STRING),
+			openapi.Parameter("ancestor_id", openapi.IN_QUERY, description="Filter taxa by the ID of their ancestor.", type=openapi.TYPE_INTEGER),
+			openapi.Parameter("rank", openapi.IN_QUERY, description="Filter taxa by their taxonomic rank.", type=openapi.TYPE_INTEGER),
+			openapi.Parameter("accepted", openapi.IN_QUERY, description="Filter by accepted/unaccepted taxa.", type=openapi.TYPE_BOOLEAN),
+			openapi.Parameter("has_image", openapi.IN_QUERY, description="Filter taxa with or without images.", type=openapi.TYPE_BOOLEAN),
+			openapi.Parameter("source", openapi.IN_QUERY, description="Filter taxa by the source of information.", type=openapi.TYPE_STRING),
+			openapi.Parameter("tag", openapi.IN_QUERY, description="Filter taxa by a specific tag name.", type=openapi.TYPE_STRING),
+			openapi.Parameter("iucnStatus", openapi.IN_QUERY, description="Filter taxa by IUCN status.", type=openapi.TYPE_INTEGER),
+			openapi.Parameter("directive", openapi.IN_QUERY, description="Filter taxa by a specific directive.", type=openapi.TYPE_BOOLEAN),
+			openapi.Parameter("system", openapi.IN_QUERY, description="Filter taxa by a specific system.", type=openapi.TYPE_BOOLEAN),
+		])
 	def get(self, request):
 		query = self.get_taxon_list(request)
 
@@ -213,35 +216,21 @@ class TaxonListCSVView(APIView, TaxonFilter):
 class TaxonCountView(LoggingMixin, APIView, TaxonFilter):
 	@swagger_auto_schema(
 		tags=["Taxonomy"],
-		operation_description="Get a list of taxa, with optional filtering.",
+		operation_id="Count taxa",
+		operation_description="Get a count of taxa based on optional filters.",
 		manual_parameters=[
 			openapi.Parameter("name", openapi.IN_QUERY, description="Name of the taxon to search for.", type=openapi.TYPE_STRING),
-			openapi.Parameter(
-				"taxonRank",
-				openapi.IN_QUERY,
-				description="Rank id of the taxon to search for.",
-				type=openapi.TYPE_STRING,
-			),
-			openapi.Parameter(
-				"scientificNameAuthorship",
-				openapi.IN_QUERY,
-				description="Authorship id of the taxon to search for.",
-				type=openapi.TYPE_STRING,
-			),
-			openapi.Parameter(
-				"parent",
-				openapi.IN_QUERY,
-				description="Parent id of the taxon to search for.",
-				type=openapi.TYPE_INTEGER,
-			),
-			openapi.Parameter(
-				"exact",
-				openapi.IN_QUERY,
-				description="Indicates whether to search for an exact match. Defaults to False.",
-				type=openapi.TYPE_BOOLEAN,
-			),
+			openapi.Parameter("ancestor_id", openapi.IN_QUERY, description="Filter taxa by the ID of their ancestor.", type=openapi.TYPE_INTEGER),
+			openapi.Parameter("rank", openapi.IN_QUERY, description="Filter taxa by their taxonomic rank.", type=openapi.TYPE_INTEGER),
+			openapi.Parameter("accepted", openapi.IN_QUERY, description="Filter by accepted/unaccepted taxa.", type=openapi.TYPE_BOOLEAN),
+			openapi.Parameter("has_image", openapi.IN_QUERY, description="Filter taxa with or without images.", type=openapi.TYPE_BOOLEAN),
+			openapi.Parameter("source", openapi.IN_QUERY, description="Filter taxa by the source of information.", type=openapi.TYPE_STRING),
+			openapi.Parameter("tag", openapi.IN_QUERY, description="Filter taxa by a specific tag name.", type=openapi.TYPE_STRING),
+			openapi.Parameter("iucnStatus", openapi.IN_QUERY, description="Filter taxa by IUCN status.", type=openapi.TYPE_INTEGER),
+			openapi.Parameter("directive", openapi.IN_QUERY, description="Filter taxa by a specific directive.", type=openapi.TYPE_BOOLEAN),
+			openapi.Parameter("system", openapi.IN_QUERY, description="Filter taxa by a specific system.", type=openapi.TYPE_BOOLEAN),
 		],
-		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
+		responses={200: "Success", 400: "Bad Request"},
 	)
 	def get(self, request):
 		return Response(self.get_taxon_list(request).count())
@@ -250,6 +239,7 @@ class TaxonCountView(LoggingMixin, APIView, TaxonFilter):
 class TaxonCRUDView(APIView):
 	@swagger_auto_schema(
 		tags=["Taxonomy"],
+		operation_id="Get taxon by id",
 		operation_description="Retrieve a specific TaxonomicLevel instance by its id",
 		manual_parameters=[
 			openapi.Parameter(
@@ -284,7 +274,8 @@ class TaxonCRUDView(APIView):
 class TaxonParentView(APIView):
 	@swagger_auto_schema(
 		tags=["Taxonomy"],
-		operation_description="Get the parents of the taxon given its ID",
+		operation_id="Get taxon ancestors",
+		operation_description="Get the parents of the taxon given its id",
 		manual_parameters=[
 			openapi.Parameter(name="id", in_=openapi.IN_QUERY, description="ID of the taxon", type=openapi.TYPE_INTEGER, required=True),
 		],
@@ -342,6 +333,7 @@ class TaxonChildrenBaseView(APIView):
 class TaxonChildrenView(TaxonChildrenBaseView):
 	@swagger_auto_schema(
 		tags=["Taxonomy"],
+		operation_id="Get taxon children",
 		operation_description="Get the children of the given taxon id",
 		manual_parameters=[
 			openapi.Parameter(
@@ -358,6 +350,13 @@ class TaxonChildrenView(TaxonChildrenBaseView):
 				description="The level of children to look up for",
 				required=False,
 			),
+			openapi.Parameter(
+				name="accepted_only",
+				in_=openapi.IN_QUERY,
+				type=openapi.TYPE_BOOLEAN,
+				description="Filter to show only accepted children",
+				required=False,
+			),
 		],
 		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
 	)
@@ -368,7 +367,8 @@ class TaxonChildrenView(TaxonChildrenBaseView):
 class TaxonChildrenCountView(LoggingMixin, TaxonChildrenBaseView):
 	@swagger_auto_schema(
 		tags=["Taxonomy"],
-		operation_description="Get the total children of the given taxon id",
+		operation_id="Count taxon children",
+		operation_description="Get the total count of children for the given taxon id",
 		manual_parameters=[
 			openapi.Parameter(
 				name="id",
@@ -384,6 +384,13 @@ class TaxonChildrenCountView(LoggingMixin, TaxonChildrenBaseView):
 				description="The level of children to look up for",
 				required=False,
 			),
+			openapi.Parameter(
+				name="accepted_only",
+				in_=openapi.IN_QUERY,
+				type=openapi.TYPE_BOOLEAN,
+				description="Filter to count only accepted children",
+				required=False,
+			),
 		],
 		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
 	)
@@ -394,6 +401,7 @@ class TaxonChildrenCountView(LoggingMixin, TaxonChildrenBaseView):
 class TaxonSistersView(APIView):
 	@swagger_auto_schema(
 		tags=["Taxonomy"],
+		operation_id="Get taxon sisters",
 		operation_description="Get the sisters of the given taxon id",
 		manual_parameters=[
 			openapi.Parameter(
@@ -426,12 +434,13 @@ class TaxonSistersView(APIView):
 class TaxonomicLevelDescendantsCountView(APIView):
 	@swagger_auto_schema(
 		tags=["Taxonomy"],
-		operation_description="Get the count of descendants of a taxonomic level by it's ID.",
+		operation_id="Count taxon descendants by rank",
+		operation_description="Get the count of descendants of a taxonomic level, grouped by rank.",
 		manual_parameters=[
 			openapi.Parameter(
 				name="id",
 				in_=openapi.IN_QUERY,
-				description="ID of the taxon to retrieve it's descendants",
+				description="ID of the taxon to retrieve its descendants count",
 				type=openapi.TYPE_INTEGER,
 				required=True,
 			),
@@ -460,18 +469,20 @@ class TaxonomicLevelDescendantsCountView(APIView):
 
 class TaxonSynonymView(ListAPIView):
 	@swagger_auto_schema(
-		tags=["Taxonomy"],
-		operation_description="Get a list of taxa, with optional filtering.",
-		manual_parameters=[
-			openapi.Parameter(
-				"id",
-				openapi.IN_QUERY,
-				description="ID of the taxon to retrieve its synonym",
-				type=openapi.TYPE_STRING,
-			)
-		],
-		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
-	)
+        tags=["Taxonomy"],
+        operation_id="Get taxon synonyms",
+        operation_description="Get a list of synonyms for a given taxon ID.",
+        manual_parameters=[
+            openapi.Parameter(
+                "id",
+                openapi.IN_QUERY,
+                description="ID of the taxon to retrieve its synonyms",
+                type=openapi.TYPE_INTEGER,
+                required=True,
+            )
+        ],
+        responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
+    )
 	def get(self, request):
 		taxon_form = TaxonomicLevelForm(self.request.GET)
 
@@ -493,18 +504,20 @@ class TaxonSynonymView(ListAPIView):
 
 class TaxonCompositionView(ListAPIView):
 	@swagger_auto_schema(
-		tags=["Taxonomy"],
-		operation_description="Get the children and the quantity of species for each.",
-		manual_parameters=[
-			openapi.Parameter(
-				"id",
-				openapi.IN_QUERY,
-				description="ID of the taxon",
-				type=openapi.TYPE_STRING,
-			)
-		],
-		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
-	)
+        tags=["Taxonomy"],
+        operation_id="Get taxon composition",
+        operation_description="Get the direct children of a taxon and the count of accepted species within each child.",
+        manual_parameters=[
+            openapi.Parameter(
+                "id",
+                openapi.IN_QUERY,
+                description="ID of the taxon",
+                type=openapi.TYPE_INTEGER,
+                required=True,
+            )
+        ],
+        responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
+    )
 	def get(self, request):
 		taxon_form = TaxonomicLevelForm(self.request.GET)
 
@@ -541,18 +554,20 @@ class TaxonCompositionView(ListAPIView):
 
 class TaxonSourceView(ListAPIView):
 	@swagger_auto_schema(
-		tags=["Taxonomy"],
-		operation_description="Get a list of sources, with optional filtering.",
-		manual_parameters=[
-			openapi.Parameter(
-				"id",
-				openapi.IN_QUERY,
-				description="ID of the taxon to retrieve its sources",
-				type=openapi.TYPE_STRING,
-			)
-		],
-		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
-	)
+        tags=["Taxonomy"],
+        operation_id="Get taxon sources",
+        operation_description="Get a list of sources associated with a given taxon ID.",
+        manual_parameters=[
+            openapi.Parameter(
+                "id",
+                openapi.IN_QUERY,
+                description="ID of the taxon to retrieve its sources",
+                type=openapi.TYPE_INTEGER,
+                required=True,
+            )
+        ],
+        responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
+    )
 	def get(self, request):
 		taxon_form = TaxonomicLevelForm(self.request.GET)
 
@@ -573,18 +588,20 @@ class TaxonSourceView(ListAPIView):
 
 class TaxonChecklistView(APIView):
 	@swagger_auto_schema(
-		tags=["Taxonomy"],
-		operation_description="Get a checklist of a taxonomic level.",
-		manual_parameters=[
-			openapi.Parameter(
-				"id",
-				openapi.IN_QUERY,
-				description="ID of the taxon to retrieve all its childrens",
-				type=openapi.TYPE_INTEGER,
-			)
-		],
-		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
-	)
+        tags=["Taxonomy"],
+        operation_id="Download taxon checklist (CSV)",
+        operation_description="Get a checklist of a taxonomic level and its accepted children in CSV format.",
+        manual_parameters=[
+            openapi.Parameter(
+                "id",
+                openapi.IN_QUERY,
+                description="ID of the taxon to retrieve all its accepted children for the checklist",
+                type=openapi.TYPE_INTEGER,
+                required=True,
+            )
+        ],
+        responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
+    )
 	def get(self, request):
 		taxon_form = TaxonomicLevelForm(self.request.GET)
 
@@ -614,19 +631,20 @@ class TaxonChecklistView(APIView):
 
 class AuthorshipCRUDView(APIView):
 	@swagger_auto_schema(
-		tags=["Authorship"],
-		operation_description="Get authorship info by ID",
-		manual_parameters=[
-			openapi.Parameter(
-				name="id",
-				in_=openapi.IN_QUERY,
-				type=openapi.TYPE_INTEGER,
-				description="ID of the authorship",
-				required=True,
-			)
-		],
-		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
-	)
+        tags=["Authorship"],
+        operation_id="Get authorship by id",
+        operation_description="Get authorship information by its ID.",
+        manual_parameters=[
+            openapi.Parameter(
+                name="id",
+                in_=openapi.IN_QUERY,
+                type=openapi.TYPE_INTEGER,
+                description="ID of the authorship",
+                required=True,
+            )
+        ],
+        responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
+    )
 	def get(self, request):
 		authorship_form = IdFieldForm(self.request.GET)
 

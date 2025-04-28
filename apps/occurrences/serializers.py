@@ -115,9 +115,9 @@ class OccurrenceCountByDateSerializer(serializers.Serializer):
 		Returns the appropriate date field name based on the view class.
 		"""
 		if self.view_class.__name__ == "OccurrenceCountByTaxonMonthView":
-			return "collection_date_month"
+			return "month"
 		elif self.view_class.__name__ == "OccurrenceCountByTaxonYearView":
-			return "collection_date_year"
+			return "year"
 		else:
 			return "sources"
 

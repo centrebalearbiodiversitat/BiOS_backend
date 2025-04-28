@@ -43,19 +43,20 @@ from common.utils.forms import TaxonomyForm
 
 class TaxonTagListView(APIView):
 	@swagger_auto_schema(
-		tags=["Tags"],
-		operation_description="Retrieve a specific taxonomic tags instance by its taxonomic level id",
-		manual_parameters=[
-			openapi.Parameter(
-				"taxonomy",
-				openapi.IN_QUERY,
-				description="ID of the taxon data to retrieve",
-				type=openapi.TYPE_INTEGER,
-				required=True,
-			)
-		],
-		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
-	)
+        tags=["Tags"],
+        operation_id="Get taxon tags by taxonomy",
+        operation_description="Retrieve a specific taxonomic tags instance by its taxonomic level id",
+        manual_parameters=[
+            openapi.Parameter(
+                "taxonomy",
+                openapi.IN_QUERY,
+                description="ID of the taxon data to retrieve",
+                type=openapi.TYPE_INTEGER,
+                required=True,
+            )
+        ],
+        responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
+    )
 	def get(self, request):
 		taxon_form = TaxonomyForm(self.request.GET)
 
@@ -212,19 +213,20 @@ class TaxonTagListView(APIView):
 
 class HabitatsListView(APIView):
 	@swagger_auto_schema(
-		tags=["Tags"],
-		operation_description="Obtains the habitats in which a taxonomic level is found by its ID.",
-		manual_parameters=[
-			openapi.Parameter(
-				name="taxonomy",
-				in_=openapi.IN_QUERY,
-				description="ID of the taxon to retrieve it's habitats",
-				type=openapi.TYPE_INTEGER,
-				required=True,
-			),
-		],
-		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
-	)
+        tags=["Tags"],
+        operation_id="Get habitats by taxonomy",
+        operation_description="Obtains the habitats in which a taxonomic level is found by its ID.",
+        manual_parameters=[
+            openapi.Parameter(
+                name="taxonomy",
+                in_=openapi.IN_QUERY,
+                description="ID of the taxon to retrieve it's habitats",
+                type=openapi.TYPE_INTEGER,
+                required=True,
+            ),
+        ],
+        responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
+    )
 	def get(self, request):
 		taxon_form = TaxonomyForm(data=request.GET)
 
@@ -255,19 +257,20 @@ class HabitatsListView(APIView):
 
 class IUCNDataListView(APIView):
 	@swagger_auto_schema(
-		tags=["Tags"],
-		operation_description="Retrieve the conservation status and habitats of a taxonomic level by its ID",
-		manual_parameters=[
-			openapi.Parameter(
-				"taxonomy",
-				openapi.IN_QUERY,
-				description="ID of the taxonomic level",
-				type=openapi.TYPE_INTEGER,
-				required=True,
-			)
-		],
-		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
-	)
+        tags=["Tags"],
+        operation_id="Get IUCN data by taxonomy",
+        operation_description="Retrieve the conservation status and habitats of a taxonomic level by its ID",
+        manual_parameters=[
+            openapi.Parameter(
+                "taxonomy",
+                openapi.IN_QUERY,
+                description="ID of the taxonomic level",
+                type=openapi.TYPE_INTEGER,
+                required=True,
+            )
+        ],
+        responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
+    )
 	def get(self, request):
 		iucn_form = TaxonomyForm(self.request.GET)
 
@@ -402,19 +405,20 @@ class IUCNDataListView(APIView):
 
 class SystemListView(APIView):
 	@swagger_auto_schema(
-		tags=["Tags"],
-		operation_description="Obtains the habitats in which a taxonomic level is found by its ID.",
-		manual_parameters=[
-			openapi.Parameter(
-				name="taxonomy",
-				in_=openapi.IN_QUERY,
-				description="ID of the taxon to retrieve it's habitats",
-				type=openapi.TYPE_INTEGER,
-				required=True,
-			),
-		],
-		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
-	)
+        tags=["Tags"],
+        operation_id="Get system by taxonomy",
+        operation_description="Obtains the habitats in which a taxonomic level is found by its ID.",
+        manual_parameters=[
+            openapi.Parameter(
+                name="taxonomy",
+                in_=openapi.IN_QUERY,
+                description="ID of the taxon to retrieve it's habitats",
+                type=openapi.TYPE_INTEGER,
+                required=True,
+            ),
+        ],
+        responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
+    )
 	def get(self, request):
 		system_form = TaxonomyForm(data=request.GET)
 
@@ -474,19 +478,20 @@ class SystemListView(APIView):
 
 class DirectiveListView(APIView):
 	@swagger_auto_schema(
-		tags=["Tags"],
-		operation_description="Retrieve a specific directive instance by its taxonomic level id",
-		manual_parameters=[
-			openapi.Parameter(
-				"taxonomy",
-				openapi.IN_QUERY,
-				description="ID of the taxonomic level to retrieve",
-				type=openapi.TYPE_INTEGER,
-				required=True,
-			)
-		],
-		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
-	)
+        tags=["Tags"],
+        operation_id="Get directive by taxonomy",
+        operation_description="Retrieve a specific directive instance by its taxonomic level id",
+        manual_parameters=[
+            openapi.Parameter(
+                "taxonomy",
+                openapi.IN_QUERY,
+                description="ID of the taxonomic level to retrieve",
+                type=openapi.TYPE_INTEGER,
+                required=True,
+            )
+        ],
+        responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
+    )
 	def get(self, request):
 		directive_form = TaxonomyForm(self.request.GET)
 

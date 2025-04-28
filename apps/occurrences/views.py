@@ -865,7 +865,6 @@ class OccurrenceCountByTaxonDateBaseView:
 
 		return Response(OccurrenceCountByDateSerializer(result, many=True, view_class=view_class).data)
 
-	
 
 class OccurrenceCountByTaxonMonthView(APIView, OccurrenceCountByTaxonDateBaseView):
 	@swagger_auto_schema(

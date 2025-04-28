@@ -33,7 +33,7 @@ class ReferencedModel(models.Model):
 		if kwargs and kwargs["action"] == "post_add":
 			obj = kwargs["instance"]
 			if hasattr(obj, "sources"):
-				sources = [s.source.basis for s in obj.sources.all()]
+				sources = [s.source for s in obj.sources.all()]
 				if len(sources) != len(set(sources)):
 					raise ValidationError(f"Sources must be unique.\n{obj}\n{obj.sources.all()}")
 
@@ -47,7 +47,7 @@ class ReferencedModel(models.Model):
 
 
 m2m_changed.connect(ReferencedModel.clean_sources, sender=ReferencedModel.sources.through)
-pre_delete.connect(ReferencedModel.pre_delete)
+# pre_delete.connect(ReferencedModel.pre_delete)
 
 
 class SynonymManager(models.Manager):

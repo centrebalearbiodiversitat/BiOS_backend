@@ -1,4 +1,5 @@
 import csv
+import re
 
 from django.db.models import Count, Q
 from django.db.models.functions import Substr, Lower
@@ -36,21 +37,20 @@ class TaxonSearch:
 		exact = taxon_form.cleaned_data.get("exact", False)
 
 		if not query:
-			raise CBBAPIException("Missing name parameter", code=400)
+			return []
 
 		queryset = None
 		query = unidecode(str_clean_up(query).translate(PUNCTUATION_TRANSLATE))
-
-		for query in query.split(" "):
+		for query in re.findall(r"(?:[x|X] \S+)|\S+", query):
 			filters["name__istartswith"] = query
-			if queryset:
+			if queryset is None:
+				queryset = TaxonomicLevel.objects.annotate(prefix=Lower(Substr("unidecode_name", 1, min(3, len(query))))).filter(prefix=query[:3].lower()).filter(**filters)
+			else:
 				queryset = (
 					TaxonomicLevel.objects.annotate(prefix=Lower(Substr("unidecode_name", 1, min(3, len(query)))))
 					.filter(prefix=query[:3].lower())
 					.filter(**filters, rank__in=[TaxonomicLevel.SPECIES, TaxonomicLevel.SUBSPECIES, TaxonomicLevel.VARIETY], parent__in=queryset)
 				)
-			else:
-				queryset = TaxonomicLevel.objects.annotate(prefix=Lower(Substr("unidecode_name", 1, min(3, len(query))))).filter(prefix=query[:3].lower()).filter(**filters)
 
 		if not exact and queryset.count() < limit:
 			for instance in queryset.filter(rank__in=[TaxonomicLevel.GENUS, TaxonomicLevel.SPECIES])[:limit]:

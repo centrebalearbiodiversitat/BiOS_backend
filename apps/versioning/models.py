@@ -59,6 +59,7 @@ class Source(models.Model):
 	WEB_PAGE = 3
 	DOCUMENT = 4
 	EXPERT = 5
+	MUSEUM = 6
 
 	SOURCE_TYPE_CHOICES = (
 		(DATABASE, "database"),
@@ -67,6 +68,7 @@ class Source(models.Model):
 		(WEB_PAGE, "web_page"),
 		(DOCUMENT, "document"),
 		(EXPERT, "expert"),
+		(MUSEUM, "museum"),
 	)
 	TRANSLATE_SOURCE_TYPE = {
 		DATABASE: "database",
@@ -81,16 +83,27 @@ class Source(models.Model):
 		"document": DOCUMENT,
 		EXPERT: "expert",
 		"expert": EXPERT,
+		MUSEUM: "museum",
+		"museum": MUSEUM,
+	}
+	SOURCE_TYPE_EXEMPT_OF_IDS = {
+		JOURNAL_ARTICLE,
+		BOOK,
+		DOCUMENT,
+		EXPERT,
+		MUSEUM,
 	}
 
 	API = 0
 	AI = 1
 	EXPERT = 2
+	PROVIDED = 3
 
 	EXTRACTION_METHOD_CHOICES = (
 		(API, "api"),
 		(AI, "ai"),
 		(EXPERT, "expert"),
+		(PROVIDED, "provided"),
 	)
 	TRANSLATE_EXTRACTION_METHOD = {
 		API: "api",
@@ -99,6 +112,8 @@ class Source(models.Model):
 		"ai": AI,
 		EXPERT: "expert",
 		"expert": EXPERT,
+		PROVIDED: "provided",
+		"provided": PROVIDED,
 	}
 
 	TAXON = 0
@@ -107,6 +122,7 @@ class Source(models.Model):
 	IMAGE = 3
 	TAXON_DATA = 4
 	DATASET_KEY = 5
+
 	DATA_TYPE_CHOICES = (
 		(TAXON, "taxon"),
 		(TAXON_DATA, "taxon_data"),
@@ -137,11 +153,26 @@ class Source(models.Model):
 	batch = models.ForeignKey(Batch, on_delete=models.CASCADE, null=True, blank=True, default=None)
 	basis = models.ForeignKey(Basis, on_delete=models.CASCADE, related_name="source", null=True, blank=True, default=None)
 
+	def clean(self):
+		super().clean()
+		if self.url and "{id}" not in self.url:
+			raise ValidationError("Source: URL bad formatting. Missing '{id}'")
+
+	def save(self, force_insert=False, force_update=False, using=None, update_fields=None):
+		self.full_clean()
+		super().save(force_insert, force_update, using, update_fields)
+
 	def translate_source_type(self):
 		return Source.TRANSLATE_SOURCE_TYPE[self.source_type]
 
+	def translate_data_type(self):
+		return Source.TRANSLATE_DATA_TYPE[self.data_type]
+
 	def __str__(self):
-		return self.basis.name
+		return f"{self.translate_data_type()}:{self.basis.get_name()}"
+
+	class Meta:
+		unique_together = ["basis", "data_type"]
 
 
 class OriginId(models.Model):
@@ -155,7 +186,7 @@ class OriginId(models.Model):
 
 	def clean(self):
 		super().clean()
-		if not self.external_id and self.source.source_type in {Source.DATABASE, Source.WEB_PAGE}:
+		if not self.external_id and self.source.source_type not in Source.SOURCE_TYPE_EXEMPT_OF_IDS:
 			raise ValidationError(f"External ID is None and is not allowed with origin type '{self.source.translate_source_type().upper()}'")
 
 	def __str__(self):

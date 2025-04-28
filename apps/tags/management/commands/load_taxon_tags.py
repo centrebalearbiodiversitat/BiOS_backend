@@ -6,11 +6,12 @@ from django.db import transaction
 from apps.taxonomy.models import TaxonomicLevel
 from apps.tags.models import Tag, TaxonTag, System, Directive
 from apps.versioning.models import Batch, OriginId, Source
-from common.utils.utils import get_or_create_source
+from common.utils.utils import get_or_create_source, is_batch_referenced
 
 EXTERNAL_ID = "origin_id"
 INTERNAL_NAME = "source"
 SOURCE_TYPE = "origin"
+SOURCE_METHOD = "extraction_method"
 
 
 def check_taxon(line):
@@ -30,7 +31,7 @@ def load_taxon_tags(line, taxonomy, batch):
 
 	source = get_or_create_source(
 		source_type=Source.TRANSLATE_SOURCE_TYPE[line[SOURCE_TYPE].lower()],
-		extraction_method=Source.EXPERT,
+		extraction_method=Source.TRANSLATE_EXTRACTION_METHOD[line[SOURCE_METHOD].lower()],
 		data_type=Source.TAXON_DATA,
 		batch=batch,
 		internal_name=line[INTERNAL_NAME],
@@ -106,3 +107,5 @@ class Command(BaseCommand):
 
 		if exception:
 			raise Exception(f"Errors found: Rollback control")
+
+		is_batch_referenced(batch)

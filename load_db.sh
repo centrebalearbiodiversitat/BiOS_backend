@@ -9,8 +9,6 @@ echo "Loading Populations..."
 python manage.py load_gadm data/GIS/CNIG_poblaciones/*uncertainess*/*.shp
 
 #Populate
-echo "Populating sources..."
-python manage.py populate_sources data/sources.csv
 echo "Populating tags..."
 python manage.py populate_tags
 echo "Populating habitats..."
@@ -49,3 +47,8 @@ do
     python manage.py load_occurrences_new_synonyms "$file"
   done
 done
+
+echo "Loading basis..."
+python manage.py load_basis data/basis.json
+echo "Loading sources..."
+python manage.py load_sources data/sources.csv

@@ -18,17 +18,17 @@ class LatLonModelForm(IdFieldForm, TranslateForm):
 		cleaned_data = super().clean()
 		coordinate_uncertainty_in_meters_min = cleaned_data.get("coordinate_uncertainty_in_meters_min")
 		coordinate_uncertainty_in_meters_max = cleaned_data.get("coordinate_uncertainty_in_meters_max")
-		latitude_min = cleaned_data.get("latitude_min")
-		latitude_max = cleaned_data.get("latitude_max")
-		longitude_min = cleaned_data.get("longitude_min")
-		longitude_max = cleaned_data.get("longitude_max")
+		decimal_latitude_min = cleaned_data.get("decimal_latitude_min")
+		decimal_latitude_max = cleaned_data.get("decimal_latitude_max")
+		decimal_longitude_min = cleaned_data.get("decimal_longitude_min")
+		decimal_longitude_max = cleaned_data.get("decimal_longitude_max")
 
 		if coordinate_uncertainty_in_meters_min and coordinate_uncertainty_in_meters_max and coordinate_uncertainty_in_meters_min > coordinate_uncertainty_in_meters_max:
 			raise forms.ValidationError("Minimum coordinate uncertainty cannot be greater than maximum coordinate uncertainty.")
-		if latitude_min and latitude_max and latitude_min > latitude_max:
+		if decimal_latitude_min and decimal_latitude_max and decimal_latitude_min > decimal_latitude_max:
 			raise forms.ValidationError("Minimum latitude cannot be greater than maximum latitude.")
 
-		if longitude_min and longitude_max and longitude_min > longitude_max:
+		if decimal_longitude_min and decimal_longitude_max and decimal_longitude_min > decimal_longitude_max:
 			raise forms.ValidationError("Minimum longitude cannot be greater than maximum longitude.")
 
 		return cleaned_data

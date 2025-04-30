@@ -11,7 +11,13 @@ from apps.versioning.models import Basis
 
 from .forms import MarkerForm, SequenceForm, SequenceListForm
 from .models import Marker, Sequence
-from .serializers import MarkerCountSerializer, MarkerSerializer, SequenceSerializer, SequenceAggregationSerializer, SequenceCSVSerializer
+from .serializers import (
+	MarkerCountSerializer,
+	MarkerSerializer,
+	SequenceSerializer,
+	SequenceAggregationSerializer,
+	SequenceCSVSerializer
+)
 from common.utils.views import CSVDownloadMixin
 from common.utils.serializers import get_paginated_response
 
@@ -19,13 +25,13 @@ from common.utils.serializers import get_paginated_response
 class MarkerCRUDView(APIView):
 	@swagger_auto_schema(
 		tags=["Genetic"],
-		operation_id="Search marker by id",
-		operation_description="Get details of a specific marker.",
+		operation_id="Search marker by ID",
+		operation_description="Get details of a specific marker by its ID.",
 		manual_parameters=[
 			openapi.Parameter(
 				"id",
 				openapi.IN_QUERY,
-				description="Unique identifier of the marker to retrieve.",
+				description="Marker ID",
 				type=openapi.TYPE_INTEGER,
 				required=True,
 			),
@@ -63,14 +69,14 @@ class MarkerSearchView(APIView):
 			openapi.Parameter(
 				"name",
 				openapi.IN_QUERY,
-				description="Name of the marker to search for.",
+				description="Marker name",
 				type=openapi.TYPE_STRING,
 				required=True,
 			),
 			openapi.Parameter(
 				"exact",
 				openapi.IN_QUERY,
-				description="Indicates whether to search for an exact match. Defaults to False.",
+				description="Indicates whether to search for an exact match.",
 				type=openapi.TYPE_BOOLEAN,
 				required=False,
 				default=False,
@@ -93,7 +99,7 @@ class MarkerSearchView(APIView):
 		exact = marker_form.cleaned_data.get("exact", False)
 
 		if not query:
-			raise CBBAPIException("You must specify a name", 400)
+			raise CBBAPIException("You must specify a marker name", 400)
 
 		filters["name__iexact" if exact else "name__icontains"] = query
 
@@ -190,18 +196,22 @@ class MarkerFilter(APIView):
 class MarkerListView(MarkerFilter):
 	@swagger_auto_schema(
 		tags=["Genetic"],
-		operation_id="List markers by taxonomy",
-		operation_description="Retrieve the markers of a taxonomic level by its id",
+		operation_id="List markers by taxon ID",
+		operation_description="Retrieve the markers of a taxon by its ID.",
 		manual_parameters=[
 			openapi.Parameter(
 				"taxonomy",
 				openapi.IN_QUERY,
-				description="ID of the taxon from which all its markers will be retrieved",
+				description="Taxon ID",
 				type=openapi.TYPE_INTEGER,
 				required=True,
 			)
 		],
-		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
+		responses={
+			200: "Success",
+			400: "Bad Request",
+			404: "Not Found"
+		},
 	)
 	def get(self, request):
 		return Response(MarkerCountSerializer(super().get(request), many=True).data)
@@ -210,18 +220,22 @@ class MarkerListView(MarkerFilter):
 class MarkerCountView(MarkerFilter):
 	@swagger_auto_schema(
 		tags=["Genetic"],
-		operation_id="Count markers by taxonomy",
-		operation_description="Retrieve the markers count of a taxonomic level by its id.",
+		operation_id="Count markers by taxon ID",
+		operation_description="Retrieve the markers count of a taxon by its ID.",
 		manual_parameters=[
 			openapi.Parameter(
 				"taxonomy",
 				openapi.IN_QUERY,
-				description="ID of the taxon from which all its markers will be retrieved",
+				description="Taxon ID",
 				type=openapi.TYPE_INTEGER,
 				required=True,
 			)
 		],
-		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
+		responses={
+			200: "Success",
+			400: "Bad Request",
+			404: "Not Found"
+		},
 	)
 	def get(self, request):
 		return Response(super().get(request).count())
@@ -263,7 +277,7 @@ class MarkerCountView(MarkerFilter):
 # 		# 	.values("count")
 # 		# )
 
-		
+
 # 		# --- Subconsulta Refinada ---
 # 		sequence_subquery = (
 # 			Sequence.objects.filter(
@@ -305,13 +319,13 @@ class MarkerCountView(MarkerFilter):
 class SequenceCRUDView(APIView):
 	@swagger_auto_schema(
 		tags=["Genetic"],
-		operation_id="Search sequence by id",
-		operation_description="Get details of a specific sequence.",
+		operation_id="Search genetic occurrence by ID",
+		operation_description="Get details of a specific genetic occurrence.",
 		manual_parameters=[
 			openapi.Parameter(
 				"id",
 				openapi.IN_QUERY,
-				description="Unique identifier of the sequence to retrieve.",
+				description="Genetic occurrence ID",
 				type=openapi.TYPE_INTEGER,
 				required=True,
 			),
@@ -330,7 +344,7 @@ class SequenceCRUDView(APIView):
 
 		seq_id = seq_form.cleaned_data.get("id")
 		if not seq_id:
-			raise CBBAPIException("Missing sequence id", 400)
+			raise CBBAPIException("Missing sequence ID", 400)
 
 		try:
 			gfs = Sequence.objects.get(id=seq_id)
@@ -343,18 +357,21 @@ class SequenceCRUDView(APIView):
 class SequenceSearchView(APIView):
 	@swagger_auto_schema(
 		tags=["Genetic"],
-		operation_id="Search sequence by definition",
-		operation_description="Search for a sequence by definition.",
+		operation_id="Search genetic occurrence by definition",
+		operation_description="Search for a genetic occurrence by NCBI definition.",
 		manual_parameters=[
 			openapi.Parameter(
 				"definition",
 				openapi.IN_QUERY,
-				description="Definition of the sequence to search for.",
+				description="NCBI definition",
 				type=openapi.TYPE_STRING,
 				required=True,
 			)
 		],
-		responses={200: "Success", 400: "Bad Request"},
+		responses={
+			200: "Success",
+			400: "Bad Request"
+		},
 	)
 	def get(self, request):
 		seq_form = SequenceForm(data=self.request.GET)
@@ -398,18 +415,22 @@ class SequenceFilter(APIView):
 class SequenceListView(SequenceFilter):
 	@swagger_auto_schema(
 		tags=["Genetic"],
-		operation_id="List sequences by taxonomy",
-		operation_description="Retrieve the sequences of a taxonomic level by its id",
+		operation_id="List genetic occurrences by taxon ID",
+		operation_description="Retrieve the genetic occurrences of a taxon by its ID.",
 		manual_parameters=[
 			openapi.Parameter(
-				"taxonomy",
+				"taxonomy",  # ID
 				openapi.IN_QUERY,
-				description="ID of the taxon from which all its sequences will be retrieved",
+				description="Taxon ID",
 				type=openapi.TYPE_INTEGER,
 				required=True,
 			)
 		],
-		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
+		responses={
+			200: "Success",
+			400: "Bad Request",
+			404: "Not Found"
+		},
 	)
 	def get(self, request):
 		query = super().get(request).prefetch_related("sources", "markers").select_related("occurrence", "occurrence__taxonomy")
@@ -420,18 +441,22 @@ class SequenceListView(SequenceFilter):
 class SequenceCountView(SequenceFilter):
 	@swagger_auto_schema(
 		tags=["Genetic"],
-		operation_id="Count sequences by taxonomy",
-		operation_description="Retrieve the sequences count of a taxonomic level by its id.",
+		operation_id="Count genetic occurrences by taxon ID",
+		operation_description="Retrieve the genetic occurrence count of a taxon by its ID.",
 		manual_parameters=[
 			openapi.Parameter(
 				"taxonomy",
 				openapi.IN_QUERY,
-				description="ID of the taxon from which all its sequences will be retrieved",
+				description="Taxon ID",
 				type=openapi.TYPE_INTEGER,
 				required=True,
 			)
 		],
-		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
+		responses={
+			200: "Success",
+			400: "Bad Request",
+			404: "Not Found"
+		},
 	)
 	def get(self, request):
 		return Response(super().get(request).count())
@@ -440,48 +465,55 @@ class SequenceCountView(SequenceFilter):
 class SequenceListCSVView(SequenceFilter):
 	@swagger_auto_schema(
 		tags=["Genetic"],
-		operation_id="List sequences by taxonomy (CSV)",
-		operation_description="Retrieve a CSV with the sequences of a taxonomic level by its id",
+		operation_id="List genetic occurrences by taxon ID (CSV)",
+		operation_description="Retrieve a CSV with the genetic occurrences of a taxon by its ID.",
 		manual_parameters=[
 			openapi.Parameter(
 				"taxonomy",
 				openapi.IN_QUERY,
-				description="ID of the taxon from which all its sequences will be retrieved",
+				description="Taxon ID",
 				type=openapi.TYPE_INTEGER,
 				required=True,
 			)
 		],
-		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
-
+		responses={
+			200: "Success",
+			400: "Bad Request",
+			404: "Not Found"
+		},
 	)
 	def get(self, request):
 		query = super().get(request).prefetch_related("sources", "markers").select_related("occurrence", "occurrence__taxonomy")
 
-		return CSVDownloadMixin.generate_csv(SequenceCSVSerializer(query, many=True).data, filename="sequences.csv")
+		return CSVDownloadMixin.generate_csv(SequenceCSVSerializer(query, many=True).data, filename="genetic_occurrences.csv")
 
 
 class SequenceSourceCountView(APIView):
 	@swagger_auto_schema(
 		tags=["Genetic"],
-		operation_id="Count sequences of a taxon by source",
-		operation_description="Retrieve the sequences count of a taxon based on its source.",
+		operation_id="Count genetic occurrences of a taxon per source",
+		operation_description="Retrieve the genetic occurrence count of a taxon per source.",
 		manual_parameters=[
 			openapi.Parameter(
 				"marker",
 				openapi.IN_QUERY,
-				description="ID of the marker from which all its sequences will be retrieved",
+				description="Marker ID",
 				type=openapi.TYPE_INTEGER,
 				required=True,
 			),
 			openapi.Parameter(
 				"taxonomy",
 				openapi.IN_QUERY,
-				description="ID of the taxon from which all its sequences will be retrieved",
+				description="Taxon ID",
 				type=openapi.TYPE_INTEGER,
 				required=True,
 			)
 		],
-		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
+		responses={
+			200: "Success",
+			400: "Bad Request",
+			404: "Not Found"
+		},
 	)
 	def get(self, request):
 		seq_form = SequenceForm(data=self.request.GET)
@@ -551,32 +583,36 @@ class SequenceSourceDownload(APIView):
 class SequenceSourceCSVDownloadView(SequenceSourceDownload):
 	@swagger_auto_schema(
 		tags=["Genetic"],
-		operation_id="Download sequences by source (CSV)",
-		operation_description="Retrieve a CSV with the sequences of a taxonomic level by its id",
+		operation_id="Download genetic occurrences by taxon and source (CSV)",
+		operation_description="Retrieve a CSV with the genetic occurrences of a taxon by its ID and source.",
 		manual_parameters=[
 			openapi.Parameter(
-				"taxonomy",
+				"marker",
 				openapi.IN_QUERY,
-				description="ID of the taxon from which all its sequences will be retrieved",
+				description="Marker ID",
 				type=openapi.TYPE_INTEGER,
 				required=True,
 			),
 			openapi.Parameter(
-				"marker",
+				"taxonomy",
 				openapi.IN_QUERY,
-				description="ID of the marker from which all its sequences will be retrieved",
+				description="Taxon ID",
 				type=openapi.TYPE_INTEGER,
 				required=True,
 			),
 			openapi.Parameter(
 				"source",
 				openapi.IN_QUERY,
-				description="Name of the source from which all its sequences will be retrieved",
+				description="Source name (e.g., ncbi)",
 				type=openapi.TYPE_STRING,
 				required=True,
 			),
 		],
-		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
+		responses={
+			200: "Success",
+			400: "Bad Request",
+			404: "Not Found"
+		},
 	)
 	def get(self, request):
 		response = super().get(request)

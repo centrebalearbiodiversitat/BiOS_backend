@@ -8,7 +8,9 @@ from apps.API.serializers import APIStatusSerializer
 class APIStatus(APIView):
 	@swagger_auto_schema(
 		operation_description="Check current API status.",
-		responses={200: APIStatusSerializer()}
+		responses={
+			200: APIStatusSerializer()
+		}
 	)
 	def get(self, request):
 		return Response(

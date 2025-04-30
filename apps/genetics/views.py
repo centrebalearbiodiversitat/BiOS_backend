@@ -163,8 +163,7 @@ class MarkerFilter(APIView):
 			raise CBBAPIException("Taxonomic level does not exist", 404)
 
 		# Filter all markers by taxon
-		seq_queryset = Sequence.objects.filter(
-			occurrence__taxonomy__in=taxon.get_descendants(include_self=True)).distinct()
+		seq_queryset = Sequence.objects.filter(occurrence__taxonomy__in=taxon.get_descendants(include_self=True)).distinct()
 
 		in_geography_scope = marker_form.cleaned_data.get("in_geography_scope", None)
 		if in_geography_scope is not None:
@@ -173,8 +172,7 @@ class MarkerFilter(APIView):
 		# queryset = Marker.objects.filter(sequence__in=seq_queryset)
 		# queryset = queryset.annotate(total=Count("id")).order_by("-total")
 
-		accepted_marker = Marker.objects.filter(
-			Q(accepted=True, id=OuterRef("id")) | Q(synonyms=OuterRef("id"), accepted=True))
+		accepted_marker = Marker.objects.filter(Q(accepted=True, id=OuterRef("id")) | Q(synonyms=OuterRef("id"), accepted=True))
 
 		queryset = Marker.objects.filter(sequence__in=seq_queryset)
 		queryset = queryset.annotate(accepted_id=accepted_marker.values("id")[:1]).annotate(total=Count("id"))
@@ -373,7 +371,6 @@ class SequenceSearchView(APIView):
 		responses={
 			200: "Success",
 			400: "Bad Request"
-			# Falta el 404, quizas "Definition does not exist"
 		},
 	)
 	def get(self, request):
@@ -400,8 +397,7 @@ class SequenceFilter(APIView):
 		if taxon:
 			try:
 				taxon = TaxonomicLevel.objects.get(id=taxon)
-				filters |= Q(occurrence__taxonomy=taxon) | Q(occurrence__taxonomy__lft__gte=taxon.lft,
-															 occurrence__taxonomy__rght__lte=taxon.rght)
+				filters |= Q(occurrence__taxonomy=taxon) | Q(occurrence__taxonomy__lft__gte=taxon.lft, occurrence__taxonomy__rght__lte=taxon.rght)
 			except TaxonomicLevel.DoesNotExist:
 				raise CBBAPIException("Taxonomic level does not exist", 404)
 
@@ -437,8 +433,7 @@ class SequenceListView(SequenceFilter):
 		},
 	)
 	def get(self, request):
-		query = super().get(request).prefetch_related("sources", "markers").select_related("occurrence",
-																						   "occurrence__taxonomy")
+		query = super().get(request).prefetch_related("sources", "markers").select_related("occurrence", "occurrence__taxonomy")
 
 		return Response(get_paginated_response(request, query, SequenceSerializer))
 
@@ -488,10 +483,9 @@ class SequenceListCSVView(SequenceFilter):
 		},
 	)
 	def get(self, request):
-		query = super().get(request).prefetch_related("sources", "markers").select_related("occurrence",
-																						   "occurrence__taxonomy")
+		query = super().get(request).prefetch_related("sources", "markers").select_related("occurrence", "occurrence__taxonomy")
 
-		return CSVDownloadMixin.generate_csv(SequenceCSVSerializer(query, many=True).data, filename="sequences.csv")  #  genetic_occurrences.csv
+		return CSVDownloadMixin.generate_csv(SequenceCSVSerializer(query, many=True).data, filename="genetic_occurrences.csv")
 
 
 class SequenceSourceCountView(APIView):
@@ -544,8 +538,7 @@ class SequenceSourceCountView(APIView):
 		except Marker.DoesNotExist:
 			raise CBBAPIException("Marker does not exist", 404)
 
-		queryset = Sequence.objects.filter(Q(occurrence__taxonomy=taxon) & Q(markers=marker)).values(
-			"sources__source__basis__internal_name").annotate(count=Count("id")).order_by("-count")
+		queryset = Sequence.objects.filter(Q(occurrence__taxonomy=taxon) & Q(markers=marker)).values("sources__source__basis__internal_name").annotate(count=Count("id")).order_by("-count")
 		return Response(SequenceAggregationSerializer(queryset, many=True).data)
 
 
@@ -582,8 +575,7 @@ class SequenceSourceDownload(APIView):
 		except Marker.DoesNotExist:
 			raise CBBAPIException("Source level does not exist", 404)
 
-		queryset = Sequence.objects.filter(
-			Q(occurrence__taxonomy=taxon) & Q(markers=marker) & Q(sources__source__basis=src))
+		queryset = Sequence.objects.filter(Q(occurrence__taxonomy=taxon) & Q(markers=marker) & Q(sources__source__basis=src))
 
 		return Response(SequenceSerializer(queryset, many=True).data)
 
@@ -593,18 +585,18 @@ class SequenceSourceCSVDownloadView(SequenceSourceDownload):
 		tags=["Genetic"],
 		operation_id="Download genetic occurrences by taxon and source (CSV)",
 		operation_description="Retrieve a CSV with the genetic occurrences of a taxon by its ID and source.",
-		manual_parameters=[ # Can we put before marker and then taxonomy as the previous endpoint?
-			openapi.Parameter(
-				"taxonomy",
-				openapi.IN_QUERY,
-				description="Taxon ID",
-				type=openapi.TYPE_INTEGER,
-				required=True,
-			),
+		manual_parameters=[
 			openapi.Parameter(
 				"marker",
 				openapi.IN_QUERY,
 				description="Marker ID",
+				type=openapi.TYPE_INTEGER,
+				required=True,
+			),
+			openapi.Parameter(
+				"taxonomy",
+				openapi.IN_QUERY,
+				description="Taxon ID",
 				type=openapi.TYPE_INTEGER,
 				required=True,
 			),

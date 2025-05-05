@@ -44,13 +44,13 @@ from common.utils.forms import TaxonomyForm
 class TaxonTagListView(APIView):
 	@swagger_auto_schema(
         tags=["Tags"],
-        operation_id="Get taxon tags by taxonomy",
-        operation_description="Retrieve a specific taxonomic tags instance by its taxonomic level id",
+        operation_id="Get taxon tags by taxon ID",
+        operation_description="Retrieve a specific taxon tag instance by taxon ID.",
         manual_parameters=[
             openapi.Parameter(
                 "taxonomy",
                 openapi.IN_QUERY,
-                description="ID of the taxon data to retrieve",
+                description="Taxon ID",
                 type=openapi.TYPE_INTEGER,
                 required=True,
             )
@@ -214,13 +214,13 @@ class TaxonTagListView(APIView):
 class HabitatsListView(APIView):
 	@swagger_auto_schema(
         tags=["Tags"],
-        operation_id="Get habitats by taxonomy",
+        operation_id="Get habitats by taxon ID",
         operation_description="Obtains the habitats in which a taxonomic level is found by its ID.",
         manual_parameters=[
             openapi.Parameter(
                 name="taxonomy",
                 in_=openapi.IN_QUERY,
-                description="ID of the taxon to retrieve it's habitats",
+                description="Taxon ID",
                 type=openapi.TYPE_INTEGER,
                 required=True,
             ),
@@ -258,13 +258,13 @@ class HabitatsListView(APIView):
 class IUCNDataListView(APIView):
 	@swagger_auto_schema(
         tags=["Tags"],
-        operation_id="Get IUCN data by taxonomy",
-        operation_description="Retrieve the conservation status and habitats of a taxonomic level by its ID",
+        operation_id="Get IUCN data by taxon ID",
+        operation_description="Retrieve the conservation status of a taxonomic level by its ID.",
         manual_parameters=[
             openapi.Parameter(
                 "taxonomy",
                 openapi.IN_QUERY,
-                description="ID of the taxonomic level",
+                description="Taxon ID",
                 type=openapi.TYPE_INTEGER,
                 required=True,
             )
@@ -406,13 +406,13 @@ class IUCNDataListView(APIView):
 class SystemListView(APIView):
 	@swagger_auto_schema(
         tags=["Tags"],
-        operation_id="Get system by taxonomy",
-        operation_description="Obtains the habitats in which a taxonomic level is found by its ID.",
+        operation_id="Get system by taxon ID",
+        operation_description="Obtains the system in which a taxon is found.",
         manual_parameters=[
             openapi.Parameter(
                 name="taxonomy",
                 in_=openapi.IN_QUERY,
-                description="ID of the taxon to retrieve it's habitats",
+                description="Taxon ID",
                 type=openapi.TYPE_INTEGER,
                 required=True,
             ),
@@ -479,13 +479,13 @@ class SystemListView(APIView):
 class DirectiveListView(APIView):
 	@swagger_auto_schema(
         tags=["Tags"],
-        operation_id="Get directive by taxonomy",
-        operation_description="Retrieve a specific directive instance by its taxonomic level id",
+        operation_id="Get directive by taxon ID",
+        operation_description="Retrieve a specific directive instance by taxon ID.",
         manual_parameters=[
             openapi.Parameter(
                 "taxonomy",
                 openapi.IN_QUERY,
-                description="ID of the taxonomic level to retrieve",
+                description="Taxon ID",
                 type=openapi.TYPE_INTEGER,
                 required=True,
             )

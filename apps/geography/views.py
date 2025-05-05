@@ -27,7 +27,7 @@ class GeographicLevelDetailView(APIView):
                 name="exact",
                 in_=openapi.IN_QUERY,
                 type=openapi.TYPE_BOOLEAN,
-                description="Indicates whether to search for an exact match.",
+                description="Indicates whether to search for an exact match (case-insensitive).",
                 required=False,
 				default=False
             )
@@ -126,45 +126,43 @@ class GeographicLevelFilter(APIView):
 			query = GeographicLevel.objects.none()
 		return query
 
-# Can we remove it?
-class GeographicLevelListView(GeographicLevelFilter):
-	@swagger_auto_schema(
-        tags=["Geography"],
-        operation_id="List geographic levels",
-        operation_description="List geographic levels with optional filters.",
-        manual_parameters=[
-            openapi.Parameter(name="name", in_=openapi.IN_QUERY, type=openapi.TYPE_STRING, description="Filter by name", required=False),
-            openapi.Parameter(name="parent", in_=openapi.IN_QUERY, type=openapi.TYPE_INTEGER, description="Filter by parent ID", required=False),
-            openapi.Parameter(name="rank", in_=openapi.IN_QUERY, type=openapi.TYPE_STRING, description="Filter by rank", required=False),
-            openapi.Parameter(name="decimalLatitude", in_=openapi.IN_QUERY, type=openapi.TYPE_NUMBER, description="Filter by decimal latitude", required=False),  # Remove
-            openapi.Parameter(name="decimalLongitude", in_=openapi.IN_QUERY, type=openapi.TYPE_NUMBER, description="Filter by decimal longitude", required=False), # Remove
-            openapi.Parameter(name="coordinateUncertaintyInMeters", in_=openapi.IN_QUERY, type=openapi.TYPE_INTEGER, description="Filter by coordinate uncertainty", required=False), # Remove
-            openapi.Parameter(name="exact", in_=openapi.IN_QUERY, type=openapi.TYPE_BOOLEAN, description="Use exact match for 'name' parameter", required=False),
-        ],
-        responses={200: "Success", 400: "Bad Request"},
-    )
-	def get(self, request):
-		return Response(GeographicLevelSerializer(super().get(request), many=True).data)
+# class GeographicLevelListView(GeographicLevelFilter):
+# 	@swagger_auto_schema(
+#         tags=["Geography"],
+#         operation_id="List geographic levels",
+#         operation_description="List geographic levels with optional filters.",
+#         manual_parameters=[
+#             openapi.Parameter(name="name", in_=openapi.IN_QUERY, type=openapi.TYPE_STRING, description="Filter by name", required=False),
+#             openapi.Parameter(name="parent", in_=openapi.IN_QUERY, type=openapi.TYPE_INTEGER, description="Filter by parent ID", required=False),
+#             openapi.Parameter(name="rank", in_=openapi.IN_QUERY, type=openapi.TYPE_STRING, description="Filter by rank", required=False),
+#             openapi.Parameter(name="decimalLatitude", in_=openapi.IN_QUERY, type=openapi.TYPE_NUMBER, description="Filter by decimal latitude", required=False),  # Remove
+#             openapi.Parameter(name="decimalLongitude", in_=openapi.IN_QUERY, type=openapi.TYPE_NUMBER, description="Filter by decimal longitude", required=False), # Remove
+#             openapi.Parameter(name="coordinateUncertaintyInMeters", in_=openapi.IN_QUERY, type=openapi.TYPE_INTEGER, description="Filter by coordinate uncertainty", required=False), # Remove
+#             openapi.Parameter(name="exact", in_=openapi.IN_QUERY, type=openapi.TYPE_BOOLEAN, description="Use exact match for 'name' parameter", required=False),
+#         ],
+#         responses={200: "Success", 400: "Bad Request"},
+#     )
+# 	def get(self, request):
+# 		return Response(GeographicLevelSerializer(super().get(request), many=True).data)
 
-# Can we remove it?
-class GeographicLevelCountView(GeographicLevelFilter):
-	@swagger_auto_schema(
-        tags=["Geography"],
-        operation_id="Count geographic levels",
-        operation_description="Get the count of geographic levels based on optional filters.",
-        manual_parameters=[
-            openapi.Parameter(name="name", in_=openapi.IN_QUERY, type=openapi.TYPE_STRING, description="Filter by name", required=False),
-            openapi.Parameter(name="parent", in_=openapi.IN_QUERY, type=openapi.TYPE_INTEGER, description="Filter by parent ID", required=False),
-            openapi.Parameter(name="rank", in_=openapi.IN_QUERY, type=openapi.TYPE_STRING, description="Filter by rank", required=False),
-            openapi.Parameter(name="decimalLatitude", in_=openapi.IN_QUERY, type=openapi.TYPE_NUMBER, description="Filter by decimal latitude", required=False), # Remove
-            openapi.Parameter(name="decimalLongitude", in_=openapi.IN_QUERY, type=openapi.TYPE_NUMBER, description="Filter by decimal longitude", required=False), # Remove
-            openapi.Parameter(name="coordinateUncertaintyInMeters", in_=openapi.IN_QUERY, type=openapi.TYPE_INTEGER, description="Filter by coordinate uncertainty", required=False), # Remove
-            openapi.Parameter(name="exact", in_=openapi.IN_QUERY, type=openapi.TYPE_BOOLEAN, description="Use exact match for 'name' parameter", required=False),
-        ],
-        responses={200: "Success", 400: "Bad Request"},
-    )
-	def get(self, request):
-		return Response(super().get(request).count())
+# class GeographicLevelCountView(GeographicLevelFilter):
+# 	@swagger_auto_schema(
+#         tags=["Geography"],
+#         operation_id="Count geographic levels",
+#         operation_description="Get the count of geographic levels based on optional filters.",
+#         manual_parameters=[
+#             openapi.Parameter(name="name", in_=openapi.IN_QUERY, type=openapi.TYPE_STRING, description="Filter by name", required=False),
+#             openapi.Parameter(name="parent", in_=openapi.IN_QUERY, type=openapi.TYPE_INTEGER, description="Filter by parent ID", required=False),
+#             openapi.Parameter(name="rank", in_=openapi.IN_QUERY, type=openapi.TYPE_STRING, description="Filter by rank", required=False),
+#             openapi.Parameter(name="decimalLatitude", in_=openapi.IN_QUERY, type=openapi.TYPE_NUMBER, description="Filter by decimal latitude", required=False), # Remove
+#             openapi.Parameter(name="decimalLongitude", in_=openapi.IN_QUERY, type=openapi.TYPE_NUMBER, description="Filter by decimal longitude", required=False), # Remove
+#             openapi.Parameter(name="coordinateUncertaintyInMeters", in_=openapi.IN_QUERY, type=openapi.TYPE_INTEGER, description="Filter by coordinate uncertainty", required=False), # Remove
+#             openapi.Parameter(name="exact", in_=openapi.IN_QUERY, type=openapi.TYPE_BOOLEAN, description="Use exact match for 'name' parameter", required=False),
+#         ],
+#         responses={200: "Success", 400: "Bad Request"},
+#     )
+# 	def get(self, request):
+# 		return Response(super().get(request).count())
 
 
 class GeographicLevelParent(APIView):

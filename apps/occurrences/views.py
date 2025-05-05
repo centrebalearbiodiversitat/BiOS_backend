@@ -621,6 +621,18 @@ class OccurrenceCountView(OccurrenceFilter):
 				description="Filter occurrences by basis of record field.",
 				type=openapi.TYPE_STRING,
 			),
+			openapi.Parameter(
+				"coordinate_uncertainty_in_meters_min",
+				openapi.IN_QUERY,
+				description="Minimum coordinate uncertainty in meters",
+				type=openapi.TYPE_INTEGER,
+			),
+			openapi.Parameter(
+				"coordinate_uncertainty_in_meters_max",
+				openapi.IN_QUERY,
+				description="Maximum coordinate uncertainty in meters",
+				type=openapi.TYPE_INTEGER,
+			),
 		],
 		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
 	)

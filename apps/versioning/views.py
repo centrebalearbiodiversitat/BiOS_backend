@@ -119,30 +119,6 @@ class BasisListView(BasisFilter):
         tags=["Versioning"],
         operation_id="List basis",
         operation_description="List of basis.",
-        # manual_parameters=[
-            # openapi.Parameter(
-            #     "name",
-            #     openapi.IN_QUERY,
-            #     description="Name of the basis to search for.",
-            #     type=openapi.TYPE_STRING,
-            #     required=False,
-            # ),
-            # openapi.Parameter(
-            #     "accepted",
-            #     openapi.IN_QUERY,
-            #     description="Whether to search for accepted or not.",
-            #     type=openapi.TYPE_BOOLEAN,
-            #     required=False,
-            #     default=False,
-            # ),
-            # openapi.Parameter(
-            #     "origin",
-            #     openapi.IN_QUERY,
-            #     description="Origin of the basis to search for.",
-            #     type=openapi.TYPE_STRING,
-            #     required=False,
-            # ),
-        # ],
         responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
     )
 	def get(self, request):
@@ -154,30 +130,6 @@ class BasisCountView(BasisFilter):
         tags=["Versioning"],
         operation_id="Count basis",
         operation_description="Return the total number of the basis.",
-        # manual_parameters=[
-        #     openapi.Parameter(
-        #         "name",
-        #         openapi.IN_QUERY,
-        #         description="Name of the basis to search for.",
-        #         type=openapi.TYPE_STRING,
-        #         required=False,
-        #     ),
-        #     openapi.Parameter(
-        #         "accepted",
-        #         openapi.IN_QUERY,
-        #         description="Whether to search for accepted or not.",
-        #         type=openapi.TYPE_BOOLEAN,
-        #         required=False,
-        #         default=False,
-        #     ),
-        #     openapi.Parameter(
-        #         "origin",
-        #         openapi.IN_QUERY,
-        #         description="Origin of the basis to search for.",
-        #         type=openapi.TYPE_STRING,
-        #         required=False,
-        #     ),
-        # ],
         responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
     )
 	def get(self, request):
@@ -299,30 +251,6 @@ class SourceListView(SourceFilter):
         tags=["Versioning"],
         operation_id="List sources",
         operation_description="List the sources.",
-        # manual_parameters=[
-        #     openapi.Parameter(
-        #         "name",
-        #         openapi.IN_QUERY,
-        #         description="Name of the source to search for.",
-        #         type=openapi.TYPE_STRING,
-        #         required=False,
-        #     ),
-        #     openapi.Parameter(
-        #         "accepted",
-        #         openapi.IN_QUERY,
-        #         description="Whether to search for accepted or not.",
-        #         type=openapi.TYPE_BOOLEAN,
-        #         required=False,
-        #         default=False,
-        #     ),
-        #     openapi.Parameter(
-        #         "origin",
-        #         openapi.IN_QUERY,
-        #         description="Origin of the source to search for.",
-        #         type=openapi.TYPE_STRING,
-        #         required=False,
-        #     ),
-        # ],
         responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
     )
 	def get(self, request):
@@ -334,30 +262,6 @@ class SourceCountView(SourceFilter):
         tags=["Versioning"],
         operation_id="Count sources",
         operation_description="Count the number of sources.",
-        manual_parameters=[
-            # openapi.Parameter(
-            #     "name",
-            #     openapi.IN_QUERY,
-            #     description="Name of the source to search for.",
-            #     type=openapi.TYPE_STRING,
-            #     required=False,
-            # ),
-            # openapi.Parameter(
-            #     "accepted",
-            #     openapi.IN_QUERY,
-            #     description="Whether to search for accepted or not.",
-            #     type=openapi.TYPE_BOOLEAN,
-            #     required=False,
-            #     default=False,
-            # ),
-            # openapi.Parameter(
-            #     "origin",
-            #     openapi.IN_QUERY,
-            #     description="Origin of the source to search for.",
-            #     type=openapi.TYPE_STRING,
-            #     required=False,
-            # ),
-        ],
         responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
     )
 	def get(self, request):

@@ -4,9 +4,22 @@ from common.utils.serializers import CaseModelSerializer
 
 
 class BasisSerializer(CaseModelSerializer):
+	name = serializers.SerializerMethodField()
+
+	def get_name(self, obj):
+		return obj.get_name()
+
 	class Meta:
 		model = Basis
-		fields = "__all__"
+		fields = [
+			"name",
+			"acronym",
+			"url",
+			"description",
+			"authors",
+			"citation",
+			"contact"
+		]
 
 
 class SourceSerializer(CaseModelSerializer):
@@ -17,7 +30,7 @@ class SourceSerializer(CaseModelSerializer):
 	data_type = serializers.CharField(source="get_data_type_display")
 
 	def get_name(self, obj):
-		return obj.basis.acronym or obj.basis.name or obj.basis.internal_name
+		return obj.basis.get_name()
 
 	class Meta:
 		model = Source

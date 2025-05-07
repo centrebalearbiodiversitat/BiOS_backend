@@ -34,7 +34,22 @@ class LatLonModelForm(IdFieldForm, TranslateForm):
 		return cleaned_data
 
 
-class OccurrenceForm(LatLonModelForm):
+class YearOccurrenceModelForm(TranslateForm):
+	collection_date_year_min = forms.IntegerField(required=False, label="Minimum Year")
+	collection_date_year_max = forms.IntegerField(required=False, label="Maximum Year")
+
+	def clean(self):
+		cleaned_data = super().clean()
+		year_min = cleaned_data.get("collection_date_year_min")
+		year_max = cleaned_data.get("collection_date_year_max")
+
+		if year_min and year_max and year_min > year_max:
+			raise forms.ValidationError("Minimum Year cannot be greater than Maximum Year.")
+
+		return cleaned_data
+
+
+class OccurrenceForm(LatLonModelForm, YearOccurrenceModelForm):
 	taxonomy = forms.IntegerField(required=False)
 	voucher = forms.IntegerField(required=False)
 	geographical_location = forms.IntegerField(required=False)
@@ -53,6 +68,3 @@ class OccurrenceForm(LatLonModelForm):
 		"month": "collection_date_month",
 		"day": "collection_date_day",
 	}
-
-	def __init__(self, *args, **kwargs):
-		super().__init__(*args, **kwargs)

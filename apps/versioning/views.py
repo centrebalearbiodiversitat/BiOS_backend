@@ -117,32 +117,8 @@ class BasisFilter(APIView):
 class BasisListView(BasisFilter):
 	@swagger_auto_schema(
         tags=["Versioning"],
-        operation_id="List basiss",
-        operation_description="List Basiss with optional filters",
-        manual_parameters=[
-            openapi.Parameter(
-                "name",
-                openapi.IN_QUERY,
-                description="Name of the basis to search for.",
-                type=openapi.TYPE_STRING,
-                required=False,
-            ),
-            openapi.Parameter(
-                "accepted",
-                openapi.IN_QUERY,
-                description="Whether to search for accepted or not.",
-                type=openapi.TYPE_BOOLEAN,
-                required=False,
-                default=False,
-            ),
-            openapi.Parameter(
-                "origin",
-                openapi.IN_QUERY,
-                description="Origin of the basis to search for.",
-                type=openapi.TYPE_STRING,
-                required=False,
-            ),
-        ],
+        operation_id="List basis",
+        operation_description="List of basis.",
         responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
     )
 	def get(self, request):
@@ -152,82 +128,58 @@ class BasisListView(BasisFilter):
 class BasisCountView(BasisFilter):
 	@swagger_auto_schema(
         tags=["Versioning"],
-        operation_id="Count basiss",
-        operation_description="List Basiss with optional filters",
-        manual_parameters=[
-            openapi.Parameter(
-                "name",
-                openapi.IN_QUERY,
-                description="Name of the basis to search for.",
-                type=openapi.TYPE_STRING,
-                required=False,
-            ),
-            openapi.Parameter(
-                "accepted",
-                openapi.IN_QUERY,
-                description="Whether to search for accepted or not.",
-                type=openapi.TYPE_BOOLEAN,
-                required=False,
-                default=False,
-            ),
-            openapi.Parameter(
-                "origin",
-                openapi.IN_QUERY,
-                description="Origin of the basis to search for.",
-                type=openapi.TYPE_STRING,
-                required=False,
-            ),
-        ],
+        operation_id="Count basis",
+        operation_description="Return the total number of the basis.",
         responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
     )
 	def get(self, request):
 		return Response(super().get(request).count())
 
 
-class SourceSearchView(APIView):
-	@swagger_auto_schema(
-        tags=["Versioning"],
-        operation_id="Get source by name",
-        operation_description="Retrieve a Source by name",
-        manual_parameters=[
-            openapi.Parameter(
-                "name",
-                openapi.IN_QUERY,
-                description="Name of the source to search for.",
-                type=openapi.TYPE_STRING,
-                required=True,
-            ),
-            openapi.Parameter(
-                "exact",
-                openapi.IN_QUERY,
-                description="Whether to search for an exact match or not.",
-                type=openapi.TYPE_BOOLEAN,
-                required=False,
-            ),
-        ],
-        responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
-    )
-	def get(self, request):
-		source_form = SourceForm(self.request.GET)
-
-		if not source_form.is_valid():
-			raise CBBAPIException(source_form.errors, code=400)
-
-		query = source_form.cleaned_data.get("name")
-		exact = source_form.cleaned_data.get("exact", False)
-
-		if not query:
-			raise CBBAPIException("Missing name parameter", code=400)
-
-		filters = {}
-		filters["name__iexact" if exact else "name__icontains"] = query
-
-		if filters:
-			queryset = Source.objects.filter(**filters)
-		else:
-			queryset = Source.objects.none()
-
-		return Response(SourceSerializer(queryset, many=True).data)
+# class SourceSearchView(APIView):
+# 	@swagger_auto_schema(
+#         tags=["Versioning"],
+#         operation_id="Get a source by its name",
+#         operation_description="Retrieve a source by its name.",
+#         manual_parameters=[
+#             openapi.Parameter(
+#                 "name",
+#                 openapi.IN_QUERY,
+#                 description="Source name",
+#                 type=openapi.TYPE_STRING,
+#                 required=True,
+#             ),
+#             openapi.Parameter(
+#                 "exact",
+#                 openapi.IN_QUERY,
+#                 description="Whether to search for an exact match or not",
+#                 type=openapi.TYPE_BOOLEAN,
+#                 required=False,
+#             ),
+#         ],
+#         responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
+#     )
+# 	def get(self, request):
+# 		source_form = SourceForm(self.request.GET)
+#
+# 		if not source_form.is_valid():
+# 			raise CBBAPIException(source_form.errors, code=400)
+#
+# 		query = source_form.cleaned_data.get("name")
+# 		exact = source_form.cleaned_data.get("exact", False)
+#
+# 		if not query:
+# 			raise CBBAPIException("Missing name parameter", code=400)
+#
+# 		filters = {}
+# 		filters["basis__name__iexact" if exact else "basis__name__icontains"] = query
+#
+# 		if filters:
+# 			queryset = Source.objects.filter(**filters)
+# 		else:
+# 			queryset = Source.objects.none()
+#
+# 		return Response(SourceSerializer(queryset, many=True).data)
 
 
 class SourceCRUDView(APIView):
@@ -298,31 +250,7 @@ class SourceListView(SourceFilter):
 	@swagger_auto_schema(
         tags=["Versioning"],
         operation_id="List sources",
-        operation_description="List Sources with optional filters",
-        manual_parameters=[
-            openapi.Parameter(
-                "name",
-                openapi.IN_QUERY,
-                description="Name of the source to search for.",
-                type=openapi.TYPE_STRING,
-                required=False,
-            ),
-            openapi.Parameter(
-                "accepted",
-                openapi.IN_QUERY,
-                description="Whether to search for accepted or not.",
-                type=openapi.TYPE_BOOLEAN,
-                required=False,
-                default=False,
-            ),
-            openapi.Parameter(
-                "origin",
-                openapi.IN_QUERY,
-                description="Origin of the source to search for.",
-                type=openapi.TYPE_STRING,
-                required=False,
-            ),
-        ],
+        operation_description="List the sources.",
         responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
     )
 	def get(self, request):
@@ -333,31 +261,7 @@ class SourceCountView(SourceFilter):
 	@swagger_auto_schema(
         tags=["Versioning"],
         operation_id="Count sources",
-        operation_description="List Sources with optional filters",
-        manual_parameters=[
-            openapi.Parameter(
-                "name",
-                openapi.IN_QUERY,
-                description="Name of the source to search for.",
-                type=openapi.TYPE_STRING,
-                required=False,
-            ),
-            openapi.Parameter(
-                "accepted",
-                openapi.IN_QUERY,
-                description="Whether to search for accepted or not.",
-                type=openapi.TYPE_BOOLEAN,
-                required=False,
-                default=False,
-            ),
-            openapi.Parameter(
-                "origin",
-                openapi.IN_QUERY,
-                description="Origin of the source to search for.",
-                type=openapi.TYPE_STRING,
-                required=False,
-            ),
-        ],
+        operation_description="Count the number of sources.",
         responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
     )
 	def get(self, request):

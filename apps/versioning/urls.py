@@ -9,7 +9,7 @@ from apps.versioning.views import (
 	SourceCRUDView,
 	SourceListView,
 	SourceCountView,
-	SourceSearchView,
+	# SourceSearchView,
 )
 
 app_name = "versioning"
@@ -21,6 +21,6 @@ urlpatterns = [
 	path("/source", SourceCRUDView.as_view(), name="source_crud"),
 	path("/source/list", SourceListView.as_view(), name="source_list"),
 	path("/source/list/count", SourceCountView.as_view(), name="source_list_count"),
-	path("/source/search", SourceSearchView.as_view(), name="source_search"),
+	# path("/source/search", SourceSearchView.as_view(), name="source_search"),
 	path("/origin", OriginIdCRUDView.as_view(), name="os_crud"),
 ]

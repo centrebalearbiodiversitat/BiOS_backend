@@ -1,4 +1,5 @@
 from django.db.models import Q, Count, Case, F, When, Value
+from django.contrib.gis.geos import Polygon
 from django.http import JsonResponse
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
@@ -62,21 +63,46 @@ class OccurrenceCRUDView(APIView):
 class OccurrenceFilter(APIView):
 	def filter_by_range(self, filters, field_name, min_value, max_value):
 
-		print(f'MIN_VALUE: {min_value} ---- MAX_VALUE: {max_value}')
-
 		if min_value:
-			print(f'{min_value}')
 			filters &= Q(**{f"{field_name}__gte": min_value})
 		if max_value:
-			print(f'{max_value}')
 			filters &= Q(**{f"{field_name}__lte": max_value})
 
-		print(f'---- {filters} ----')
 		return filters
+	
+	def get_coordinate_filter(self, filters, field_name, latitude_min, latitude_max, longitude_min, longitude_max):
 
+		if all([latitude_min is not None, latitude_max is not None, longitude_min is not None, longitude_max is not None]):
+			try:
+				min_lat = float(latitude_min)
+				max_lat = float(latitude_max)
+				min_lon = float(longitude_min)
+				max_lon = float(longitude_max)
+
+				if min_lat > max_lat or min_lon > max_lon:
+					print("Error: Minimum values are greater than maximum values.")
+
+					return filters
+				
+				area = Polygon(
+					((min_lon, min_lat), (min_lon, max_lat), (max_lon, max_lat), (max_lon, min_lat), (min_lon, min_lat)),
+					srid=4326
+				)
+				spatial_filter = Q(**{f"{field_name}__within": area})
+
+				return filters & spatial_filter
+
+			except (ValueError, TypeError) as e:
+				print(f"Error when processing coordinates: {e}")
+				return filters
+
+		else:
+			print("Not all valid limits were provided for the coordinates. No spatial filter is applied.")
+			return filters
+
+	
 	def calculate(self, request, in_geography_scope=True):
 
-		# print(request.GET)
 		occur_form = OccurrenceForm(data=request.GET)
 
 		if not occur_form.is_valid():
@@ -144,21 +170,23 @@ class OccurrenceFilter(APIView):
 		if has_sequence is not None:
 			filters &= Q(sequence__isnull=not has_sequence)
 
-		# Design the coordinate filtering system
-
 		range_parameters_direct = ["coordinate_uncertainty_in_meters", "elevation", "depth", "collection_date_year"]
 
-		print(occur_form.cleaned_data)
-
 		for param in range_parameters_direct:
-			print(f'{param}\n')
 			filters = self.filter_by_range(
 				filters,
 				param,
 				occur_form.cleaned_data.get(f"{param}_min"),
 				occur_form.cleaned_data.get(f"{param}_max"),
 			)
-			print(f'{filters}\n')
+		filters = self.get_coordinate_filter(
+			filters,
+			"location",
+			occur_form.cleaned_data.get("decimal_latitude_min"),
+			occur_form.cleaned_data.get("decimal_latitude_max"),
+			occur_form.cleaned_data.get("decimal_longitude_min"),
+			occur_form.cleaned_data.get("decimal_longitude_max"),
+		)
 
 		occurrences = Occurrence.objects.filter(filters).distinct()
 
@@ -408,7 +436,7 @@ class OccurrenceListView(OccurrenceFilter):
 				"day",
 				openapi.IN_QUERY,
 				description="Filter occurrences by day field.",
-				type=openapi.TYPE_INTEGER,
+				type=openapi.TYPE_INTEGER
 			),
 			openapi.Parameter(
 				"basisOfRecord", # We need to use the basisOfRecord id, maybe we need a endpoint to list the basisOfRecord with the IDs
@@ -416,34 +444,34 @@ class OccurrenceListView(OccurrenceFilter):
 				description="Filter occurrences by basis of record field.",
 				type=openapi.TYPE_STRING,
 			),
-			# openapi.Parameter(
-			# 	"decimal_latitude_min",
-			# 	openapi.IN_QUERY,
-			# 	description="Minimum latitude",
-			# 	type=openapi.TYPE_NUMBER,
-			# 	format=openapi.FORMAT_DECIMAL,
-			# ),
-			# openapi.Parameter(
-			# 	"decimal_latitude_max",
-			# 	openapi.IN_QUERY,
-			# 	description="Maximum latitude",
-			# 	type=openapi.TYPE_NUMBER,
-			# 	format=openapi.FORMAT_DECIMAL,
-			# ),
-			# openapi.Parameter(
-			# 	"decimal_longitude_min",
-			# 	openapi.IN_QUERY,
-			# 	description="Minimum longitude",
-			# 	type=openapi.TYPE_NUMBER,
-			# 	format=openapi.FORMAT_DECIMAL,
-			# ),
-			# openapi.Parameter(
-			# 	"decimal_longitude_max",
-			# 	openapi.IN_QUERY,
-			# 	description="Maximum longitude",
-			# 	type=openapi.TYPE_NUMBER,
-			# 	format=openapi.FORMAT_DECIMAL,
-			# ),
+			openapi.Parameter(
+				"decimal_latitude_min",
+				openapi.IN_QUERY,
+				description="Minimum latitude",
+				type=openapi.TYPE_NUMBER,
+				format=openapi.FORMAT_DECIMAL,
+			),
+			openapi.Parameter(
+				"decimal_latitude_max",
+				openapi.IN_QUERY,
+				description="Maximum latitude",
+				type=openapi.TYPE_NUMBER,
+				format=openapi.FORMAT_DECIMAL,
+			),
+			openapi.Parameter(
+				"decimal_longitude_min",
+				openapi.IN_QUERY,
+				description="Minimum longitude",
+				type=openapi.TYPE_NUMBER,
+				format=openapi.FORMAT_DECIMAL,
+			),
+			openapi.Parameter(
+				"decimal_longitude_max",
+				openapi.IN_QUERY,
+				description="Maximum longitude",
+				type=openapi.TYPE_NUMBER,
+				format=openapi.FORMAT_DECIMAL,
+			),
 			openapi.Parameter(
 				"collection_date_year_min",
 				openapi.IN_QUERY,
@@ -496,7 +524,6 @@ class OccurrenceListView(OccurrenceFilter):
 		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
 	)
 	def get(self, request):
-		# return Response(BaseOccurrenceSerializer(self.calculate(request), many=True).data)
 		return Response(OccurrenceSerializer(self.calculate(request), many=True).data)
 
 

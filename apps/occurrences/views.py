@@ -126,38 +126,38 @@ def occurrence_schema(tags: str = "Occurrences", operation_id: str = None, opera
 	# 	type=openapi.TYPE_INTEGER,
 	# 	required=False,
 	# ),
-	# openapi.Parameter(
-	# 	"decimal_latitude_min",
-	# 	openapi.IN_QUERY,
-	# 	description="Minimum latitude",
-	# 	type=openapi.TYPE_NUMBER,
-	# 	format=openapi.FORMAT_DECIMAL,
-	# 	required=False,
-	# ),
-	# openapi.Parameter(
-	# 	"decimal_latitude_max",
-	# 	openapi.IN_QUERY,
-	# 	description="Maximum latitude",
-	# 	type=openapi.TYPE_NUMBER,
-	# 	format=openapi.FORMAT_DECIMAL,
-	# 	required=False,
-	# ),
-	# openapi.Parameter(
-	# 	"decimal_longitude_min",
-	# 	openapi.IN_QUERY,
-	# 	description="Minimum longitude",
-	# 	type=openapi.TYPE_NUMBER,
-	# 	format=openapi.FORMAT_DECIMAL,
-	# 	required=False,
-	# ),
-	# openapi.Parameter(
-	# 	"decimal_longitude_max",
-	# 	openapi.IN_QUERY,
-	# 	description="Maximum longitude",
-	# 	type=openapi.TYPE_NUMBER,
-	# 	format=openapi.FORMAT_DECIMAL,
-	# 	required=False,
-	# ),
+	openapi.Parameter(
+		"decimalLatitudeMin",
+		openapi.IN_QUERY,
+		description="Minimum latitude",
+		type=openapi.TYPE_NUMBER,
+		format=openapi.FORMAT_DECIMAL,
+		required=False,
+	),
+	openapi.Parameter(
+		"decimalLatitudeMax",
+		openapi.IN_QUERY,
+		description="Maximum latitude",
+		type=openapi.TYPE_NUMBER,
+		format=openapi.FORMAT_DECIMAL,
+		required=False,
+	),
+	openapi.Parameter(
+		"decimalLongitudeMin",
+		openapi.IN_QUERY,
+		description="Minimum longitude",
+		type=openapi.TYPE_NUMBER,
+		format=openapi.FORMAT_DECIMAL,
+		required=False,
+	),
+	openapi.Parameter(
+		"decimalLongitudeMax",
+		openapi.IN_QUERY,
+		description="Maximum longitude",
+		type=openapi.TYPE_NUMBER,
+		format=openapi.FORMAT_DECIMAL,
+		required=False,
+	),
 ],
 		responses={
 			200: "Success",
@@ -256,11 +256,8 @@ class OccurrenceFilter(APIView):
 
 		taxonomy = occur_form.cleaned_data.get("taxonomy", None)
 		add_synonyms = occur_form.cleaned_data.get("add_synonyms")
-		# collection_date_month = occur_form.cleaned_data.get("collection_date_month", None)  # If we don't want a monthly range
 
 		filters = Q()
-
-		# print(f'FILTERS_1: {filters}')
 
 		if taxonomy:
 			taxon_query = Q(id=taxonomy)
@@ -318,8 +315,6 @@ class OccurrenceFilter(APIView):
 		has_sequence = occur_form.cleaned_data.get("has_sequence", None)
 		if has_sequence is not None:
 			filters &= Q(sequence__isnull=not has_sequence)
-
-		# Design the coordinate filtering system
 
 		range_parameters_direct = ["coordinate_uncertainty_in_meters", "elevation", "depth", "collection_date_year",
 								   "collection_date_month"]
@@ -492,8 +487,7 @@ class OccurrenceListDownloadView(OccurrenceFilter):
 	)
 	def get(self, request):
 		response = self.calculate(request)
-		flattened_data = CSVDownloadMixin.flatten_json(DownloadOccurrenceSerializer(response, many=True).data,
-													   ["sources"])
+		flattened_data = CSVDownloadMixin.flatten_json(DownloadOccurrenceSerializer(response, many=True).data, ["sources"])
 
 		return CSVDownloadMixin.generate_csv(flattened_data, "occurrences.csv")
 

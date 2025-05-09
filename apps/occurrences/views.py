@@ -208,12 +208,12 @@ class OccurrenceCRUDView(APIView):
 
 class OccurrenceFilter(APIView):
 	def filter_by_range(self, filters, field_name, min_value, max_value):
-
-		if min_value:
+		
+		if min_value is not None:
 			filters &= Q(**{f"{field_name}__gte": min_value})
-		if max_value:
+		if max_value is not None:
 			filters &= Q(**{f"{field_name}__lte": max_value})
-
+		
 		return filters
 	
 	def get_coordinate_filter(self, filters, field_name, latitude_min, latitude_max, longitude_min, longitude_max):

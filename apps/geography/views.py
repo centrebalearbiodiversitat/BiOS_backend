@@ -10,59 +10,12 @@ from .models import GeographicLevel
 from .serializers import GeographicLevelSerializer, MinimalGeographicLevelSerializer
 
 
-class GeographicLevelDetailView(APIView):
-	@swagger_auto_schema(
-        tags=["Geography"],
-        operation_id="Search geographic level by name",
-        operation_description="Retrieve a geographic level information by name (supports exact and partial match).",
-        manual_parameters=[
-            openapi.Parameter(
-                name="name",
-                in_=openapi.IN_QUERY,
-                type=openapi.TYPE_STRING,
-                description="Name of the geographic level to search for.",
-                required=True,
-            ),
-            openapi.Parameter(
-                name="exact",
-                in_=openapi.IN_QUERY,
-                type=openapi.TYPE_BOOLEAN,
-                description="Indicates whether to search for an exact match (case-insensitive).",
-                required=False,
-				default=False
-            )
-        ],
-        responses={
-			200: "Success",
-			400: "Bad Request",
-			404: "Not Found"
-		}
-    )
-	def get(self, request):
-		geographic_form = GeographicLevelForm(data=self.request.GET)
-
-		filters = {}
-
-		if not geographic_form.is_valid():
-			raise CBBAPIException(geographic_form.errors, code=400)
-
-		query = geographic_form.cleaned_data.get("name", None)
-		exact = geographic_form.cleaned_data.get("exact", False)
-
-		if not query:
-			return Response([])
-
-		filters["name__iexact" if exact else "name__icontains"] = query
-
-		return Response(MinimalGeographicLevelSerializer(GeographicLevel.objects.filter(**filters)[:10], many=True).data)
-
-
-class GeographicLevelIdView(APIView):
-	@swagger_auto_schema(
-		tags=["Geography"],
-		operation_id="Search geographic level by ID",
-		operation_description="Retrieve the information for a specific geographic level by its ID.",
-		manual_parameters=[
+def geography_schema(tags: str = "Geography", operation_id: str = None, operation_description: str = None, manual_parameters: list = None):
+	return swagger_auto_schema(
+		tags=[tags],
+		operation_id=operation_id,
+		operation_description=operation_description,
+		manual_parameters=manual_parameters or [
 			openapi.Parameter(
 				"id",
 				openapi.IN_QUERY,
@@ -75,25 +28,8 @@ class GeographicLevelIdView(APIView):
 			200: "Success",
 			400: "Bad Request",
 			404: "Not Found"
-		},
+		}
 	)
-	def get(self, request):
-		geographic_form = GeographicLevelForm(self.request.GET)
-
-		if not geographic_form.is_valid():
-			raise CBBAPIException(geographic_form.errors, code=400)
-
-		level_id = geographic_form.cleaned_data.get("id", None)
-		if not level_id:
-			raise CBBAPIException("Missing id parameter", code=400)
-
-		try:
-			level = GeographicLevel.objects.get(id=level_id)
-		except GeographicLevel.DoesNotExist:
-			raise CBBAPIException("Geographic level does not exist.", code=404)
-
-		return Response(GeographicLevelSerializer(level).data)
-
 
 class GeographicLevelFilter(APIView):
 	def get(self, request):
@@ -125,6 +61,72 @@ class GeographicLevelFilter(APIView):
 		else:
 			query = GeographicLevel.objects.none()
 		return query
+
+
+class GeographicLevelDetailView(APIView):
+	@geography_schema(
+		operation_id="Search geographic level by name",
+		operation_description="Retrieve a geographic level information by name (supports exact and partial match).",
+		manual_parameters=[
+			openapi.Parameter(
+				name="name",
+				in_=openapi.IN_QUERY,
+				type=openapi.TYPE_STRING,
+				description="Name of the geographic level to search for.",
+				required=True,
+			),
+			openapi.Parameter(
+				name="exact",
+				in_=openapi.IN_QUERY,
+				type=openapi.TYPE_BOOLEAN,
+				description="Indicates whether to search for an exact match.",
+				required=False,
+				default=False
+			)
+		],
+	)
+
+	def get(self, request):
+		geographic_form = GeographicLevelForm(data=self.request.GET)
+
+		filters = {}
+
+		if not geographic_form.is_valid():
+			raise CBBAPIException(geographic_form.errors, code=400)
+
+		query = geographic_form.cleaned_data.get("name", None)
+		exact = geographic_form.cleaned_data.get("exact", False)
+
+		if not query:
+			return Response([])
+
+		filters["name__iexact" if exact else "name__icontains"] = query
+
+		return Response(MinimalGeographicLevelSerializer(GeographicLevel.objects.filter(**filters)[:10], many=True).data)
+
+
+class GeographicLevelIdView(APIView):
+	@swagger_auto_schema(
+		operation_id="Search geographic level by ID",
+		operation_description="Retrieve the information for a specific geographic level by its ID.",
+	)
+	def get(self, request):
+		geographic_form = GeographicLevelForm(self.request.GET)
+
+		if not geographic_form.is_valid():
+			raise CBBAPIException(geographic_form.errors, code=400)
+
+		level_id = geographic_form.cleaned_data.get("id", None)
+		if not level_id:
+			raise CBBAPIException("Missing id parameter", code=400)
+
+		try:
+			level = GeographicLevel.objects.get(id=level_id)
+		except GeographicLevel.DoesNotExist:
+			raise CBBAPIException("Geographic level does not exist.", code=404)
+
+		return Response(GeographicLevelSerializer(level).data)
+
 
 # class GeographicLevelListView(GeographicLevelFilter):
 # 	@swagger_auto_schema(
@@ -166,19 +168,10 @@ class GeographicLevelFilter(APIView):
 
 
 class GeographicLevelParent(APIView):
-	@swagger_auto_schema(
-        tags=["Geography"],
-        operation_id="Get parents of a geographic level",
-        operation_description="Retrieve the parents of a specific geographic level by its ID.",
-        manual_parameters=[
-            openapi.Parameter(name="id",
-							  in_=openapi.IN_QUERY,
-							  description="Geographic level ID",
-							  type=openapi.TYPE_INTEGER,
-							  required=True),
-        ],
-        responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
-    )
+	@geography_schema(
+		operation_id="Get parents of a geographic level",
+		operation_description="Retrieve the parents of a specific geographic level by its ID."
+	)
 	def get(self, request):
 		geographic_form = GeographicLevelForm(self.request.GET)
 
@@ -198,25 +191,10 @@ class GeographicLevelParent(APIView):
 
 
 class GeographicLevelChildren(APIView):
-	@swagger_auto_schema(
-        tags=["Geography"],
-        operation_id="Get children of a geographic level",
-        operation_description="Retrieve the children of a specific geographic level by its ID.",
-        manual_parameters=[
-            openapi.Parameter(
-                name="id",
-                in_=openapi.IN_QUERY,
-                type=openapi.TYPE_INTEGER,
-                description="Geographic level ID",
-                required=True,
-            )
-        ],
-        responses={
-			200: "Success",
-			400: "Bad Request",
-			404: "Not Found"
-		},
-    )
+	@geography_schema(
+		operation_id="Get children of a geographic level",
+		operation_description="Retrieve the children of a specific geographic level by its ID."
+	)
 	def get(self, request):
 		geographic_form = GeographicLevelForm(self.request.GET)
 

@@ -2,7 +2,7 @@ from django import forms
 from common.utils.forms import IdFieldForm, TranslateForm, CamelCaseForm
 
 
-class LatLonModelForm(IdFieldForm, TranslateForm):
+class LatLonForm(IdFieldForm, TranslateForm):
 	decimal_latitude_min = forms.DecimalField(max_digits=8, decimal_places=5, required=False, label="Minimum Latitude")
 	decimal_latitude_max = forms.DecimalField(max_digits=8, decimal_places=5, required=False, label="Maximum Latitude")
 	decimal_longitude_min = forms.DecimalField(max_digits=8, decimal_places=5, required=False, label="Minimum Longitude")
@@ -69,7 +69,7 @@ class DateOccurrenceForm(CamelCaseForm):
 		return cleaned_data
 
 
-class OccurrenceForm(LatLonModelForm, DateOccurrenceForm):
+class OccurrenceForm(LatLonForm, DateOccurrenceForm):
 	taxonomy = forms.IntegerField(required=False)
 	voucher = forms.IntegerField(required=False)
 	geographical_location = forms.IntegerField(required=False)

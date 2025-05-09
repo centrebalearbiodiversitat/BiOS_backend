@@ -10,7 +10,7 @@ from .views import (
 	SequenceCountView,
 	SequenceListView,
 	SequenceListCSVView,
-	SequenceSearchView,
+	# SequenceSearchView,
 	SequenceSourceCountView,
 	SequenceSourceCSVDownloadView,
 )
@@ -23,7 +23,7 @@ urlpatterns = [
 	path("/marker/list/count", MarkerCountView.as_view(), name="marker_list_count"),
 	# path("/marker/taxon/list", MarkerTaxonCountListView.as_view(), name="marker_occur_list"),
 	path("/sequence", SequenceCRUDView.as_view(), name="sequence_crud"),
-	path("/sequence/search", SequenceSearchView.as_view(), name="sequence_search"),
+	# path("/sequence/search", SequenceSearchView.as_view(), name="sequence_search"),
 	path("/sequence/list", SequenceListView.as_view(), name="sequence_list"),
 	path("/sequence/list/count", SequenceCountView.as_view(), name="sequence_list_count"),
 	path("/sequence/list/csv", SequenceListCSVView.as_view(), name="sequence_list_csv"),

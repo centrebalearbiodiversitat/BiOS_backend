@@ -80,6 +80,9 @@ class Occurrence(ReferencedModel, LatLonModel):
 			except ValueError:
 				raise ValidationError("The collection date you entered is not valid.")
 
+	def translate_basis_of_record(self):
+		return self.TRANSLATE_BASIS_OF_RECORD[self.basis_of_record] if self.basis_of_record else None
+
 	def __str__(self):
 		return f"{self.taxonomy} ({self.voucher})"
 

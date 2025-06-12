@@ -1,5 +1,5 @@
 from django.db.models import Count, Q, OuterRef, Subquery, Case, When, Value, IntegerField
-from django.db.models.functions import Coalesce
+# from django.db.models.functions import Coalesce
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.response import Response
@@ -14,12 +14,14 @@ from .models import Marker, Sequence
 from .serializers import (
 	MarkerCountSerializer,
 	MarkerSerializer,
-	SequenceSerializer,
+	# SequenceSerializer,
 	SequenceAggregationSerializer,
-	SequenceCSVSerializer
+	SequenceCSVSerializer, SequenceMinimalSerializer
 )
 from common.utils.views import CSVDownloadMixin
 from common.utils.serializers import get_paginated_response
+from common.utils.utils import generate_csv, flatten_row, flatten_columns, remove_from_keys
+from common.utils.custom_swag_schema import custom_swag_schema
 
 
 def genetic_schema(tags: str = "Genetic", operation_id: str = None, operation_description: str = None, manual_parameters: list = None):
@@ -44,11 +46,26 @@ def genetic_schema(tags: str = "Genetic", operation_id: str = None, operation_de
 	)
 
 
+m1 = [
+	openapi.Parameter(
+		"id",
+		openapi.IN_QUERY,
+		description="Marker ID",
+		type=openapi.TYPE_INTEGER,
+		required=True
+	)
+]
+
+
 class MarkerCRUDView(APIView):
-	@genetic_schema(
+
+	@custom_swag_schema(
+		tags="Genetic",
 		operation_id="Search marker by ID",
 		operation_description="Get details of a specific marker by its ID.",
+		manual_parameters=m1
 	)
+
 	def get(self, request):
 		marker_form = MarkerForm(data=self.request.GET)
 
@@ -197,7 +214,7 @@ class MarkerFilter(APIView):
 class MarkerListView(MarkerFilter):
 	@genetic_schema(
 		operation_id="List markers by taxon ID",
-		operation_description="Retrieve the markers of a taxon by its ID.",
+		operation_description="Retrieve the markers list of a taxon by its ID.",
 		manual_parameters=[
 			openapi.Parameter(
 				"taxonomy",
@@ -334,7 +351,8 @@ class SequenceCRUDView(APIView):
 		except Sequence.DoesNotExist:
 			raise CBBAPIException("Sequence does not exist", 404)
 
-		return Response(SequenceSerializer(gfs).data)
+		# return Response(SequenceSerializer(gfs).data)
+		return Response(SequenceMinimalSerializer(gfs).data)
 
 
 # class SequenceSearchView(APIView):
@@ -377,7 +395,7 @@ class SequenceFilter(APIView):
 				taxon = TaxonomicLevel.objects.get(id=taxon)
 				filters |= Q(occurrence__taxonomy=taxon) | Q(occurrence__taxonomy__lft__gte=taxon.lft, occurrence__taxonomy__rght__lte=taxon.rght)
 			except TaxonomicLevel.DoesNotExist:
-				raise CBBAPIException("Taxonomic level does not exist", 404)
+				raise CBBAPIException("Taxon does not exist.", 404)
 
 		marker = seq_form.cleaned_data.get("marker")
 		if marker:
@@ -401,13 +419,36 @@ class SequenceListView(SequenceFilter):
 				description="Taxon ID",
 				type=openapi.TYPE_INTEGER,
 				required=True,
+			),
+			openapi.Parameter(
+				"marker",
+				openapi.IN_QUERY,
+				description="Marker ID",
+				type=openapi.TYPE_INTEGER,
+				required=False,
+			),
+			openapi.Parameter(
+				"in_geography_scope",
+				openapi.IN_QUERY,
+				description="Geography ID",
+				type=openapi.TYPE_BOOLEAN,
+				required=False,
+				default=False
+			),
+			openapi.Parameter(
+				"page",
+				openapi.IN_QUERY,
+				description="Page",
+				type=openapi.TYPE_INTEGER,
+				required=False,
 			)
 		]
 	)
 	def get(self, request):
-		query = super().get(request).prefetch_related("sources", "markers").select_related("occurrence", "occurrence__taxonomy")
+		query = super().get(request)
 
-		return Response(get_paginated_response(request, query, SequenceSerializer))
+		# return Response(get_paginated_response(request, query, SequenceSerializer))
+		return Response(get_paginated_response(request, query, SequenceMinimalSerializer))
 
 
 class SequenceCountView(SequenceFilter):
@@ -431,7 +472,7 @@ class SequenceCountView(SequenceFilter):
 class SequenceListCSVView(SequenceFilter):
 	@genetic_schema(
 		operation_id="List genetic occurrences by taxon ID (CSV)",
-		operation_description="Retrieve a CSV with the genetic occurrences of a taxon by its ID.",
+		operation_description="Retrieve a CSV with the genetic information of a taxon by its ID.",
 		manual_parameters=[
 			openapi.Parameter(
 				"taxonomy",
@@ -444,8 +485,7 @@ class SequenceListCSVView(SequenceFilter):
 	)
 	def get(self, request):
 		query = super().get(request).prefetch_related("sources", "markers").select_related("occurrence", "occurrence__taxonomy")
-
-		return CSVDownloadMixin.generate_csv(SequenceCSVSerializer(query, many=True).data, filename="genetic_occurrences.csv")
+		return CSVDownloadMixin.generate_csv(CSVDownloadMixin.flatten_json(SequenceCSVSerializer(query, many=True).data, ["markers"]), filename="genetic_info.csv")
 
 
 class SequenceSourceCountView(APIView):
@@ -508,44 +548,40 @@ class SequenceSourceDownload(APIView):
 			raise CBBAPIException("Missing taxon id parameter", 400)
 
 		try:
+			# filter TaxonomicLevel where the id it like the input
 			taxon = TaxonomicLevel.objects.get(id=taxon_id)
 		except TaxonomicLevel.DoesNotExist:
 			raise CBBAPIException("Taxonomic level does not exist", 404)
 
+		# filter Sequence where the related Occurrence has a taxonomy equal to taxon.
+		queryset = Sequence.objects.prefetch_related("markers", "sources", "markers__synonyms").select_related("occurrence", "occurrence__taxonomy").filter(occurrence__taxonomy=taxon)
+
 		marker_id = seq_form.cleaned_data.get("marker")
-		if not marker_id:
-			raise CBBAPIException("Missing taxon id parameter", 400)
-		try:
-			marker = Marker.objects.get(id=marker_id)
-		except Marker.DoesNotExist:
-			raise CBBAPIException("Marker does not exist", 404)
+		if marker_id:
+			try:
+				marker = Marker.objects.get(id=marker_id)
+			except Marker.DoesNotExist:
+				raise CBBAPIException("Source does not exist", 404)
+
+			queryset = queryset.filter(markers=marker)
 
 		source = seq_form.cleaned_data.get("source")
-		if not source:
-			raise CBBAPIException("Missing source name parameter", 400)
+		if source:
+			try:
+				src = Basis.objects.get(internal_name__icontains=source)
+			except Basis.DoesNotExist:
+				raise CBBAPIException("Source does not exist", 404)
 
-		try:
-			src = Basis.objects.get(internal_name__icontains=source)
-		except Marker.DoesNotExist:
-			raise CBBAPIException("Source level does not exist", 404)
+			queryset = queryset.filter(sources__source__basis=src)
 
-		queryset = Sequence.objects.filter(Q(occurrence__taxonomy=taxon) & Q(markers=marker) & Q(sources__source__basis=src))
-
-		return Response(SequenceSerializer(queryset, many=True).data)
+		return Response(SequenceMinimalSerializer(queryset, many=True).data)
 
 
 class SequenceSourceCSVDownloadView(SequenceSourceDownload):
 	@genetic_schema(
-		operation_id="Download genetic occurrences by taxon and source (CSV)",
-		operation_description="Retrieve a CSV with the genetic occurrences of a taxon by its ID and source.",
+		operation_id="Download genetic occurrences (CSV)",
+		operation_description="Retrieve a CSV with the genetic occurrences information of a taxon. It is possible filter for by its marker ID and source.",
 		manual_parameters=[
-			openapi.Parameter(
-				"marker",
-				openapi.IN_QUERY,
-				description="Marker ID",
-				type=openapi.TYPE_INTEGER,
-				required=True,
-			),
 			openapi.Parameter(
 				"taxonomy",
 				openapi.IN_QUERY,
@@ -554,16 +590,53 @@ class SequenceSourceCSVDownloadView(SequenceSourceDownload):
 				required=True,
 			),
 			openapi.Parameter(
+				"marker",
+				openapi.IN_QUERY,
+				description="Marker ID",
+				type=openapi.TYPE_INTEGER,
+				required=False,
+			),
+			openapi.Parameter(
 				"source",
 				openapi.IN_QUERY,
 				description="Source name (e.g., ncbi)",
 				type=openapi.TYPE_STRING,
-				required=True,
+				required=False,
 			),
 		]
 	)
-	def get(self, request):
-		response = super().get(request)
-		flattened_data = CSVDownloadMixin.flatten_json(response.data, ["sources", "markers"])
 
-		return CSVDownloadMixin.generate_csv(flattened_data, filename="sequences.csv")
+	def get(self, request):
+
+		# Add the taxon name
+		column_list = ['id', 'taxon', 'taxonRank', 'isolate', 'definition', 'publishedDate', 'markers_name',
+					   'occurrence_basisOfRecord', 'occurrence_coordinateUncertaintyInMeters', 'occurrence_decimalLatitude',
+					   'occurrence_decimalLongitude', 'occurrence_depth', 'occurrence_elevation', 'occurrence_voucher', 'source_flat', 'id_flat']
+
+		column_reorder = [i.replace('occurrence_', '') for i in column_list]
+
+		response = super().get(request)
+
+		a = flatten_row(response.data, ['markers'])
+		b = flatten_columns(a, ['occurrence'])
+
+		# Add a key with the list of the sources
+		for item in b:
+			source_flat = [
+				s.get('source', {}).get('name')
+				for s in item.get('sources', [])
+				if s.get('source', {}).get('name') is not None
+			]
+			item['source_flat'] = source_flat[0]
+
+			id_flat = item.get('sources', [])
+			item['id_flat'] = id_flat[0].get('externalId') if id_flat else None
+
+			item['taxon'] = item.get('occurrence_taxonomy').get('name') if id else None
+			item['taxonRank'] = item.get('occurrence_taxonomy').get('taxonRank') if id else None
+
+		# Clean the key names and reorder the final csv
+		b_clean = [{k: item[k] for k in column_list if k in item} for item in b]
+		b_clean = [remove_from_keys(item, 'occurrence_') for item in b_clean]
+
+		return generate_csv(b_clean, filename="genetic_occurrences.csv", fieldnames=column_reorder)

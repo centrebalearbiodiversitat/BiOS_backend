@@ -5,8 +5,6 @@ from apps.tags.models import Habitat
 from apps.versioning.models import Batch, OriginId, Source
 from common.utils.utils import get_or_create_source, is_batch_referenced
 
-IUCN = "IUCN"
-
 HABITATS = [
 	("forest", 1),
 	("savanna", 2),
@@ -36,10 +34,10 @@ class Command(BaseCommand):
 		for name, iucn_id in HABITATS:
 			source = get_or_create_source(
 				source_type=Source.DATABASE,
-				extraction_method=Source.API,
+				extraction_method=Source.API,  # Revisar. Easta informacion puede llegar tambien como EXPERT
 				data_type=Source.TAXON_DATA,
 				batch=batch,
-				internal_name=IUCN,
+				internal_name="IUCN",
 			)
 			habitat, created = Habitat.objects.get_or_create(
 				name=name,

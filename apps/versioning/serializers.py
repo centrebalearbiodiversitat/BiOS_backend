@@ -57,3 +57,22 @@ class OriginIdSerializer(CaseModelSerializer):
 	class Meta:
 		model = OriginId
 		exclude = ("id",)
+
+
+class SourceMinimalSerializer(CaseModelSerializer):
+	name = serializers.SerializerMethodField()
+
+	def get_name(self, obj):
+		return obj.basis.get_name()
+
+	class Meta:
+		model = Source
+		fields = ["id", "name"]
+
+
+class OriginIdMinimalSerializer(CaseModelSerializer):
+	source = SourceMinimalSerializer(read_only=True)
+
+	class Meta:
+		model = OriginId
+		exclude = ("id",)

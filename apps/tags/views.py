@@ -1,6 +1,6 @@
 from apps.tags.serializers import SystemSerializer
 from drf_yasg import openapi
-from drf_yasg.utils import swagger_auto_schema
+# from drf_yasg.utils import swagger_auto_schema
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from apps.API.exceptions import CBBAPIException
@@ -8,55 +8,26 @@ from apps.tags.models import Directive, Habitat, IUCNData, System, TaxonomicLeve
 from apps.tags.serializers import HabitatSerializer, IUCNDataSerializer, TaxonTagSerializer, DirectiveSerializer
 from common.utils.forms import TaxonomyForm
 
-# class TagListView(APIView):
-# 	@swagger_auto_schema(
-# 		tags=["Tag"],
-# 		operation_description="Retrieve a specific tag instance by its id",
-# 		manual_parameters=[
-# 			openapi.Parameter(
-# 				"id",
-# 				openapi.IN_QUERY,
-# 				description="ID of the tag to retrieve",
-# 				type=openapi.TYPE_INTEGER,
-# 				required=True,
-# 			)
-# 		],
-# 		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
-# 	)
-# 	def get(self, request):
-# 		tag_form = TagForm(self.request.GET)
+from common.utils.custom_swag_schema import custom_swag_schema
 
-# 		if not tag_form.is_valid():
-# 			raise CBBAPIException(tag_form.errors, code=400)
 
-# 		tag_id = tag_form.cleaned_data.get("id")
-# 		if not tag_id:
-# 			raise CBBAPIException("Missing id parameter", code=400)
-
-# 		try:
-# 			tag = Tag.objects.get(id=tag_id)
-# 		except Tag.DoesNotExist:
-# 			raise CBBAPIException("Tag does not exist", code=404)
-
-# 		return Response(TagSerializer(tag).data)
-
+m1 = [
+	openapi.Parameter(
+		"taxonomy",
+		openapi.IN_QUERY,
+		description="Taxon ID",
+		type=openapi.TYPE_INTEGER,
+		required=True
+	)
+]
 
 class TaxonTagListView(APIView):
-	@swagger_auto_schema(
-        tags=["Tags"],
-        operation_id="Get taxon tags by taxon ID",
-        operation_description="Retrieve a specific taxon tag instance by taxon ID.",
-        manual_parameters=[
-            openapi.Parameter(
-                "taxonomy",
-                openapi.IN_QUERY,
-                description="Taxon ID",
-                type=openapi.TYPE_INTEGER,
-                required=True,
-            )
-        ],
-        responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
-    )
+	@custom_swag_schema(
+		tags="Tags",
+		operation_id="Get the tags by taxon ID",
+		operation_description="Retrieve the tags by taxon ID.",
+		manual_parameters=m1
+	)
 	def get(self, request):
 		taxon_form = TaxonomyForm(self.request.GET)
 
@@ -64,7 +35,6 @@ class TaxonTagListView(APIView):
 			raise CBBAPIException(taxon_form.errors, code=400)
 
 		taxon_id = taxon_form.cleaned_data.get("taxonomy")
-
 		if not taxon_id:
 			raise CBBAPIException("Missing taxonomy id parameter", code=400)
 
@@ -212,21 +182,12 @@ class TaxonTagListView(APIView):
 
 
 class HabitatsListView(APIView):
-	@swagger_auto_schema(
-        tags=["Tags"],
-        operation_id="Get habitats by taxon ID",
-        operation_description="Obtains the habitats in which a taxonomic level is found by its ID.",
-        manual_parameters=[
-            openapi.Parameter(
-                name="taxonomy",
-                in_=openapi.IN_QUERY,
-                description="Taxon ID",
-                type=openapi.TYPE_INTEGER,
-                required=True,
-            ),
-        ],
-        responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
-    )
+	@custom_swag_schema(
+		tags="Tags",
+		operation_id="Get habitats by taxon ID",
+		operation_description="Obtains the habitats in which a taxon is found by its ID.",
+		manual_parameters=m1,
+	)
 	def get(self, request):
 		taxon_form = TaxonomyForm(data=request.GET)
 
@@ -234,7 +195,6 @@ class HabitatsListView(APIView):
 			raise CBBAPIException(taxon_form.errors, 400)
 
 		taxonomy = taxon_form.cleaned_data.get("taxonomy", None)
-
 		if not taxonomy:
 			raise CBBAPIException("Missing taxonomy id parameter", 400)
 
@@ -245,32 +205,18 @@ class HabitatsListView(APIView):
 
 		descendants = taxon_parent.get_descendants(include_self=True)
 
-		iucn_data = IUCNData.objects.filter(taxonomy__in=descendants)
+		filtered_habitats_queryset = Habitat.objects.filter(habitattaxonomy__taxonomy_id__in=descendants).distinct()
 
-		if not iucn_data.exists():
-			return Response(data=None)
-
-		habitats = Habitat.objects.filter(iucndata__in=iucn_data).distinct()
-
-		return Response(HabitatSerializer(habitats, many=True).data)
+		return Response(HabitatSerializer(filtered_habitats_queryset, many=True).data)
 
 
 class IUCNDataListView(APIView):
-	@swagger_auto_schema(
-        tags=["Tags"],
-        operation_id="Get IUCN data by taxon ID",
-        operation_description="Retrieve the conservation status of a taxonomic level by its ID.",
-        manual_parameters=[
-            openapi.Parameter(
-                "taxonomy",
-                openapi.IN_QUERY,
-                description="Taxon ID",
-                type=openapi.TYPE_INTEGER,
-                required=True,
-            )
-        ],
-        responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
-    )
+	@custom_swag_schema(
+		tags="Tags",
+		operation_id="Get IUCN data by taxon ID",
+		operation_description="Retrieve the conservation status of a taxon by its ID.",
+		manual_parameters=m1
+	)
 	def get(self, request):
 		iucn_form = TaxonomyForm(self.request.GET)
 
@@ -278,16 +224,17 @@ class IUCNDataListView(APIView):
 			raise CBBAPIException(iucn_form.errors, code=400)
 
 		taxon_id = iucn_form.cleaned_data.get("taxonomy")
-
 		if not taxon_id:
 			raise CBBAPIException("Missing taxonomy id parameter", code=400)
 		try:
-			taxon = IUCNData.objects.get(taxonomy=taxon_id)
+			taxon = TaxonomicLevel.objects.get(id=taxon_id)
+
 		except IUCNData.DoesNotExist:
 			raise CBBAPIException("Conservation status does not exist", code=404)
 
-		return Response(IUCNDataSerializer(taxon).data)
+		filtered_iucn_queryset = IUCNData.objects.filter(taxonomy_id__in=[taxon]).distinct()
 
+		return Response(IUCNDataSerializer(filtered_iucn_queryset, many=True).data)
 
 # class IUCNDataFilter:
 # 	def get(self, request):
@@ -404,21 +351,12 @@ class IUCNDataListView(APIView):
 
 
 class SystemListView(APIView):
-	@swagger_auto_schema(
-        tags=["Tags"],
-        operation_id="Get system by taxon ID",
-        operation_description="Obtains the system in which a taxon is found.",
-        manual_parameters=[
-            openapi.Parameter(
-                name="taxonomy",
-                in_=openapi.IN_QUERY,
-                description="Taxon ID",
-                type=openapi.TYPE_INTEGER,
-                required=True,
-            ),
-        ],
-        responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
-    )
+	@custom_swag_schema(
+		tags="Tags",
+		operation_id="Get system by taxon ID",
+		operation_description="Obtains the system information of a taxon by its ID.",
+		manual_parameters=m1
+	)
 	def get(self, request):
 		system_form = TaxonomyForm(data=request.GET)
 
@@ -426,7 +364,6 @@ class SystemListView(APIView):
 			raise CBBAPIException(system_form.errors, 400)
 
 		taxonomy = system_form.cleaned_data.get("taxonomy", None)
-
 		if not taxonomy:
 			raise CBBAPIException("Missing taxonomy id parameter", 400)
 
@@ -477,21 +414,12 @@ class SystemListView(APIView):
 
 
 class DirectiveListView(APIView):
-	@swagger_auto_schema(
-        tags=["Tags"],
-        operation_id="Get directive by taxon ID",
-        operation_description="Retrieve a specific directive instance by taxon ID.",
-        manual_parameters=[
-            openapi.Parameter(
-                "taxonomy",
-                openapi.IN_QUERY,
-                description="Taxon ID",
-                type=openapi.TYPE_INTEGER,
-                required=True,
-            )
-        ],
-        responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
-    )
+	@custom_swag_schema(
+		tags="Tags",
+		operation_id="Get directive by taxon ID",
+		operation_description="Retrieve directives instance by taxon ID.",
+		manual_parameters=m1
+	)
 	def get(self, request):
 		directive_form = TaxonomyForm(self.request.GET)
 
@@ -499,7 +427,6 @@ class DirectiveListView(APIView):
 			raise CBBAPIException(directive_form.errors, code=400)
 
 		taxon_id = directive_form.cleaned_data.get("taxonomy")
-
 		if not taxon_id:
 			raise CBBAPIException("Missing taxonomy id parameter", code=400)
 

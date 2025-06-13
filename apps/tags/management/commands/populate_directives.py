@@ -10,6 +10,8 @@ from common.utils.utils import get_or_create_source, is_batch_referenced
 BOOL_DICT = {"verdadero": True, "falso": False}
 
 
+# Quizas podemos eliminarlo porque no se usa.
+
 class Command(BaseCommand):
 	help = "Loads directives from a CSV file"
 

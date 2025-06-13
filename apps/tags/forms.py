@@ -16,16 +16,17 @@ class DirectiveForm(CamelCaseForm):
 		fields = "__all__"
 
 
+class HabitatForm(TranslateForm):
+	habitat = forms.CharField(max_length=50, required=False)
+
+
 class IUCNDataForm(TranslateForm):
-	iucn_global = forms.CharField(max_length=100, required=False)
-	iucn_europe = forms.CharField(max_length=100, required=False)
-	iucn_mediterranean = forms.CharField(max_length=100, required=False)
-	habitat = forms.IntegerField(required=False)
+	assessment = forms.CharField(max_length=50, required=False)
+	region = forms.CharField(max_length=100, required=False)
 
 	CHOICES_FIELD = {
-		"iucn_global": IUCNData.TRANSLATE_CS,
-		"iucn_europe": IUCNData.TRANSLATE_CS,
-		"iucn_mediterranean": IUCNData.TRANSLATE_CS,
+		"assessment": IUCNData.TRANSLATE_CS,
+		"region": IUCNData.TRANSLATE_RG,
 	}
 
 

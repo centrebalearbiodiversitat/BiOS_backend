@@ -81,7 +81,7 @@ class OccurrenceSerializer(BaseOccurrenceSerializer):
 	# 	return GeographicLevelSerializer(GeographicLevel.objects.filter(area__intersects=obj.location).order_by("-rank").first()).data
 
 	def get_basis_of_record(self, obj):
-		return Occurrence.TRANSLATE_BASIS_OF_RECORD[obj.basis_of_record]
+		return obj.translate_basis_of_record()
 
 	def get_event_date(self, obj):
 		year = obj.collection_date_year

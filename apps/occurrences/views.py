@@ -126,9 +126,11 @@ def occurrence_schema(tags: str = "Occurrences", operation_id: str = None, opera
 	# 	type=openapi.TYPE_INTEGER,
 	# 	required=False,
 	# ),
+	# HABLAR CON TOM
 	openapi.Parameter(
 		"decimalLatitudeMin",
 		openapi.IN_QUERY,
+		default=37.6,
 		description="Minimum latitude",
 		type=openapi.TYPE_NUMBER,
 		format=openapi.FORMAT_DECIMAL,
@@ -137,6 +139,7 @@ def occurrence_schema(tags: str = "Occurrences", operation_id: str = None, opera
 	openapi.Parameter(
 		"decimalLatitudeMax",
 		openapi.IN_QUERY,
+		default=41.5,
 		description="Maximum latitude",
 		type=openapi.TYPE_NUMBER,
 		format=openapi.FORMAT_DECIMAL,
@@ -145,6 +148,7 @@ def occurrence_schema(tags: str = "Occurrences", operation_id: str = None, opera
 	openapi.Parameter(
 		"decimalLongitudeMin",
 		openapi.IN_QUERY,
+		default=0.3,
 		description="Minimum longitude",
 		type=openapi.TYPE_NUMBER,
 		format=openapi.FORMAT_DECIMAL,
@@ -153,11 +157,13 @@ def occurrence_schema(tags: str = "Occurrences", operation_id: str = None, opera
 	openapi.Parameter(
 		"decimalLongitudeMax",
 		openapi.IN_QUERY,
+		default=6.15,
 		description="Maximum longitude",
 		type=openapi.TYPE_NUMBER,
 		format=openapi.FORMAT_DECIMAL,
 		required=False,
 	),
+			# HABLAR CON TOM
 ],
 		responses={
 			200: "Success",

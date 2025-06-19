@@ -1,5 +1,6 @@
 from django.core.exceptions import ValidationError
 from django.db import models
+from django.db.models.functions import Upper
 
 
 class Batch(models.Model):
@@ -23,36 +24,6 @@ class Batch(models.Model):
 
 
 class Basis(models.Model):
-	internal_name = models.CharField(max_length=255, unique=True)
-	name = models.CharField(max_length=255, blank=False)
-	acronym = models.CharField(max_length=50, null=True, blank=True)
-	url = models.URLField(null=True, blank=True)
-	description = models.TextField(null=True, blank=True)
-	authors = models.TextField(null=True, blank=True)
-	citation = models.TextField(null=True, blank=True)
-	contact = models.CharField(max_length=255, null=True, blank=True)
-	batch = models.ForeignKey(Batch, on_delete=models.CASCADE)
-
-	def get_name(self):
-		return self.acronym or self.name or self.internal_name
-
-	def __str__(self):
-		return f"{self.get_name()}"
-
-	class Meta:
-		verbose_name_plural = "Bases"
-
-
-class SourceManager(models.Manager):
-	def get_queryset(self):
-		qs = super().get_queryset()
-
-		return qs.select_related("basis")
-
-
-class Source(models.Model):
-	objects = SourceManager()
-
 	DATABASE = 0
 	JOURNAL_ARTICLE = 1
 	BOOK = 2
@@ -61,7 +32,7 @@ class Source(models.Model):
 	EXPERT = 5
 	MUSEUM = 6
 
-	SOURCE_TYPE_CHOICES = (
+	TYPE_CHOICES = (
 		(DATABASE, "database"),
 		(JOURNAL_ARTICLE, "journal_article"),
 		(BOOK, "book"),
@@ -70,7 +41,7 @@ class Source(models.Model):
 		(EXPERT, "expert"),
 		(MUSEUM, "museum"),
 	)
-	TRANSLATE_SOURCE_TYPE = {
+	TRANSLATE_TYPE = {
 		DATABASE: "database",
 		"database": DATABASE,
 		JOURNAL_ARTICLE: "journal_article",
@@ -86,13 +57,51 @@ class Source(models.Model):
 		MUSEUM: "museum",
 		"museum": MUSEUM,
 	}
-	SOURCE_TYPE_EXEMPT_OF_IDS = {
+	TYPE_EXEMPT_OF_IDS = {
 		JOURNAL_ARTICLE,
 		BOOK,
 		DOCUMENT,
 		EXPERT,
 		MUSEUM,
 	}
+
+	internal_name = models.CharField(max_length=255, unique=True)
+	name = models.CharField(max_length=1023, blank=True, null=True)
+	acronym = models.CharField(max_length=50, null=True, blank=True)
+	type = models.PositiveSmallIntegerField(choices=TYPE_CHOICES)
+	url = models.URLField(null=True, blank=True)
+	image = models.URLField(null=True, max_length=255, blank=True)
+	description = models.TextField(null=True, blank=True)
+	authors = models.TextField(null=True, blank=True)
+	citation = models.TextField(null=True, blank=True)
+	contact = models.CharField(max_length=255, null=True, blank=True)
+	batch = models.ForeignKey(Batch, on_delete=models.CASCADE)
+
+	def get_name(self):
+		return self.name or self.internal_name
+
+	def translate_type(self):
+		return Basis.TRANSLATE_TYPE[self.type]
+
+	def __str__(self):
+		return f"{self.get_name()}"
+
+	class Meta:
+		verbose_name_plural = "Bases"
+		indexes = [
+			models.Index(Upper('internal_name'), name='basis_internal_name_upper_idx'),
+		]
+
+
+class SourceManager(models.Manager):
+	def get_queryset(self):
+		qs = super().get_queryset()
+
+		return qs.select_related("basis")
+
+
+class Source(models.Model):
+	objects = SourceManager()
 
 	API = 0
 	AI = 1
@@ -146,12 +155,11 @@ class Source(models.Model):
 		"dataset_key": DATASET_KEY,
 	}
 
-	source_type = models.PositiveSmallIntegerField(choices=SOURCE_TYPE_CHOICES)
 	extraction_method = models.PositiveSmallIntegerField(choices=EXTRACTION_METHOD_CHOICES)
 	data_type = models.PositiveSmallIntegerField(choices=DATA_TYPE_CHOICES)
 	url = models.URLField(null=True, blank=True, default=None)  # revisar
 	batch = models.ForeignKey(Batch, on_delete=models.CASCADE, null=True, blank=True, default=None)
-	basis = models.ForeignKey(Basis, on_delete=models.CASCADE, related_name="source", null=True, blank=True, default=None)
+	basis = models.ForeignKey(Basis, on_delete=models.CASCADE, related_name="source", null=True, blank=True, default=None, db_index=True)
 
 	def clean(self):
 		super().clean()
@@ -162,9 +170,6 @@ class Source(models.Model):
 		self.full_clean()
 		super().save(force_insert, force_update, using, update_fields)
 
-	def translate_source_type(self):
-		return Source.TRANSLATE_SOURCE_TYPE[self.source_type]
-
 	def translate_data_type(self):
 		return Source.TRANSLATE_DATA_TYPE[self.data_type]
 
@@ -173,11 +178,16 @@ class Source(models.Model):
 
 	class Meta:
 		unique_together = ["basis", "data_type"]
+		indexes = [
+			models.Index(fields=["basis"]),
+			models.Index(fields=["id", "basis"]),
+			models.Index(fields=["basis", "data_type"]),
+		]
 
 
 class OriginId(models.Model):
 	external_id = models.CharField(max_length=255, blank=True, null=True)
-	source = models.ForeignKey(Source, on_delete=models.CASCADE, db_index=True)
+	source = models.ForeignKey(Source, on_delete=models.CASCADE)
 	attribution = models.CharField(max_length=512, null=True, default=None, blank=True)
 
 	def save(self, force_insert=False, force_update=False, using=None, update_fields=None):
@@ -186,8 +196,8 @@ class OriginId(models.Model):
 
 	def clean(self):
 		super().clean()
-		if not self.external_id and self.source.source_type not in Source.SOURCE_TYPE_EXEMPT_OF_IDS:
-			raise ValidationError(f"External ID is None and is not allowed with origin type '{self.source.translate_source_type().upper()}'")
+		if not self.external_id and self.source.basis.type not in Basis.TYPE_EXEMPT_OF_IDS:
+			raise ValidationError(f"External ID is None and is not allowed with origin type '{self.source.basis.translate_type().upper()}'")
 
 	def __str__(self):
 		if self.external_id:
@@ -197,6 +207,8 @@ class OriginId(models.Model):
 
 	class Meta:
 		indexes = [
+			models.Index(fields=["source_id"]),
 			models.Index(fields=["external_id", "source"]),
+			models.Index(Upper('external_id'), name='originid_external_id_upper_idx'),
 		]
 		unique_together = ("external_id", "source")

@@ -6,7 +6,7 @@ from django.core.management.base import BaseCommand
 from django.db import transaction
 
 from apps.taxonomy.models import Authorship, TaxonomicLevel
-from apps.versioning.models import Batch, OriginId, Source
+from apps.versioning.models import Batch, OriginId, Source, Basis
 from common.utils.utils import str_clean_up, get_or_create_source, is_batch_referenced
 
 KINGDOM = "kingdom"
@@ -76,7 +76,7 @@ def create_taxonomic_level(line, parent, batch, idx_name, rank):
 			raise Exception(f"Epithet cant be upper cased.\n{line}")
 
 		source = get_or_create_source(
-			source_type=Source.TRANSLATE_SOURCE_TYPE[line[SOURCE_TYPE]],
+			source_type=line[SOURCE_TYPE],
 			extraction_method=Source.API,
 			data_type=Source.TAXON,
 			batch=batch,

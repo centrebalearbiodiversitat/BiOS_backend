@@ -4,7 +4,6 @@ from django.core.management.base import BaseCommand
 from django.db import transaction
 from dateutil import parser
 from django.contrib.gis.geos import Point, GEOSGeometry
-from django.db.models import Q
 
 from apps.genetics.models import Sequence, Marker
 from apps.occurrences.models import Occurrence
@@ -12,7 +11,6 @@ from apps.taxonomy.models import TaxonomicLevel
 from apps.versioning.models import Batch, OriginId, Source
 from common.utils.utils import get_or_create_source, is_batch_referenced
 
-GBIF = "gbif"
 EXTERNAL_ID = "sample_id"
 INTERNAL_NAME = "occurrenceSource"
 SOURCE_TYPE = "occurrenceOrigin"
@@ -89,7 +87,7 @@ def parse_line(line: dict):
 
 def genetic_sources(line: dict, batch, occ):
 	source = get_or_create_source(
-		source_type=Source.TRANSLATE_SOURCE_TYPE[line[SOURCE_TYPE]],
+		source_type=line[SOURCE_TYPE],
 		extraction_method=Source.API,
 		data_type=Source.SEQUENCE,
 		batch=batch,
@@ -178,7 +176,7 @@ class Command(BaseCommand):
 				line = parse_line(line)
 
 				source = get_or_create_source(
-					source_type=Source.TRANSLATE_SOURCE_TYPE[line[SOURCE_TYPE]],
+					source_type=line[SOURCE_TYPE],
 					extraction_method=Source.API,
 					data_type=Source.TAXON,
 					batch=batch,
@@ -224,7 +222,7 @@ class Command(BaseCommand):
 					del line["lat_lon"]
 
 				source = get_or_create_source(
-					source_type=Source.TRANSLATE_SOURCE_TYPE[line[SOURCE_TYPE]],
+					source_type=line[SOURCE_TYPE],
 					extraction_method=Source.API,
 					data_type=Source.OCCURRENCE,
 					batch=batch,
@@ -242,7 +240,7 @@ class Command(BaseCommand):
 				os_dk, new_dk = None, None
 				if "datasetKey" in line:
 					dk_source = get_or_create_source(
-						source_type=Source.TRANSLATE_SOURCE_TYPE[line[SOURCE_TYPE]],
+						source_type=line[SOURCE_TYPE],
 						extraction_method=Source.API,
 						data_type=Source.DATASET_KEY,
 						batch=batch,
@@ -278,7 +276,7 @@ class Command(BaseCommand):
 					occ.sources.add(os_dk)
 				occ.save()
 
-				if "genetic_features" in line and not OriginId.objects.filter(Q(sequence__sources__external_id__iexact=line[EXTERNAL_ID])).exists():
+				if "genetic_features" in line and not OriginId.objects.filter(sequence__sources__external_id__iexact=line[EXTERNAL_ID]).exists():
 					genetic_sources(line, batch, occ)
 
 			is_batch_referenced(batch)

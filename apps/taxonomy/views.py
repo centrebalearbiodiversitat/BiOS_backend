@@ -51,6 +51,8 @@ class TaxonSearch:
 					.filter(prefix=query[:3].lower())
 					.filter(**filters, rank__in=[TaxonomicLevel.SPECIES, TaxonomicLevel.SUBSPECIES, TaxonomicLevel.VARIETY], parent__in=queryset)
 				)
+		if not queryset:
+			queryset = TaxonomicLevel.objects.none()
 
 		if not exact and queryset.count() < limit:
 			for instance in queryset.filter(rank__in=[TaxonomicLevel.GENUS, TaxonomicLevel.SPECIES])[:limit]:

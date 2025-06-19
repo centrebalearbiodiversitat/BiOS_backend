@@ -19,11 +19,11 @@ class BothHttpAndHttpsSchemaGenerator(OpenAPISchemaGenerator):
 
 schema_view = get_schema_view(
 	openapi.Info(
-		title="CBB API",
+		title="Balearica API",
 		default_version="v1",
 		description="Documentation for our API usage",
 		terms_of_service="",
-		contact=openapi.Contact(email="centre.balear@uib.cat"),
+		contact=openapi.Contact(email="centrebalear@uib.cat"),
 		license=openapi.License(name="BSD License"),
 	),
 	public=True,

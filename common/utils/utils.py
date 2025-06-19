@@ -17,14 +17,22 @@ def get_or_create_source(source_type, extraction_method, data_type, batch, inter
 		raise ValueError("All records must have a basis\n")
 
 	basis, _ = Basis.objects.get_or_create(
-		internal_name__iexact=internal_name.lower(),
-		defaults={"internal_name": internal_name, "batch": batch},
+		internal_name__icontains=internal_name.strip(),
+		defaults={
+			"type": Basis.TRANSLATE_TYPE[source_type],
+			"internal_name": internal_name,
+			"batch": batch
+		},
 	)
 
 	source, _ = Source.objects.get_or_create(
 		basis=basis,
 		data_type=data_type,
-		defaults={"url": url, "source_type": source_type, "extraction_method": extraction_method, "batch": batch},
+		defaults={
+			"url": url,
+			"extraction_method": extraction_method,
+			"batch": batch
+		},
 	)
 
 	return source

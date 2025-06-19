@@ -11,7 +11,7 @@ class MarkerCountSerializer(CaseModelSerializer):
 
 	class Meta:
 		model = Marker
-		fields = ["id", "name", "total"]
+		fields = ["id", "name", "total", "product"]
 
 
 class BaseMarkerSerializer(CaseModelSerializer):

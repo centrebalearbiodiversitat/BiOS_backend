@@ -1,4 +1,4 @@
-from django.db.models import OuterRef, Subquery, Count
+from django.db.models import OuterRef, Subquery, Count, IntegerField
 from django.db.models.functions import Coalesce
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
@@ -104,12 +104,23 @@ class BasisFilter(APIView):
 		filters = {}
 		for param in basis_form.cleaned_data:
 			value = basis_form.cleaned_data.get(param)
-			if param == "name":
-				filters["internal_name__icontains"] = value
-			elif value or isinstance(value, int):
+			if value or isinstance(value, int):
 				filters[param] = value
 
-		return Basis.objects.filter(**filters)
+		q = Basis.objects.filter(**filters)
+
+		if "type" in filters and filters["type"]:
+			origin_ids = OriginId.objects.filter(
+				source__basis=OuterRef('id')
+			).values('source__basis_id').annotate(
+				c=Count('id')
+			).values('c')
+
+			q = Basis.objects.filter(**filters).annotate(
+				originid_count=Subquery(origin_ids, output_field=IntegerField())
+			).order_by('-originid_count')
+
+		return q
 
 
 class BasisListView(BasisFilter):
@@ -264,54 +275,64 @@ class SourceCRUDView(APIView):
 
 class SourceFilter(APIView):
 	def get(self, request):
-		source_form = SourceForm(data=self.request.GET)
-
-		if not source_form.is_valid():
-			raise CBBAPIException(source_form.errors, code=400)
-
-		filters = {}
-		for param in source_form.cleaned_data:
-			value = source_form.cleaned_data.get(param)
-			if value or isinstance(value, int):
-				filters[param] = value
-
-		oq = (
-			OriginId.objects.filter(source=OuterRef("id"))
-			.exclude(source__data_type=Source.OCCURRENCE, occurrence__in_geography_scope=False)
-			.values("source")
-			.annotate(ent_count=Count("id"))
-			.values("ent_count")
-		)
-
-		sources = Source.objects.filter(**filters).annotate(count=Coalesce(Subquery(oq[:1]), 0))
-
-		return sources
+		return Source.objects.all().select_related("basis")
 
 
 class SourceListView(SourceFilter):
 	@swagger_auto_schema(
 		tags=["Versioning"],
+		operation_description="List all the Sources",
+		manual_parameters=[],
+		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
+	)
+	def get(self, request):
+		return Response(SourceSerializer(super().get(request), many=True).data)
+
+
+class SourceListCountView(SourceFilter):
+	@swagger_auto_schema(
+		tags=["Versioning"],
+		operation_description="List all the Sources",
+		manual_parameters=[],
+		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
+	)
+	def get(self, request):
+		return Response(super().get(request).count())
+
+
+class SourceStatisticsFilter(APIView):
+	def get(self, request):
+		basis_form = BasisForm(data=self.request.GET)
+
+		if not basis_form.is_valid():
+			raise CBBAPIException(basis_form.errors, code=400)
+
+		basis_id = basis_form.cleaned_data.get("id")
+		if not basis_id:
+			raise CBBAPIException("Missing id parameter", 400)
+
+		oq = (
+			OriginId.objects.filter(source=OuterRef("id"))
+				.exclude(source__data_type=Source.OCCURRENCE, occurrence__in_geography_scope=False)
+				.values("source")
+				.annotate(ent_count=Count("id"))
+				.values("ent_count")
+		)
+
+		sources = Source.objects.filter(basis_id=basis_id).annotate(count=Coalesce(Subquery(oq[:1]), 0))
+
+		return sources
+
+
+class SourceStatisticsView(SourceStatisticsFilter):
+	@swagger_auto_schema(
+		tags=["Versioning"],
 		operation_description="List Sources with optional filters",
 		manual_parameters=[
 			openapi.Parameter(
-				"name",
+				"id",
 				openapi.IN_QUERY,
-				description="Name of the source to search for.",
-				type=openapi.TYPE_STRING,
-				required=False,
-			),
-			openapi.Parameter(
-				"accepted",
-				openapi.IN_QUERY,
-				description="Whether to search for accepted or not.",
-				type=openapi.TYPE_BOOLEAN,
-				required=False,
-				default=False,
-			),
-			openapi.Parameter(
-				"origin",
-				openapi.IN_QUERY,
-				description="Origin of the source to search for.",
+				description="Id of the basis to search for.",
 				type=openapi.TYPE_STRING,
 				required=False,
 			),
@@ -320,40 +341,6 @@ class SourceListView(SourceFilter):
 	)
 	def get(self, request):
 		return Response(SourceCountSerializer(super().get(request).order_by("-count"), many=True).data)
-
-
-class SourceCountView(SourceFilter):
-	@swagger_auto_schema(
-		tags=["Versioning"],
-		operation_description="List Sources with optional filters",
-		manual_parameters=[
-			openapi.Parameter(
-				"name",
-				openapi.IN_QUERY,
-				description="Name of the source to search for.",
-				type=openapi.TYPE_STRING,
-				required=False,
-			),
-			openapi.Parameter(
-				"accepted",
-				openapi.IN_QUERY,
-				description="Whether to search for accepted or not.",
-				type=openapi.TYPE_BOOLEAN,
-				required=False,
-				default=False,
-			),
-			openapi.Parameter(
-				"origin",
-				openapi.IN_QUERY,
-				description="Origin of the source to search for.",
-				type=openapi.TYPE_STRING,
-				required=False,
-			),
-		],
-		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
-	)
-	def get(self, request):
-		return Response(super().get(request).count())
 
 
 class OriginIdCRUDView(APIView):

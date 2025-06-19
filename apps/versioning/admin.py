@@ -6,8 +6,7 @@ admin.site.register(Batch)
 
 
 class SourceAdmin(admin.ModelAdmin):
-	search_fields = ["source_type"]
-	list_display = ["basis", "data_type", "source_type", "extraction_method", "url"]
+	list_display = ["basis", "data_type", "extraction_method", "url"]
 	list_filter = ["data_type"]
 
 
@@ -16,7 +15,7 @@ admin.site.register(Source, SourceAdmin)
 
 class BasisAdmin(admin.ModelAdmin):
 	search_fields = ["internal_name"]
-	list_display = ["internal_name", "acronym", "url", "description", "citation"]
+	list_display = ["internal_name", "type", "acronym", "url", "description", "citation"]
 	list_filter = ["acronym"]
 
 

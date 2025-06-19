@@ -11,13 +11,15 @@ def populate_basis(line, batch):
 	Basis.objects.update_or_create(
 		internal_name__iexact=line.get("internal_name", ""),
 		defaults={
-			"name": line.get("name", ""),
-			"acronym": line.get("acronym", ""),
-			"url": line.get("url", ""),
-			"description": line.get("description", ""),
-			"citation": line.get("citation", ""),
-			"contact": line.get("contact", ""),
-			"authors": line.get("authors", ""),
+			"name": line["name"],
+			"type": Basis.TRANSLATE_TYPE[line["type"]],
+			"acronym": line.get("acronym", None),
+			"url": line.get("url", None),
+			"description": line.get("description", None),
+			"citation": line.get("citation", None),
+			"contact": line.get("contact", None),
+			"authors": line.get("authors", None),
+			"image": line.get("image", None),
 			"batch": batch,
 		},
 	)

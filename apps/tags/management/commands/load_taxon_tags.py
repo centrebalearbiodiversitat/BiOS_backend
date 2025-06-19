@@ -30,7 +30,7 @@ def load_taxon_tags(line, taxonomy, batch):
 		raise Exception(f"Taxon rank not allowed.\n{line}")
 
 	source = get_or_create_source(
-		source_type=Source.TRANSLATE_SOURCE_TYPE[line[SOURCE_TYPE].lower()],
+		source_type=line[SOURCE_TYPE].lower(),
 		extraction_method=Source.TRANSLATE_EXTRACTION_METHOD[line[SOURCE_METHOD].lower()],
 		data_type=Source.TAXON_DATA,
 		batch=batch,

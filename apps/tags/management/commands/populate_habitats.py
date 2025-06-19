@@ -2,7 +2,7 @@ from django.core.management.base import BaseCommand
 from django.db import transaction
 
 from apps.tags.models import Habitat
-from apps.versioning.models import Batch, OriginId, Source
+from apps.versioning.models import Batch, OriginId, Source, Basis
 from common.utils.utils import get_or_create_source, is_batch_referenced
 
 IUCN = "IUCN"
@@ -35,7 +35,7 @@ class Command(BaseCommand):
 	def populate_habitat(self, batch):
 		for name, iucn_id in HABITATS:
 			source = get_or_create_source(
-				source_type=Source.DATABASE,
+				source_type=Basis.DATABASE,
 				extraction_method=Source.API,
 				data_type=Source.TAXON_DATA,
 				batch=batch,

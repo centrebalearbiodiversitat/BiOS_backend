@@ -420,7 +420,7 @@ class SequenceSourceDownload(APIView):
 
 		marker_id = seq_form.cleaned_data.get("marker")
 		if not marker_id:
-			raise CBBAPIException("Missing taxon id parameter", 400)
+			raise CBBAPIException("Missing marker id parameter", 400)
 		try:
 			marker = Marker.objects.get(id=marker_id)
 		except Marker.DoesNotExist:

@@ -2,7 +2,7 @@ import csv
 
 from apps.taxonomy.models import TaxonomicLevel
 from apps.tags.models import Directive
-from apps.versioning.models import Batch, OriginId, Source
+from apps.versioning.models import Batch, OriginId, Source, Basis
 from django.core.management.base import BaseCommand
 from django.db import transaction
 from common.utils.utils import get_or_create_source, is_batch_referenced
@@ -28,7 +28,7 @@ class Command(BaseCommand):
 				taxonomy = TaxonomicLevel.objects.find(taxon=line["origin_taxon"]).first()
 
 				source = get_or_create_source(
-					source_type=Source.DATABASE,
+					source_type=Basis.DATABASE,
 					extraction_method=Source.API,
 					data_type=Source.TAXON,
 					batch=batch,

@@ -4,7 +4,7 @@ from django.core.management.base import BaseCommand
 from django.db import transaction
 
 from apps.taxonomy.models import TaxonomicLevel
-from apps.versioning.models import OriginId, Batch, Source
+from apps.versioning.models import OriginId, Batch, Source, Basis
 from common.utils.utils import get_or_create_source, is_batch_referenced
 
 EXTERNAL_ID = "image_id"
@@ -26,7 +26,13 @@ def add_taxonomic_image(line, batch):
 
 		taxon = taxon.first()
 
-		source = get_or_create_source(source_type=Source.DATABASE, extraction_method=Source.API, data_type=Source.IMAGE, batch=batch, internal_name=INATURALIST)
+		source = get_or_create_source(
+			source_type=Basis.DATABASE,
+			extraction_method=Source.API,
+			data_type=Source.IMAGE,
+			batch=batch,
+			internal_name=INATURALIST
+		)
 
 		os, _ = OriginId.objects.get_or_create(external_id=line[EXTERNAL_ID], source=source, defaults={"attribution": line["attribution"]})
 

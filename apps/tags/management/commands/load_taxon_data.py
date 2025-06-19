@@ -7,7 +7,7 @@ from django.core.management.base import BaseCommand
 from django.db import transaction
 from apps.taxonomy.models import TaxonomicLevel
 from apps.tags.models import Habitat, IUCNData, System
-from apps.versioning.models import Batch, OriginId, Source
+from apps.versioning.models import Batch, OriginId, Source, Basis
 from common.utils.utils import get_or_create_source, is_batch_referenced
 
 EXTERNAL_ID = "origin_id"
@@ -40,7 +40,7 @@ def load_taxon_data_from_json(line, taxonomy, batch):
 	os = None
 	if line[EXTERNAL_ID]:
 		source = get_or_create_source(
-			source_type=Source.DATABASE,
+			source_type=Basis.DATABASE,
 			extraction_method=Source.API,
 			data_type=Source.TAXON_DATA,
 			batch=batch,

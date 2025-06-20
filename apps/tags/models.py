@@ -56,25 +56,23 @@ class Habitat(ReferencedModel):
 
 
 class IUCNData(ReferencedModel):
-	# IUCN Assessment
-	NE = 0  # Not Evaluated
-	DD = 1  # Data Deficient
-	LC = 2  # Least Concern
-	NT = 3  # Near Threatened
-	VU = 4  # Vulnerable
-	EN = 5  # Endangered
-	CR = 6  # Critically Endangered
-	EW = 7  # Extinct in the Wild
-	EX = 8  # Extinct
-	CD = 9  # Conservation Dependent
-	NA = 10  # Not Applicable
+	
+	NE = 0
+	DD = 1
+	LC = 2
+	NT = 3
+	VU = 4
+	EN = 5
+	CR = 6
+	EW = 7
+	EX = 8
+	CD = 9
+	NA = 10
 
-	# IUCN Region
 	GLOBAL = 1
 	EUROPE = 2
 	MEDITERRANEAN = 3
 
-	# Assessment choices
 	CS_CHOICES = (
 		(NE, "ne"),
 		(DD, "dd"),
@@ -89,14 +87,12 @@ class IUCNData(ReferencedModel):
 		(NA, "na"),
 	)
 
-	# Region choices
 	RG_CHOICES = (
 		(GLOBAL, "global"),
 		(EUROPE, "europe"),
 		(MEDITERRANEAN, "mediterranean")
 	)
 
-	# Assessment translate
 	TRANSLATE_CS = {
 		NE: "ne",
 		"ne": NE,
@@ -122,7 +118,6 @@ class IUCNData(ReferencedModel):
 		"na": NA,
 	}
 
-	# Regional translate
 	TRANSLATE_RG = {
 		GLOBAL: "global",
 		"global": GLOBAL,
@@ -135,11 +130,6 @@ class IUCNData(ReferencedModel):
 	taxonomy = models.ForeignKey(TaxonomicLevel, on_delete=models.CASCADE, db_index=True)
 	assessment = models.PositiveSmallIntegerField(choices=CS_CHOICES, default=NE)
 	region = models.PositiveSmallIntegerField(choices=RG_CHOICES, default=None)
-	# iucn_global = models.PositiveSmallIntegerField(choices=CS_CHOICES, default=NE)
-	# iucn_europe = models.PositiveSmallIntegerField(choices=CS_CHOICES, default=NE)
-	# iucn_mediterranean = models.PositiveSmallIntegerField(choices=CS_CHOICES, default=NE)
-	# habitats = models.ManyToManyField(Habitat, blank=True, default=None)
-
 
 	def __str__(self):
 		return f"{self.taxonomy} - assessment: {self.assessment}, region: {self.region}"

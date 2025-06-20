@@ -34,7 +34,7 @@ class Command(BaseCommand):
 		for name, iucn_id in HABITATS:
 			source = get_or_create_source(
 				source_type=Source.DATABASE,
-				extraction_method=Source.API,  # Revisar. Easta informacion puede llegar tambien como EXPERT
+				extraction_method=Source.API,
 				data_type=Source.TAXON_DATA,
 				batch=batch,
 				internal_name="IUCN",

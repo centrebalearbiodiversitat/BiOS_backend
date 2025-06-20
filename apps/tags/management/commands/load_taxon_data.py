@@ -11,6 +11,10 @@ from apps.versioning.models import Batch, OriginId, Source
 from common.utils.utils import get_or_create_source, is_batch_referenced
 
 
+INTERNAL_NAME = "IUCN"
+EXTERNAL_ID = "origin_id"
+IUCN_FIELDS = ["iucn_global", "iucn_europe", "iucn_mediterranean"]
+
 def check_taxon(line):
 	taxonomy = TaxonomicLevel.objects.find(taxon=line["origin_taxon"])
 
@@ -23,11 +27,10 @@ def check_taxon(line):
 
 
 iucn_regex = re.compile(r"^[A-Z]{2}/[a-z]{2}$")
-iucn_fields = ["iucn_global", "iucn_europe", "iucn_mediterranean"]
 
 
 def transform_iucn_status(line):
-	for field in iucn_fields:
+	for field in IUCN_FIELDS:
 		if isinstance(line.get(field), dict):  # Check if the iucn_fields exists into the line and check if line is a dictionary
 			nested_dict = line[field]
 
@@ -41,11 +44,11 @@ def transform_iucn_status(line):
 
 def load_taxon_data_from_json(line, taxonomy, batch):
 	os = None
-	taxon_id = line.get("origin_id")
+	taxon_id = line.get(EXTERNAL_ID)
 
 	try:
 		with transaction.atomic():
-			for field in iucn_fields:
+			for field in IUCN_FIELDS:
 				field_data = line.get(field)
 				if not field_data:
 					continue
@@ -80,7 +83,7 @@ def load_taxon_data_from_json(line, taxonomy, batch):
 					extraction_method=Source.API,
 					data_type=Source.TAXON_DATA,
 					batch=batch,
-					internal_name="IUCN",
+					internal_name=INTERNAL_NAME,
 				)
 
 				origin, _ = OriginId.objects.get_or_create(

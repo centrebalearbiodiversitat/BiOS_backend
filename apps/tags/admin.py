@@ -29,12 +29,6 @@ class HabitatTaxonomyAdmin(admin.ModelAdmin):
 	search_fields = ("taxonomy__name",)
 	autocomplete_fields = ("taxonomy", "sources")
 
-	# readonly_fields = ["taxonomy"]
-	# fieldsets = (
-	# 	(None, {"fields": ["taxonomy"]}),
-	# 	("Habitat", {"fields": ["habitat"]})
-	# )
-
 
 admin.site.register(HabitatTaxonomy, HabitatTaxonomyAdmin)
 
@@ -44,13 +38,6 @@ class IUCNDataAdmin(admin.ModelAdmin):
 	list_filter = ("assessment", "region")
 	search_fields = ("taxonomy__name",)
 	autocomplete_fields = ("taxonomy", "sources")
-
-	# filter_horizontal = ("habitats",)
-	# readonly_fields = ["taxonomy"]
-	# fieldsets = (
-	# 	("Taxonomy", {"fields": ["taxonomy"]}),
-	# 	("IUCN Status", {"fields": [("assessment", "region")]})
-	# )
 
 
 admin.site.register(IUCNData, IUCNDataAdmin)

@@ -15,6 +15,9 @@ INTERNAL_NAME = "IUCN"
 EXTERNAL_ID = "origin_id"
 IUCN_FIELDS = ["iucn_global", "iucn_europe", "iucn_mediterranean"]
 
+iucn_regex = re.compile(r"^[A-Z]{2}/[a-z]{2}$")
+
+
 def check_taxon(line):
 	taxonomy = TaxonomicLevel.objects.find(taxon=line["origin_taxon"])
 
@@ -26,12 +29,10 @@ def check_taxon(line):
 	return taxonomy.first()
 
 
-iucn_regex = re.compile(r"^[A-Z]{2}/[a-z]{2}$")
-
-
 def transform_iucn_status(line):
 	for field in IUCN_FIELDS:
-		if isinstance(line.get(field), dict):  # Check if the iucn_fields exists into the line and check if line is a dictionary
+		# Check if the IUCN_FIELDS exists into the line and check if line is a dictionary
+		if isinstance(line.get(field), dict):
 			nested_dict = line[field]
 
 			if "status" in nested_dict and nested_dict["status"] is not None:
@@ -42,14 +43,24 @@ def transform_iucn_status(line):
 					nested_dict["status"] = current_status_value[-2:].upper()
 
 
+# Important: This is valid only for IUCN json files.
 def load_taxon_data_from_json(line, taxonomy, batch):
-	os = None
 	taxon_id = line.get(EXTERNAL_ID)
+
+	source = get_or_create_source(
+		source_type=Source.DATABASE,
+		extraction_method=Source.API,
+		data_type=Source.TAXON_DATA,
+		batch=batch,
+		internal_name=INTERNAL_NAME,
+	)
 
 	try:
 		with transaction.atomic():
+			# Assessment
 			for field in IUCN_FIELDS:
 				field_data = line.get(field)
+
 				if not field_data:
 					continue
 
@@ -78,24 +89,28 @@ def load_taxon_data_from_json(line, taxonomy, batch):
 					}
 				)
 
-				source = get_or_create_source(
-					source_type=Source.DATABASE,
-					extraction_method=Source.API,
-					data_type=Source.TAXON_DATA,
-					batch=batch,
-					internal_name=INTERNAL_NAME,
-				)
-
 				origin, _ = OriginId.objects.get_or_create(
 					external_id=f"{taxon_id}/{url_id}",
 					source=source
 				)
 
 				iucn_data.sources.add(origin)
-	except Exception as e:
-		print(f"⚠️ Error in field '{field}': {e}")
 
-	if os:
+		# System
+		system, _ = System.objects.update_or_create(
+			taxonomy=taxonomy,
+			defaults={
+				"freshwater": line["freshwater"],
+				"marine": line["marine"],
+				"terrestrial": line["terrestrial"],
+				"batch": batch,
+			}
+		)
+
+		origin, _ = OriginId.objects.get_or_create(source=source, external_id=taxon_id)
+		system.sources.add(origin)
+
+		# Habitats
 		habitat_ids = set(line["habitat"] or [])
 		valid_habitats = Habitat.objects.filter(sources__external_id__in=habitat_ids)
 
@@ -104,26 +119,19 @@ def load_taxon_data_from_json(line, taxonomy, batch):
 			raise Exception(f"Invalid habitat IDs: {invalid_ids}")
 
 		for single_habitat_object in valid_habitats:
-			habitat_data, _ = HabitatTaxonomy.objects.update_or_create(
+			habitat_taxonomy, _ = HabitatTaxonomy.objects.update_or_create(
 				taxonomy=taxonomy,
 				habitat=single_habitat_object,
 				defaults={
-					"batch": batch,
+					"batch": batch
 				}
 			)
-			habitat_data.sources.add(os)
 
-	system, _ = System.objects.update_or_create(
-		taxonomy=taxonomy,
-		defaults={
-			"freshwater": line["freshwater"],
-			"marine": line["marine"],
-			"terrestrial": line["terrestrial"],
-			"batch": batch,
-		},
-	)
-	if os:  # if there is data available
-		system.sources.add(os)
+			origin, _ = OriginId.objects.get_or_create(source=source, external_id=taxon_id)
+			habitat_taxonomy.sources.add(origin)
+
+	except Exception as e:
+		print(f"⚠️ Error in field '{field}': {e}")
 
 
 class Command(BaseCommand):
@@ -140,8 +148,6 @@ class Command(BaseCommand):
 
 		with open(file_name, "r") as json_file:
 			json_data = json.load(json_file)
-
-			# line = json_data[0]
 
 			for line in json_data:
 				try:

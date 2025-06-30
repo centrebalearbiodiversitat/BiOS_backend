@@ -25,9 +25,10 @@ class BaseTaxonLevelAdmin(MPTTModelAdmin):
 		"batch",
 		"parsed_year",
 		"authorship",
+		"images",
 	]
 	search_fields = ["unidecode_name", "verbatim_authorship"]
-	autocomplete_fields = ["parent", "synonyms", "authorship", "sources"]
+	autocomplete_fields = ["parent", "synonyms", "authorship", "sources", "images"]
 	# exclude = ['references']
 	mptt_indent_field = 1
 

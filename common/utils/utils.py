@@ -18,21 +18,13 @@ def get_or_create_source(source_type, extraction_method, data_type, batch, inter
 
 	basis, _ = Basis.objects.get_or_create(
 		internal_name__icontains=internal_name.strip(),
-		defaults={
-			"type": Basis.TRANSLATE_TYPE[source_type],
-			"internal_name": internal_name,
-			"batch": batch
-		},
+		defaults={"type": Basis.TRANSLATE_TYPE[source_type], "internal_name": internal_name, "batch": batch},
 	)
 
 	source, _ = Source.objects.get_or_create(
 		basis=basis,
 		data_type=data_type,
-		defaults={
-			"url": url,
-			"extraction_method": extraction_method,
-			"batch": batch
-		},
+		defaults={"url": url, "extraction_method": extraction_method, "batch": batch},
 	)
 
 	return source

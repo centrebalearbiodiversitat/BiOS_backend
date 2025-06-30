@@ -89,7 +89,7 @@ class Basis(models.Model):
 	class Meta:
 		verbose_name_plural = "Bases"
 		indexes = [
-			models.Index(Upper('internal_name'), name='basis_internal_name_upper_idx'),
+			models.Index(Upper("internal_name"), name="basis_internal_name_upper_idx"),
 		]
 
 
@@ -209,6 +209,6 @@ class OriginId(models.Model):
 		indexes = [
 			models.Index(fields=["source_id"]),
 			models.Index(fields=["external_id", "source"]),
-			models.Index(Upper('external_id'), name='originid_external_id_upper_idx'),
+			models.Index(Upper("external_id"), name="originid_external_id_upper_idx"),
 		]
 		unique_together = ("external_id", "source")

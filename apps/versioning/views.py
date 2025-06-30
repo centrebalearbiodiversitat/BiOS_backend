@@ -110,15 +110,9 @@ class BasisFilter(APIView):
 		q = Basis.objects.filter(**filters)
 
 		if "type" in filters and filters["type"]:
-			origin_ids = OriginId.objects.filter(
-				source__basis=OuterRef('id')
-			).values('source__basis_id').annotate(
-				c=Count('id')
-			).values('c')
+			origin_ids = OriginId.objects.filter(source__basis=OuterRef("id")).values("source__basis_id").annotate(c=Count("id")).values("c")
 
-			q = Basis.objects.filter(**filters).annotate(
-				originid_count=Subquery(origin_ids, output_field=IntegerField())
-			).order_by('-originid_count')
+			q = Basis.objects.filter(**filters).annotate(originid_count=Subquery(origin_ids, output_field=IntegerField())).order_by("-originid_count")
 
 		return q
 
@@ -313,10 +307,10 @@ class SourceStatisticsFilter(APIView):
 
 		oq = (
 			OriginId.objects.filter(source=OuterRef("id"))
-				.exclude(source__data_type=Source.OCCURRENCE, occurrence__in_geography_scope=False)
-				.values("source")
-				.annotate(ent_count=Count("id"))
-				.values("ent_count")
+			.exclude(source__data_type=Source.OCCURRENCE, occurrence__in_geography_scope=False)
+			.values("source")
+			.annotate(ent_count=Count("id"))
+			.values("ent_count")
 		)
 
 		sources = Source.objects.filter(basis_id=basis_id).annotate(count=Coalesce(Subquery(oq[:1]), 0))

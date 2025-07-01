@@ -126,7 +126,7 @@ def occurrence_schema(tags: str = "Occurrences", operation_id: str = None, opera
 	# 	type=openapi.TYPE_INTEGER,
 	# 	required=False,
 	# ),
-	# HABLAR CON TOM
+
 	openapi.Parameter(
 		"decimalLatitudeMin",
 		openapi.IN_QUERY,
@@ -163,7 +163,6 @@ def occurrence_schema(tags: str = "Occurrences", operation_id: str = None, opera
 		format=openapi.FORMAT_DECIMAL,
 		required=False,
 	),
-			# HABLAR CON TOM
 ],
 		responses={
 			200: "Success",
@@ -553,16 +552,19 @@ class OccurrenceCountBySourceView(APIView):
 class OccurrenceCountByTaxonAndChildrenView(APIView):
 	def check_ancestors(self, children_id, parents_list, count):
 		taxon_children = TaxonomicLevel.objects.get(id=children_id)
-		ancestors = taxon_children.get_ancestors()
+		# ancestors = taxon_children.get_ancestors()
 
+		contexts = []
 		for parent in parents_list:
-			if ancestors.filter(id=parent.id).exists():
-				ancestor = ancestors.get(id=parent.id)
-				context = {
-					"taxonomy": ancestor.name,
-					"count": count,
-				}
-				return context
+			# if ancestors.filter(id=parent.id).exists():
+				# print("Entra en if ancestors")
+				# ancestor = ancestors.get(id=parent.id)
+			context = {
+				"taxonomy": parent.name,
+				"count": count,
+			}
+			contexts.append(context)
+		return contexts
 			
 	@swagger_auto_schema(
 		 tags=["Occurrences"],
@@ -578,16 +580,17 @@ class OccurrenceCountByTaxonAndChildrenView(APIView):
 		],
 		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
 	)
-	def get(self, request):
+	def get(self, request, in_geography_scope=True):
 		occur_form = OccurrenceForm(data=request.GET)
 
 		if not occur_form.is_valid():
 			raise CBBAPIException(occur_form.errors, 400)
 
 		taxonomy = occur_form.cleaned_data.get("taxonomy", None)
+
 		if not taxonomy:
 			raise CBBAPIException("Missing taxonomy id parameter", 400)
-
+		
 		try:
 			taxon_parent = TaxonomicLevel.objects.get(id=taxonomy)
 			if taxon_parent.rank >= 6:
@@ -597,19 +600,23 @@ class OccurrenceCountByTaxonAndChildrenView(APIView):
 				)
 		except TaxonomicLevel.DoesNotExist:
 			raise CBBAPIException("Taxonomic level does not exist", 404)
+		
 		childrens = taxon_parent.get_children()
-		descendants = taxon_parent.get_descendants(include_self=True)
+		descendants = taxon_parent.get_descendants(include_self=False)
 
+		filtered_occurrences_for_annotation = Occurrence.objects.filter(taxonomy__in=descendants)
+
+		if in_geography_scope:
+			filtered_occurrences_for_annotation = filtered_occurrences_for_annotation.filter(in_geography_scope=in_geography_scope)
 		annotated_occ = (
-			Occurrence.objects.annotate(
-				descendant_taxonomy=Case(When(taxonomy__in=descendants, then=F("taxonomy__name")), default=Value("Unknown")),
-				descendant_taxon_id=Case(When(taxonomy__in=descendants, then=F("taxonomy__id")), default=None),
+			filtered_occurrences_for_annotation.annotate(
+				descendant_taxonomy=F("taxonomy__name"),
+				descendant_taxon_id=F("taxonomy__id"),
 			)
 			.values("descendant_taxonomy", "descendant_taxon_id")
 			.annotate(count=Count("id"))
 			.order_by("descendant_taxonomy")
 		)
-
 		response = []
 		for i in annotated_occ:
 			ancestor = self.check_ancestors(i["descendant_taxon_id"], childrens, i["count"])

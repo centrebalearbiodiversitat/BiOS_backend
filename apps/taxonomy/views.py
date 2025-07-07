@@ -485,7 +485,7 @@ class TaxonChildrenView(TaxonChildrenBaseView):
 			openapi.Parameter(  # TO DO: No entiendo muy bien este parametero. Revisar
 				"childrenRank",
 				openapi.IN_QUERY,
-				type=openapi.TYPE_INTEGER,
+				type=openapi.TYPE_STRING,
 				description="The level of children to look up for",
 				required=False
 			),
@@ -518,7 +518,7 @@ class TaxonChildrenCountView(LoggingMixin, TaxonChildrenBaseView):
 			openapi.Parameter(
 				"childrenRank",
 				openapi.IN_QUERY,
-				type=openapi.TYPE_INTEGER,
+				type=openapi.TYPE_STRING,
 				description="The level of children to look up for",
 				required=False
 			),

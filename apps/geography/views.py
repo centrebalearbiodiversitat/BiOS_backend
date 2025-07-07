@@ -9,27 +9,19 @@ from .forms import GeographicLevelForm
 from .models import GeographicLevel
 from .serializers import GeographicLevelSerializer, MinimalGeographicLevelSerializer
 
+from common.utils.custom_swag_schema import custom_swag_schema
 
-def geography_schema(tags: str = "Geography", operation_id: str = None, operation_description: str = None, manual_parameters: list = None):
-	return swagger_auto_schema(
-		tags=[tags],
-		operation_id=operation_id,
-		operation_description=operation_description,
-		manual_parameters=manual_parameters or [
-			openapi.Parameter(
-				"id",
-				openapi.IN_QUERY,
-				description="Geographic level ID",
-				type=openapi.TYPE_INTEGER,
-				required=True,
-			)
-		],
-		responses={
-			200: "Success",
-			400: "Bad Request",
-			404: "Not Found"
-		}
+
+manual_param = [
+	openapi.Parameter(
+		"id",
+		openapi.IN_QUERY,
+		description="Geographic level ID",
+		type=openapi.TYPE_INTEGER,
+		required=True
 	)
+]
+
 
 class GeographicLevelFilter(APIView):
 	def get(self, request):
@@ -64,7 +56,8 @@ class GeographicLevelFilter(APIView):
 
 
 class GeographicLevelDetailView(APIView):
-	@geography_schema(
+	@custom_swag_schema(
+		tags="Geography",
 		operation_id="Search geographic level by name",
 		operation_description="Retrieve a geographic level information by name (supports exact and partial match).",
 		manual_parameters=[
@@ -83,9 +76,8 @@ class GeographicLevelDetailView(APIView):
 				required=False,
 				default=False
 			)
-		],
+		]
 	)
-
 	def get(self, request):
 		geographic_form = GeographicLevelForm(data=self.request.GET)
 
@@ -106,9 +98,11 @@ class GeographicLevelDetailView(APIView):
 
 
 class GeographicLevelIdView(APIView):
-	@swagger_auto_schema(
+	@custom_swag_schema(
+		tags="Geography",
 		operation_id="Search geographic level by ID",
 		operation_description="Retrieve the information for a specific geographic level by its ID.",
+		manual_parameters=manual_param
 	)
 	def get(self, request):
 		geographic_form = GeographicLevelForm(self.request.GET)
@@ -168,9 +162,11 @@ class GeographicLevelIdView(APIView):
 
 
 class GeographicLevelParent(APIView):
-	@geography_schema(
+	@custom_swag_schema(
+		tags="Geography",
 		operation_id="Get parents of a geographic level",
-		operation_description="Retrieve the parents of a specific geographic level by its ID."
+		operation_description="Retrieve the parents of a specific geographic level by its ID.",
+		manual_parameters=manual_param
 	)
 	def get(self, request):
 		geographic_form = GeographicLevelForm(self.request.GET)
@@ -191,9 +187,11 @@ class GeographicLevelParent(APIView):
 
 
 class GeographicLevelChildren(APIView):
-	@geography_schema(
+	@custom_swag_schema(
+		tags="Geography",
 		operation_id="Get children of a geographic level",
-		operation_description="Retrieve the children of a specific geographic level by its ID."
+		operation_description="Retrieve the children of a specific geographic level by its ID.",
+		manual_parameters=manual_param
 	)
 	def get(self, request):
 		geographic_form = GeographicLevelForm(self.request.GET)

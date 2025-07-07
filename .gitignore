@@ -106,3 +106,5 @@ docker-compose.*.yml
 cbb/settings/developer/*
 /data*/
 /public/
+/CHECKED/
+/proof_function.py

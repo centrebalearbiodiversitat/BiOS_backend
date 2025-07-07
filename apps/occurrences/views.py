@@ -2,7 +2,6 @@ from django.db.models import Q, Count, Case, F, When, Value
 from django.contrib.gis.geos import Polygon
 from django.http import JsonResponse
 from drf_yasg import openapi
-from drf_yasg.utils import swagger_auto_schema
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from apps.taxonomy.models import TaxonomicLevel
@@ -20,13 +19,9 @@ from apps.geography.models import GeographicLevel
 from apps.tags.forms import IUCNDataForm, DirectiveForm, SystemForm, TaxonTagForm
 from common.utils.views import CSVDownloadMixin
 
+from common.utils.custom_swag_schema import custom_swag_schema
 
-def occurrence_schema(tags: str = "Occurrences", operation_id: str = None, operation_description: str = None, manual_parameters: list = None):
-	return swagger_auto_schema(
-		tags=[tags],
-		operation_id=operation_id,
-		operation_description=operation_description,
-		manual_parameters=manual_parameters or [
+manual_param = [
 	openapi.Parameter(
 		"taxonomy",
 		openapi.IN_QUERY,
@@ -119,18 +114,9 @@ def occurrence_schema(tags: str = "Occurrences", operation_id: str = None, opera
 		description="Maximum depth",
 		type=openapi.TYPE_INTEGER
 	),
-	# openapi.Parameter(
-	# 	"day",
-	# 	openapi.IN_QUERY,
-	# 	description="Filter occurrences by day field.",
-	# 	type=openapi.TYPE_INTEGER,
-	# 	required=False,
-	# ),
-
 	openapi.Parameter(
 		"decimalLatitudeMin",
 		openapi.IN_QUERY,
-		default=37.6,
 		description="Minimum latitude",
 		type=openapi.TYPE_NUMBER,
 		format=openapi.FORMAT_DECIMAL,
@@ -139,7 +125,6 @@ def occurrence_schema(tags: str = "Occurrences", operation_id: str = None, opera
 	openapi.Parameter(
 		"decimalLatitudeMax",
 		openapi.IN_QUERY,
-		default=41.5,
 		description="Maximum latitude",
 		type=openapi.TYPE_NUMBER,
 		format=openapi.FORMAT_DECIMAL,
@@ -148,7 +133,6 @@ def occurrence_schema(tags: str = "Occurrences", operation_id: str = None, opera
 	openapi.Parameter(
 		"decimalLongitudeMin",
 		openapi.IN_QUERY,
-		default=0.3,
 		description="Minimum longitude",
 		type=openapi.TYPE_NUMBER,
 		format=openapi.FORMAT_DECIMAL,
@@ -157,70 +141,24 @@ def occurrence_schema(tags: str = "Occurrences", operation_id: str = None, opera
 	openapi.Parameter(
 		"decimalLongitudeMax",
 		openapi.IN_QUERY,
-		default=6.15,
 		description="Maximum longitude",
 		type=openapi.TYPE_NUMBER,
 		format=openapi.FORMAT_DECIMAL,
 		required=False,
-	),
-],
-		responses={
-			200: "Success",
-			400: "Bad Request",
-			404: "Not Found"
-		}
 	)
-
-
-class OccurrenceCRUDView(APIView):
-	@swagger_auto_schema(
-		tags=["Occurrences"],
-		operation_id="Get occurrence by ID",
-		operation_description="Get details of a specific Occurrence.",
-		manual_parameters=[
-			openapi.Parameter(
-				"id",
-				openapi.IN_QUERY,
-				description="Occurrence ID",
-				type=openapi.TYPE_INTEGER,
-				required=True,
-			),
-		],
-		responses={
-			200: "Success",
-			400: "Bad Request",
-			404: "Not Found",
-		},
-	)
-	def get(self, request):
-		occur_form = OccurrenceForm(data=self.request.GET)
-
-		if not occur_form.is_valid():
-			raise CBBAPIException(occur_form.errors, 400)
-
-		occur_id = occur_form.cleaned_data.get("id")
-
-		if not occur_id:
-			raise CBBAPIException("Missing id parameter", 400)
-
-		try:
-			occurrence = Occurrence.objects.get(id=occur_id)
-		except Occurrence.DoesNotExist:
-			raise CBBAPIException("Occurrence does not exist", 404)
-
-		return Response(OccurrenceSerializer(occurrence).data)
+]
 
 
 class OccurrenceFilter(APIView):
 	def filter_by_range(self, filters, field_name, min_value, max_value):
-		
+
 		if min_value is not None:
 			filters &= Q(**{f"{field_name}__gte": min_value})
 		if max_value is not None:
 			filters &= Q(**{f"{field_name}__lte": max_value})
-		
+
 		return filters
-	
+
 	def get_coordinate_filter(self, filters, field_name, latitude_min, latitude_max, longitude_min, longitude_max):
 
 		if all([latitude_min is not None, latitude_max is not None, longitude_min is not None, longitude_max is not None]):
@@ -234,7 +172,7 @@ class OccurrenceFilter(APIView):
 					print("Error: Minimum values are greater than maximum values.")
 
 					return filters
-				
+
 				area = Polygon(
 					((min_lon, min_lat), (min_lon, max_lat), (max_lon, max_lat), (max_lon, min_lat), (min_lon, min_lat)),
 					srid=4326
@@ -248,10 +186,9 @@ class OccurrenceFilter(APIView):
 				return filters
 
 		else:
-			print("Not all valid limits were provided for the coordinates. No spatial filter is applied.")
+			print("Not all valid limits were provided for the coordinates. No spatial filter has been applied.")
 			return filters
 
-	
 	def calculate(self, request, in_geography_scope=True):
 
 		occur_form = OccurrenceForm(data=request.GET)
@@ -356,14 +293,50 @@ class OccurrenceFilter(APIView):
 		return occurrences
 
 
+class OccurrenceCRUDView(APIView):
+	@custom_swag_schema(
+		tags="Occurrences",
+		operation_id="Get occurrence info by its ID",
+		operation_description="Get details of a specific occurrence by its ID.",
+		manual_parameters=[
+			openapi.Parameter(
+				"id",
+				openapi.IN_QUERY,
+				description="Occurrence ID",
+				type=openapi.TYPE_INTEGER,
+				required=True,
+			)
+		],
+	)
+	def get(self, request):
+		occur_form = OccurrenceForm(data=self.request.GET)
+
+		if not occur_form.is_valid():
+			raise CBBAPIException(occur_form.errors, 400)
+
+		occur_id = occur_form.cleaned_data.get("id")
+		if not occur_id:
+			raise CBBAPIException("Missing id parameter", 400)
+
+		try:
+			occurrence = Occurrence.objects.get(id=occur_id)
+		except Occurrence.DoesNotExist:
+			raise CBBAPIException("Occurrence does not exist", 404)
+
+		return Response(OccurrenceSerializer(occurrence).data)
+
+
 class OccurrenceMapView(OccurrenceFilter):
-	@occurrence_schema(
+	@custom_swag_schema(
+		tags="Occurrences",
 		operation_id="Get occurrence summary",
 		operation_description=(
-				"Filter occurrences based on query parameters. "
+				"Filter occurrences based on query parameters."
 				"The API returns a summarized list of unique occurrences that match the filters. " 
-				"Each occurrence includes the following fields: id, coordinateUncertaintyInMeters, decimalLatitude, and decimalLongitude."
+				"Each occurrence includes the following fields: id, coordinateUncertaintyInMeters, decimalLatitude, and decimalLongitude. \n\n"
+				"Range parameters such as `year`, `month`, `uncertainty`, `elevation`, and `depth` are inclusive of their boundary values."
 		),
+		manual_parameters=manual_param
 	)
 	def get(self, request):
 		return Response(BaseOccurrenceSerializer(self.calculate(request).distinct("location"), many=True).data)
@@ -471,46 +444,55 @@ class OccurrenceMapView(OccurrenceFilter):
 
 
 class OccurrenceListView(OccurrenceFilter):
-	@occurrence_schema(
+	@custom_swag_schema(
+		tags="Occurrences",
 		operation_id="Filter occurrences",
 		operation_description=(
-				"Filter occurrences based on query parameters."
+				"Filter occurrences based on query parameters. \n\n"
 				"Range parameters such as `year`, `month`, `uncertainty`, `elevation`, and `depth` are inclusive of their boundary values."
-		)
+		),
+		manual_parameters=manual_param
 	)
 	def get(self, request):
 		return Response(OccurrenceSerializer(self.calculate(request), many=True).data)
 
 
 class OccurrenceListDownloadView(OccurrenceFilter):
-	@occurrence_schema(
+	@custom_swag_schema(
+		tags="Occurrences",
 		operation_id="Download filtered occurrences",
 		operation_description=(
-				"Download filtered occurrences based on query parameters."
+				"Download filtered occurrences based on query parameters. \n\n"
 				"Range parameters such as `year`, `month`, `uncertainty`, `elevation`, and `depth` are inclusive of their boundary values."
-		)
+		),
+		manual_parameters=manual_param
 	)
 	def get(self, request):
 		response = self.calculate(request)
-		flattened_data = CSVDownloadMixin.flatten_json(DownloadOccurrenceSerializer(response, many=True).data, ["sources"])
+
+		# flattened_data = CSVDownloadMixin.flatten_json(DownloadOccurrenceSerializer(response, many=True).data, ["sources"])
+		flattened_data = DownloadOccurrenceSerializer(response, many=True).data
 
 		return CSVDownloadMixin.generate_csv(flattened_data, "occurrences.csv")
 
 
 class OccurrenceCountView(OccurrenceFilter):
-	@occurrence_schema(
+	@custom_swag_schema(
+		tags="Occurrences",
 		operation_id="Count filtered occurrences",
 		operation_description=(
-				"Count filtered occurrences based on query parameters."
+				"Count filtered occurrences based on query parameters. \n\n"
 				"Range parameters such as `year`, `month`, `uncertainty`, `elevation`, and `depth` are inclusive of their boundary values."
-		)
+		),
+		manual_parameters=manual_param
 	)
 	def get(self, request):
 		return Response(self.calculate(request).count())
 
 
 class OccurrenceCountBySourceView(APIView):
-	@occurrence_schema(
+	@custom_swag_schema(
+		tags="Occurrences",
 		operation_id="Count occurrences by taxon and source",
 		operation_description="Get counts of occurrences grouped by source for a given taxon ID.",
 		manual_parameters=[
@@ -521,7 +503,7 @@ class OccurrenceCountBySourceView(APIView):
 				type=openapi.TYPE_INTEGER,
 				required=True
 			)
-		],
+		]
 	)
 	def get(self, request):
 		occur_form = OccurrenceForm(data=request.GET)
@@ -566,19 +548,19 @@ class OccurrenceCountByTaxonAndChildrenView(APIView):
 			contexts.append(context)
 		return contexts
 			
-	@swagger_auto_schema(
-		 tags=["Occurrences"],
-		operation_id="Count occurrences by taxon children",
-		operation_description="Get count of occurrence grouped by the children of a taxon according to its ID.",
+	@custom_swag_schema(
+		tags="Occurrences",
+		operation_id="Count children occurrences",
+		operation_description="Get count of occurrences grouped by the children of a taxon according to its ID.",
 		manual_parameters=[
 			openapi.Parameter(
 				"taxonomy",
 				openapi.IN_QUERY,
-				description="Filter occurrences by Taxon ID",
+				description="Taxon ID",
 				type=openapi.TYPE_INTEGER,
-			),
-		],
-		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
+				required=True
+			)
+		]
 	)
 	def get(self, request, in_geography_scope=True):
 		occur_form = OccurrenceForm(data=request.GET)
@@ -590,7 +572,7 @@ class OccurrenceCountByTaxonAndChildrenView(APIView):
 
 		if not taxonomy:
 			raise CBBAPIException("Missing taxonomy id parameter", 400)
-		
+
 		try:
 			taxon_parent = TaxonomicLevel.objects.get(id=taxonomy)
 			if taxon_parent.rank >= 6:
@@ -600,7 +582,7 @@ class OccurrenceCountByTaxonAndChildrenView(APIView):
 				)
 		except TaxonomicLevel.DoesNotExist:
 			raise CBBAPIException("Taxonomic level does not exist", 404)
-		
+
 		childrens = taxon_parent.get_children()
 		descendants = taxon_parent.get_descendants(include_self=False)
 
@@ -681,6 +663,7 @@ class OccurrenceCountByTaxonAndChildrenView(APIView):
 # 	def get(self, request):
 # 		return self.calculate(request, "collection_date_year", self.__class__)
 
+
 class OccurrenceCountByTaxonDateBaseView:
 	def get_occurrences_by_taxonomy(self, taxonomy):
 
@@ -758,7 +741,8 @@ class OccurrenceCountByTaxonDateBaseView:
 
 
 class OccurrenceCountByTaxonMonthView(APIView, OccurrenceCountByTaxonDateBaseView):
-	@occurrence_schema(
+	@custom_swag_schema(
+		tags="Occurrences",
 		operation_id="Count occurrences by taxon and month",
 		operation_description="Get counts of occurrences grouped by month for a given taxon ID.",
 		manual_parameters=[
@@ -768,15 +752,16 @@ class OccurrenceCountByTaxonMonthView(APIView, OccurrenceCountByTaxonDateBaseVie
 				description="Taxon ID",
 				type=openapi.TYPE_INTEGER,
 				required=True
-			),
-		],
+			)
+		]
 	)
 	def get(self, request):
 		return self.calculate(request, "collection_date_month", self.__class__)
 
 
 class OccurrenceCountByTaxonYearView(APIView, OccurrenceCountByTaxonDateBaseView):
-	@occurrence_schema(
+	@custom_swag_schema(
+		tags="Occurrences",
 		operation_id="Count occurrences by taxon and year",
 		operation_description="Get counts of occurrences grouped by year for a given taxon ID.",
 		manual_parameters=[
@@ -787,7 +772,7 @@ class OccurrenceCountByTaxonYearView(APIView, OccurrenceCountByTaxonDateBaseView
 				type=openapi.TYPE_INTEGER,
 				required=True
 			)
-		],
+		]
 	)
 	def get(self, request):
 		return self.calculate(request, "collection_date_year", self.__class__)

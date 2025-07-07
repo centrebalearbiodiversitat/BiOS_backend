@@ -19,11 +19,11 @@
 # python manage.py populate_habitats
 
 
-for folder in data/groups/*/
+for folder in data/*/
 do
-  # # Taxonomy
-  # echo "$folder/taxonomy.csv"
-  # python manage.py load_taxonomy_new "$folder/taxonomy.csv"
+   # Taxonomy
+   echo "$folder/taxonomy.csv"
+   python manage.py load_taxonomy_new "$folder/taxonomy.csv"
 
   # # Images
   # echo "$folder/images.json"
@@ -49,14 +49,14 @@ do
   # done
 
   # Genetics
-  for file in "$folder/genetics/test/"*.json
-  do
-    echo "$file"
-    python manage.py load_occurrences_new_synonyms "$file"
-  done
+#  for file in "$folder/genetics/test/"*.json
+#  do
+#    echo "$file"
+#    python manage.py load_occurrences_new_synonyms "$file"
+#  done
 done
 
-echo "Loading basis..."
-python manage.py load_basis data/basis.json
-echo "Loading sources..."
-python manage.py load_sources data/sources.csv
+#echo "Loading basis..."
+#python manage.py load_basis data/basis.json
+#echo "Loading sources..."
+#python manage.py load_sources data/sources.csv

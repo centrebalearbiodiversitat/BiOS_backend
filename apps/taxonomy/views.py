@@ -7,7 +7,6 @@ from django.http import StreamingHttpResponse
 from unidecode import unidecode
 from apps.taxonomy.serializers import SearchTaxonomicLevelSerializer, AncestorsTaxonomicLevelSerializer
 from drf_yasg import openapi
-# from drf_yasg.utils import swagger_auto_schema
 from rest_framework.generics import ListAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -27,7 +26,7 @@ from apps.tags.forms import IUCNDataForm, DirectiveForm, SystemForm, TaxonTagFor
 from common.utils.custom_swag_schema import custom_swag_schema
 
 
-manual_param = [
+MANUAL_PARAMETERS = [
 			openapi.Parameter(
 				"name",
 				openapi.IN_QUERY,
@@ -58,13 +57,13 @@ manual_param = [
 				description="Filter taxa with or without images",
 				type=openapi.TYPE_BOOLEAN
 			),
-			openapi.Parameter(  # Lack the information of the source in the response....
+			openapi.Parameter(
 				"source",
 				openapi.IN_QUERY,
 				description="Filter taxa by the source of information",
 				type=openapi.TYPE_STRING
 			),
-			openapi.Parameter(  # What is the tag name???
+			openapi.Parameter(
 				"tag",
 				openapi.IN_QUERY,
 				description="Filter taxa by a specific tag name",
@@ -242,7 +241,7 @@ class TaxonListView(APIView, TaxonFilter):
 		tags="Taxonomy",
 		operation_id="List of taxa",
 		operation_description="Get a list of the selected taxon and its children, if available, with optional filtering.",
-		manual_parameters=manual_param + [
+		manual_parameters=MANUAL_PARAMETERS + [
 			openapi.Parameter(
 				"page",
 				openapi.IN_QUERY,
@@ -260,7 +259,7 @@ class TaxonCountView(LoggingMixin, APIView, TaxonFilter):
 		tags="Taxonomy",
 		operation_id="Count filtered taxa",
 		operation_description="Get a count of taxa based on filters filters.",
-		manual_parameters=manual_param
+		manual_parameters=MANUAL_PARAMETERS
 	)
 	def get(self, request):
 		return Response(self.get_taxon_list(request).count())
@@ -482,7 +481,7 @@ class TaxonChildrenView(TaxonChildrenBaseView):
 				description="ID of the taxonomic level",
 				required=True,
 			),
-			openapi.Parameter(  # TO DO: No entiendo muy bien este parametero. Revisar
+			openapi.Parameter(
 				"childrenRank",
 				openapi.IN_QUERY,
 				type=openapi.TYPE_STRING,
@@ -567,7 +566,6 @@ class TaxonSistersView(APIView):
 		return Response(BaseTaxonomicLevelSerializer(siblings, many=True).data)
 
 
-# TO DO: Que diferencias hay entre descendants y children?
 class TaxonomicLevelDescendantsCountView(APIView):
 	@custom_swag_schema(
 		tags="Taxonomy",
@@ -761,10 +759,9 @@ class TaxonChecklistView(APIView):
 		)
 
 
-# TO DO: Porque necesitamos este endpoint?
 class AuthorshipCRUDView(APIView):
 	@custom_swag_schema(
-        tags="Authorship", # TO DO: Porque no lo ponemos como Taxonomy?
+        tags="Authorship",
         operation_id="Get authorship by id",
         operation_description="Get authorship information by its ID.",
         manual_parameters=[

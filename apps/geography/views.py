@@ -1,5 +1,4 @@
 from drf_yasg import openapi
-from drf_yasg.utils import swagger_auto_schema
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -12,7 +11,7 @@ from .serializers import GeographicLevelSerializer, MinimalGeographicLevelSerial
 from common.utils.custom_swag_schema import custom_swag_schema
 
 
-manual_param = [
+MANUAL_PARAMETERS = [
 	openapi.Parameter(
 		"id",
 		openapi.IN_QUERY,
@@ -102,7 +101,7 @@ class GeographicLevelIdView(APIView):
 		tags="Geography",
 		operation_id="Search geographic level by ID",
 		operation_description="Retrieve the information for a specific geographic level by its ID.",
-		manual_parameters=manual_param
+		manual_parameters=MANUAL_PARAMETERS
 	)
 	def get(self, request):
 		geographic_form = GeographicLevelForm(self.request.GET)
@@ -166,7 +165,7 @@ class GeographicLevelParent(APIView):
 		tags="Geography",
 		operation_id="Get parents of a geographic level",
 		operation_description="Retrieve the parents of a specific geographic level by its ID.",
-		manual_parameters=manual_param
+		manual_parameters=MANUAL_PARAMETERS
 	)
 	def get(self, request):
 		geographic_form = GeographicLevelForm(self.request.GET)
@@ -191,7 +190,7 @@ class GeographicLevelChildren(APIView):
 		tags="Geography",
 		operation_id="Get children of a geographic level",
 		operation_description="Retrieve the children of a specific geographic level by its ID.",
-		manual_parameters=manual_param
+		manual_parameters=MANUAL_PARAMETERS
 	)
 	def get(self, request):
 		geographic_form = GeographicLevelForm(self.request.GET)

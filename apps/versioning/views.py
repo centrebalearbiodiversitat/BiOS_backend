@@ -1,7 +1,6 @@
 from django.db.models import OuterRef, Subquery, Count
 from django.db.models.functions import Coalesce
 from drf_yasg import openapi
-from drf_yasg.utils import swagger_auto_schema
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -10,10 +9,22 @@ from .forms import BasisForm, OriginIdForm, SourceForm
 from .models import Basis, OriginId, Source
 from .serializers import BasisSerializer, OriginIdSerializer, SourceSerializer, SourceCountSerializer
 
+from common.utils.custom_swag_schema import custom_swag_schema
+
+
+MANUAL_PARAMETERS = [
+            openapi.Parameter(
+                "id",
+                openapi.IN_QUERY,
+                description="Unique identifier of the source to retrieve.",
+                type=openapi.TYPE_INTEGER,
+                required=True
+            )
+        ]
 
 class BasisSearchView(APIView):
-	@swagger_auto_schema(
-        tags=["Versioning"],
+	@custom_swag_schema(
+        tags="Versioning",
         operation_id="Get basis by name",
         operation_description="Retrieve a Basis by name",
         manual_parameters=[
@@ -30,9 +41,8 @@ class BasisSearchView(APIView):
                 description="Whether to search for an exact match or not.",
                 type=openapi.TYPE_BOOLEAN,
                 required=False,
-            ),
-        ],
-        responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
+            )
+        ]
     )
 	def get(self, request):
 		basis_form = BasisForm(self.request.GET)
@@ -58,24 +68,11 @@ class BasisSearchView(APIView):
 
 
 class BasisCRUDView(APIView):
-	@swagger_auto_schema(
-        tags=["Versioning"],
+	@custom_swag_schema(
+        tags="Versioning",
         operation_id="Get basis details",
         operation_description="Get details of a specific basis.",
-        manual_parameters=[
-            openapi.Parameter(
-                "id",
-                openapi.IN_QUERY,
-                description="Unique identifier of the basis to retrieve.",
-                type=openapi.TYPE_INTEGER,
-                required=True,
-            ),
-        ],
-        responses={
-            200: "Success",
-            400: "Bad Request",
-            404: "Not Found",
-        },
+        manual_parameters=MANUAL_PARAMETERS
     )
 	def get(self, request):
 		basis_form = BasisForm(data=self.request.GET)
@@ -115,22 +112,20 @@ class BasisFilter(APIView):
 
 
 class BasisListView(BasisFilter):
-	@swagger_auto_schema(
-        tags=["Versioning"],
+	@custom_swag_schema(
+        tags="Versioning",
         operation_id="List basis",
-        operation_description="List of basis.",
-        responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
+        operation_description="List of basis."
     )
 	def get(self, request):
 		return Response(BasisSerializer(super().get(request), many=True).data)
 
 
 class BasisCountView(BasisFilter):
-	@swagger_auto_schema(
-        tags=["Versioning"],
+	@custom_swag_schema(
+        tags="Versioning",
         operation_id="Count basis",
-        operation_description="Return the total number of the basis.",
-        responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
+        operation_description="Return the total number of the basis."
     )
 	def get(self, request):
 		return Response(super().get(request).count())
@@ -183,24 +178,11 @@ class BasisCountView(BasisFilter):
 
 
 class SourceCRUDView(APIView):
-	@swagger_auto_schema(
-        tags=["Versioning"],
+	@custom_swag_schema(
+        tags="Versioning",
         operation_id="Get source details",
         operation_description="Get details of a specific source.",
-        manual_parameters=[
-            openapi.Parameter(
-                "id",
-                openapi.IN_QUERY,
-                description="Unique identifier of the source to retrieve.",
-                type=openapi.TYPE_INTEGER,
-                required=True,
-            ),
-        ],
-        responses={
-            200: "Success",
-            400: "Bad Request",
-            404: "Not Found",
-        },
+        manual_parameters=MANUAL_PARAMETERS
     )
 	def get(self, request):
 		source_form = SourceForm(data=self.request.GET)
@@ -247,46 +229,31 @@ class SourceFilter(APIView):
 
 
 class SourceListView(SourceFilter):
-	@swagger_auto_schema(
-        tags=["Versioning"],
+	@custom_swag_schema(
+        tags="Versioning",
         operation_id="List sources",
-        operation_description="List the sources.",
-        responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
+        operation_description="List the sources."
     )
 	def get(self, request):
 		return Response(SourceCountSerializer(super().get(request).order_by("-count"), many=True).data)
 
 
 class SourceCountView(SourceFilter):
-	@swagger_auto_schema(
-        tags=["Versioning"],
+	@custom_swag_schema(
+        tags="Versioning",
         operation_id="Count sources",
-        operation_description="Count the number of sources.",
-        responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
+        operation_description="Count the number of sources."
     )
 	def get(self, request):
 		return Response(super().get(request).count())
 
 
 class OriginIdCRUDView(APIView):
-	@swagger_auto_schema(
-        tags=["Versioning"],
+	@custom_swag_schema(
+        tags="Versioning",
         operation_id="Get origin id details",
         operation_description="Get details of a specific source.",
-        manual_parameters=[
-            openapi.Parameter(
-                "id",
-                openapi.IN_QUERY,
-                description="Unique identifier of the source to retrieve.",
-                type=openapi.TYPE_INTEGER,
-                required=True,
-            ),
-        ],
-        responses={
-            200: "Success",
-            400: "Bad Request",
-            404: "Not Found",
-        },
+        manual_parameters=MANUAL_PARAMETERS
     )
 	def get(self, request):
 		os_form = OriginIdForm(data=self.request.GET)

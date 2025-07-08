@@ -21,7 +21,8 @@ from common.utils.views import CSVDownloadMixin
 
 from common.utils.custom_swag_schema import custom_swag_schema
 
-manual_param = [
+
+MANUAL_PARAMETERS = [
 	openapi.Parameter(
 		"taxonomy",
 		openapi.IN_QUERY,
@@ -306,7 +307,7 @@ class OccurrenceCRUDView(APIView):
 				type=openapi.TYPE_INTEGER,
 				required=True,
 			)
-		],
+		]
 	)
 	def get(self, request):
 		occur_form = OccurrenceForm(data=self.request.GET)
@@ -336,7 +337,7 @@ class OccurrenceMapView(OccurrenceFilter):
 				"Each occurrence includes the following fields: id, coordinateUncertaintyInMeters, decimalLatitude, and decimalLongitude. \n\n"
 				"Range parameters such as `year`, `month`, `uncertainty`, `elevation`, and `depth` are inclusive of their boundary values."
 		),
-		manual_parameters=manual_param
+		manual_parameters=MANUAL_PARAMETERS
 	)
 	def get(self, request):
 		return Response(BaseOccurrenceSerializer(self.calculate(request).distinct("location"), many=True).data)
@@ -451,7 +452,7 @@ class OccurrenceListView(OccurrenceFilter):
 				"Filter occurrences based on query parameters. \n\n"
 				"Range parameters such as `year`, `month`, `uncertainty`, `elevation`, and `depth` are inclusive of their boundary values."
 		),
-		manual_parameters=manual_param
+		manual_parameters=MANUAL_PARAMETERS
 	)
 	def get(self, request):
 		return Response(OccurrenceSerializer(self.calculate(request), many=True).data)
@@ -465,7 +466,7 @@ class OccurrenceListDownloadView(OccurrenceFilter):
 				"Download filtered occurrences based on query parameters. \n\n"
 				"Range parameters such as `year`, `month`, `uncertainty`, `elevation`, and `depth` are inclusive of their boundary values."
 		),
-		manual_parameters=manual_param
+		manual_parameters=MANUAL_PARAMETERS
 	)
 	def get(self, request):
 		response = self.calculate(request)
@@ -484,7 +485,7 @@ class OccurrenceCountView(OccurrenceFilter):
 				"Count filtered occurrences based on query parameters. \n\n"
 				"Range parameters such as `year`, `month`, `uncertainty`, `elevation`, and `depth` are inclusive of their boundary values."
 		),
-		manual_parameters=manual_param
+		manual_parameters=MANUAL_PARAMETERS
 	)
 	def get(self, request):
 		return Response(self.calculate(request).count())

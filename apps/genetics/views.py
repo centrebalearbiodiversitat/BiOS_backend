@@ -1,7 +1,5 @@
 from django.db.models import Count, Q, OuterRef, Subquery, Case, When, Value, IntegerField
-# from django.db.models.functions import Coalesce
 from drf_yasg import openapi
-from drf_yasg.utils import swagger_auto_schema
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -21,32 +19,11 @@ from .serializers import (
 from common.utils.views import CSVDownloadMixin
 from common.utils.serializers import get_paginated_response
 from common.utils.utils import generate_csv, flatten_row, flatten_columns, remove_from_keys
+
 from common.utils.custom_swag_schema import custom_swag_schema
 
 
-def genetic_schema(tags: str = "Genetic", operation_id: str = None, operation_description: str = None, manual_parameters: list = None):
-	return swagger_auto_schema(
-		tags=[tags],
-		operation_id=operation_id,
-		operation_description=operation_description,
-		manual_parameters=manual_parameters or [
-			openapi.Parameter(
-				"id",
-				openapi.IN_QUERY,
-				description="Marker ID",
-				type=openapi.TYPE_INTEGER,
-				required=True,
-			),
-],
-		responses={
-			200: "Success",
-			400: "Bad Request",
-			404: "Not Found"
-		}
-	)
-
-
-m1 = [
+MANUAL_PARAMETERS = [
 	openapi.Parameter(
 		"id",
 		openapi.IN_QUERY,
@@ -63,7 +40,7 @@ class MarkerCRUDView(APIView):
 		tags="Genetic",
 		operation_id="Search marker by ID",
 		operation_description="Get details of a specific marker by its ID.",
-		manual_parameters=m1
+		manual_parameters=MANUAL_PARAMETERS
 	)
 
 	def get(self, request):
@@ -85,7 +62,8 @@ class MarkerCRUDView(APIView):
 
 
 class MarkerSearchView(APIView):
-	@genetic_schema(
+	@custom_swag_schema(
+		tags="Genetic",
 		operation_id="Search marker by name",
 		operation_description="Search for a marker by name.",
 		manual_parameters=[
@@ -103,7 +81,7 @@ class MarkerSearchView(APIView):
 				type=openapi.TYPE_BOOLEAN,
 				required=False,
 				default=False,
-			),
+			)
 		]
 	)
 	def get(self, request):
@@ -212,7 +190,8 @@ class MarkerFilter(APIView):
 
 
 class MarkerListView(MarkerFilter):
-	@genetic_schema(
+	@custom_swag_schema(
+		tags="Genetic",
 		operation_id="List markers by taxon ID",
 		operation_description="Retrieve the markers list of a taxon by its ID.",
 		manual_parameters=[
@@ -230,7 +209,8 @@ class MarkerListView(MarkerFilter):
 
 
 class MarkerCountView(MarkerFilter):
-	@genetic_schema(
+	@custom_swag_schema(
+		tags="Genetic",
 		operation_id="Count markers by taxon ID",
 		operation_description="Retrieve the markers count of a taxon by its ID.",
 		manual_parameters=[
@@ -323,7 +303,8 @@ class MarkerCountView(MarkerFilter):
 
 
 class SequenceCRUDView(APIView):
-	@genetic_schema(
+	@custom_swag_schema(
+		tags="Genetic",
 		operation_id="Search genetic occurrence by ID",
 		operation_description="Get details of a specific genetic occurrence.",
 		manual_parameters=[
@@ -333,7 +314,7 @@ class SequenceCRUDView(APIView):
 				description="Genetic occurrence ID",
 				type=openapi.TYPE_INTEGER,
 				required=True,
-			),
+			)
 		]
 	)
 	def get(self, request):
@@ -409,7 +390,8 @@ class SequenceFilter(APIView):
 
 
 class SequenceListView(SequenceFilter):
-	@genetic_schema(
+	@custom_swag_schema(
+		tags="Genetic",
 		operation_id="List genetic occurrences by taxon ID",
 		operation_description="Retrieve the genetic occurrences of a taxon by its ID.",
 		manual_parameters=[
@@ -452,7 +434,8 @@ class SequenceListView(SequenceFilter):
 
 
 class SequenceCountView(SequenceFilter):
-	@genetic_schema(
+	@custom_swag_schema(
+		tags="Genetic",
 		operation_id="Count genetic occurrences by taxon ID",
 		operation_description="Retrieve the genetic occurrence count of a taxon by its ID.",
 		manual_parameters=[
@@ -470,7 +453,8 @@ class SequenceCountView(SequenceFilter):
 
 
 class SequenceListCSVView(SequenceFilter):
-	@genetic_schema(
+	@custom_swag_schema(
+		tags="Genetic",
 		operation_id="List genetic occurrences by taxon ID (CSV)",
 		operation_description="Retrieve a CSV with the genetic information of a taxon by its ID.",
 		manual_parameters=[
@@ -489,17 +473,11 @@ class SequenceListCSVView(SequenceFilter):
 
 
 class SequenceSourceCountView(APIView):
-	@genetic_schema(
+	@custom_swag_schema(
+		tags="Genetic",
 		operation_id="Count genetic occurrences of a taxon per source",
 		operation_description="Retrieve the genetic occurrence count of a taxon per source.",
-		manual_parameters=[
-			openapi.Parameter(
-				"marker",
-				openapi.IN_QUERY,
-				description="Marker ID",
-				type=openapi.TYPE_INTEGER,
-				required=True,
-			),
+		manual_parameters=MANUAL_PARAMETERS + [
 			openapi.Parameter(
 				"taxonomy",
 				openapi.IN_QUERY,
@@ -548,12 +526,10 @@ class SequenceSourceDownload(APIView):
 			raise CBBAPIException("Missing taxon id parameter", 400)
 
 		try:
-			# filter TaxonomicLevel where the id it like the input
 			taxon = TaxonomicLevel.objects.get(id=taxon_id)
 		except TaxonomicLevel.DoesNotExist:
 			raise CBBAPIException("Taxonomic level does not exist", 404)
 
-		# filter Sequence where the related Occurrence has a taxonomy equal to taxon.
 		queryset = Sequence.objects.prefetch_related("markers", "sources", "markers__synonyms").select_related("occurrence", "occurrence__taxonomy").filter(occurrence__taxonomy=taxon)
 
 		marker_id = seq_form.cleaned_data.get("marker")
@@ -578,23 +554,17 @@ class SequenceSourceDownload(APIView):
 
 
 class SequenceSourceCSVDownloadView(SequenceSourceDownload):
-	@genetic_schema(
+	@custom_swag_schema(
+		tags="Genetic",
 		operation_id="Download genetic occurrences (CSV)",
 		operation_description="Retrieve a CSV with the genetic occurrences information of a taxon. It is possible filter for by its marker ID and source.",
-		manual_parameters=[
+		manual_parameters=MANUAL_PARAMETERS + [
 			openapi.Parameter(
 				"taxonomy",
 				openapi.IN_QUERY,
 				description="Taxon ID",
 				type=openapi.TYPE_INTEGER,
 				required=True,
-			),
-			openapi.Parameter(
-				"marker",
-				openapi.IN_QUERY,
-				description="Marker ID",
-				type=openapi.TYPE_INTEGER,
-				required=False,
 			),
 			openapi.Parameter(
 				"source",

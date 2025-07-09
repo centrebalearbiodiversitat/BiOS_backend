@@ -1,6 +1,15 @@
 from django.contrib import admin
 
-from apps.tags.models import Habitat, TaxonTag, Tag, System, IUCNData, Directive
+from apps.tags.models import Habitat, TaxonTag, Tag, System, IUCNData, Directive, HabitatTaxonomy
+
+
+class TagAdmin(admin.ModelAdmin):
+	search_fields = ["name", "tag_type"]
+	list_display = ["name", "tag_type"]
+	fields = ["name", "tag_type"]
+
+
+admin.site.register(Tag, TagAdmin)
 
 
 class HabitatAdmin(admin.ModelAdmin):
@@ -14,28 +23,21 @@ class HabitatAdmin(admin.ModelAdmin):
 admin.site.register(Habitat, HabitatAdmin)
 
 
-class TagAdmin(admin.ModelAdmin):
-	search_fields = ["name", "tag_type"]
-	list_display = ["name", "tag_type"]
-	fields = ["name", "tag_type"]
+class HabitatTaxonomyAdmin(admin.ModelAdmin):
+	list_display = ("taxonomy", "habitat")
+	list_filter = ("habitat", )
+	search_fields = ("taxonomy__name",)
+	autocomplete_fields = ("taxonomy", "sources")
 
 
-admin.site.register(Tag, TagAdmin)
+admin.site.register(HabitatTaxonomy, HabitatTaxonomyAdmin)
 
 
 class IUCNDataAdmin(admin.ModelAdmin):
-	list_display = ("taxonomy", "iucn_global", "iucn_europe", "iucn_mediterranean")
-	list_filter = ("iucn_global", "iucn_europe", "iucn_mediterranean")
+	list_display = ("taxonomy", "assessment", "region")
+	list_filter = ("assessment", "region")
 	search_fields = ("taxonomy__name",)
-	autocomplete_fields = ("taxonomy",)
-
-	filter_horizontal = ("habitats",)
-	readonly_fields = ["taxonomy"]
-	fieldsets = (
-		(None, {"fields": ["taxonomy"]}),
-		("IUCN Status", {"fields": ("iucn_global", "iucn_europe", "iucn_mediterranean")}),
-		("Other Information", {"fields": ("habitats",)}),
-	)
+	autocomplete_fields = ("taxonomy", "sources")
 
 
 admin.site.register(IUCNData, IUCNDataAdmin)

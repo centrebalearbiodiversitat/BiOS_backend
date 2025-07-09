@@ -56,6 +56,7 @@ class Habitat(ReferencedModel):
 
 
 class IUCNData(ReferencedModel):
+	
 	NE = 0
 	DD = 1
 	LC = 2
@@ -67,6 +68,10 @@ class IUCNData(ReferencedModel):
 	EX = 8
 	CD = 9
 	NA = 10
+
+	GLOBAL = 1
+	EUROPE = 2
+	MEDITERRANEAN = 3
 
 	CS_CHOICES = (
 		(NE, "ne"),
@@ -80,6 +85,12 @@ class IUCNData(ReferencedModel):
 		(EX, "ex"),
 		(CD, "cd"),
 		(NA, "na"),
+	)
+
+	RG_CHOICES = (
+		(GLOBAL, "global"),
+		(EUROPE, "europe"),
+		(MEDITERRANEAN, "mediterranean")
 	)
 
 	TRANSLATE_CS = {
@@ -107,18 +118,38 @@ class IUCNData(ReferencedModel):
 		"na": NA,
 	}
 
+	TRANSLATE_RG = {
+		GLOBAL: "global",
+		"global": GLOBAL,
+		EUROPE: "europe",
+		"europe": EUROPE,
+		MEDITERRANEAN: "mediterranean",
+		"mediterranean": MEDITERRANEAN
+	}
+
 	taxonomy = models.ForeignKey(TaxonomicLevel, on_delete=models.CASCADE, db_index=True)
-	iucn_global = models.PositiveSmallIntegerField(choices=CS_CHOICES, default=NE)
-	iucn_europe = models.PositiveSmallIntegerField(choices=CS_CHOICES, default=NE)
-	iucn_mediterranean = models.PositiveSmallIntegerField(choices=CS_CHOICES, default=NE)
-	habitats = models.ManyToManyField(Habitat, blank=True, default=None)
+	assessment = models.PositiveSmallIntegerField(choices=CS_CHOICES, default=NE)
+	region = models.PositiveSmallIntegerField(choices=RG_CHOICES, default=None)
 
 	def __str__(self):
-		return f"{self.taxonomy} - iucn_global: {self.iucn_global}, iucn_europe: {self.iucn_europe}, iucn_mediterranean: {self.iucn_mediterranean}"
+		return f"{self.taxonomy} - assessment: {self.assessment}, region: {self.region}"
 
 	class Meta:
-		verbose_name_plural = "IUCN data"
-		unique_together = ["taxonomy"]
+		verbose_name_plural = "IUCN"
+		# Unique values for taxonomy and region. We cannot have a taxon with the same regions.
+		unique_together = ["taxonomy", "region"]
+
+
+class HabitatTaxonomy(ReferencedModel):
+	taxonomy = models.ForeignKey(TaxonomicLevel, on_delete=models.CASCADE, db_index=True)
+	habitat = models.ForeignKey(Habitat, on_delete=models.CASCADE, db_index=True)
+
+	def __str__(self):
+		return f"{self.taxonomy} - habitat: {self.habitat}"
+
+	class Meta:
+		verbose_name_plural = "Habitat Taxonomy"
+		unique_together = ["taxonomy", "habitat"]  # Unique values for taxonomy and habitat.
 
 
 class Directive(ReferencedModel):

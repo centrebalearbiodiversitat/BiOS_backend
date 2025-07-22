@@ -1,6 +1,10 @@
 from rest_framework import serializers
 
 from apps.taxonomy.models import Authorship, TaxonomicLevel
+from apps.tags.serializers import (
+	IUCNDataSerializer,
+	TaxonTagSerializer,
+)
 from apps.versioning.serializers import OriginIdSerializer
 from common.utils.serializers import CaseModelSerializer
 
@@ -87,6 +91,18 @@ class SearchTaxonomicLevelSerializer(CaseModelSerializer):
 		model = TaxonomicLevel
 		fields = ["id", "name", "taxon_rank", "scientific_name_authorship", "accepted", "accepted_modifier"]
 
+
+class TaxonomicFilterSerializer(SearchTaxonomicLevelSerializer):
+
+    iucndata = IUCNDataSerializer(source="iucndata_set", many=True, read_only=True)
+    tag = TaxonTagSerializer(source="taxontag_set", many=True, read_only=True) 
+
+    class Meta(SearchTaxonomicLevelSerializer.Meta):
+
+        fields = SearchTaxonomicLevelSerializer.Meta.fields + [
+            "iucndata",
+            "tag",
+        ]
 
 class TaxonCompositionSerializer(BaseTaxonomicLevelSerializer):
 	total_species = serializers.IntegerField()

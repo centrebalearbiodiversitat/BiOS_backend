@@ -91,30 +91,10 @@ MANUAL_PARAMETERS = [
 		description="Maximum coordinate uncertainty in meters",
 		type=openapi.TYPE_INTEGER,
 	),
-	openapi.Parameter(
-		"elevationMin",
-		openapi.IN_QUERY,
-		description="Minimum elevation",
-		type=openapi.TYPE_INTEGER
-	),
-	openapi.Parameter(
-		"elevationMax",
-		openapi.IN_QUERY,
-		description="Maximum elevation",
-		type=openapi.TYPE_INTEGER
-	),
-	openapi.Parameter(
-		"depthMin",
-		openapi.IN_QUERY,
-		description="Minimum depth",
-		type=openapi.TYPE_INTEGER
-	),
-	openapi.Parameter(
-		"depthMax",
-		openapi.IN_QUERY,
-		description="Maximum depth",
-		type=openapi.TYPE_INTEGER
-	),
+	openapi.Parameter("elevationMin", openapi.IN_QUERY, description="Minimum elevation", type=openapi.TYPE_INTEGER),
+	openapi.Parameter("elevationMax", openapi.IN_QUERY, description="Maximum elevation", type=openapi.TYPE_INTEGER),
+	openapi.Parameter("depthMin", openapi.IN_QUERY, description="Minimum depth", type=openapi.TYPE_INTEGER),
+	openapi.Parameter("depthMax", openapi.IN_QUERY, description="Maximum depth", type=openapi.TYPE_INTEGER),
 	openapi.Parameter(
 		"decimalLatitudeMin",
 		openapi.IN_QUERY,
@@ -150,13 +130,12 @@ MANUAL_PARAMETERS = [
 		type=openapi.TYPE_NUMBER,
 		format=openapi.FORMAT_DECIMAL,
 		required=False,
-	)
+	),
 ]
 
 
 class OccurrenceFilter(APIView):
 	def filter_by_range(self, filters, field_name, min_value, max_value):
-
 		if min_value is not None:
 			filters &= Q(**{f"{field_name}__gte": min_value})
 		if max_value is not None:
@@ -178,10 +157,7 @@ class OccurrenceFilter(APIView):
 
 					return filters
 
-				area = Polygon(
-					((min_lon, min_lat), (min_lon, max_lat), (max_lon, max_lat), (max_lon, min_lat), (min_lon, min_lat)),
-					srid=4326
-				)
+				area = Polygon(((min_lon, min_lat), (min_lon, max_lat), (max_lon, max_lat), (max_lon, min_lat), (min_lon, min_lat)), srid=4326)
 				spatial_filter = Q(**{f"{field_name}__within": area})
 
 				return filters & spatial_filter
@@ -195,7 +171,6 @@ class OccurrenceFilter(APIView):
 			return filters
 
 	def calculate(self, request, in_geography_scope=True):
-
 		occur_form = OccurrenceForm(data=request.GET)
 
 		if not occur_form.is_valid():
@@ -263,8 +238,7 @@ class OccurrenceFilter(APIView):
 		if has_sequence is not None:
 			filters &= Q(sequence__isnull=not has_sequence)
 
-		range_parameters_direct = ["coordinate_uncertainty_in_meters", "elevation", "depth", "collection_date_year",
-								   "collection_date_month"]
+		range_parameters_direct = ["coordinate_uncertainty_in_meters", "elevation", "depth", "collection_date_year", "collection_date_month"]
 
 		for param in range_parameters_direct:
 			filters = self.filter_by_range(
@@ -311,7 +285,7 @@ class OccurrenceCRUDView(APIView):
 				type=openapi.TYPE_INTEGER,
 				required=True,
 			)
-		]
+		],
 	)
 	def get(self, request):
 		occur_form = OccurrenceForm(data=self.request.GET)
@@ -336,12 +310,12 @@ class OccurrenceMapView(OccurrenceFilter):
 		tags="Occurrences",
 		operation_id="Get occurrence summary",
 		operation_description=(
-				"Filter occurrences based on query parameters."
-				"The API returns a summarized list of unique occurrences that match the filters. " 
-				"Each occurrence includes the following fields: id, coordinateUncertaintyInMeters, decimalLatitude, and decimalLongitude. \n\n"
-				"Range parameters such as `year`, `month`, `uncertainty`, `elevation`, and `depth` are inclusive of their boundary values."
+			"Filter occurrences based on query parameters."
+			"The API returns a summarized list of unique occurrences that match the filters. "
+			"Each occurrence includes the following fields: id, coordinateUncertaintyInMeters, decimalLatitude, and decimalLongitude. \n\n"
+			"Range parameters such as `year`, `month`, `uncertainty`, `elevation`, and `depth` are inclusive of their boundary values."
 		),
-		manual_parameters=MANUAL_PARAMETERS
+		manual_parameters=MANUAL_PARAMETERS,
 	)
 	def get(self, request):
 		return Response(BaseOccurrenceSerializer(self.calculate(request).distinct("location"), many=True).data)
@@ -453,10 +427,9 @@ class OccurrenceListView(OccurrenceFilter):
 		tags="Occurrences",
 		operation_id="Filter occurrences",
 		operation_description=(
-				"Filter occurrences based on query parameters. \n\n"
-				"Range parameters such as `year`, `month`, `uncertainty`, `elevation`, and `depth` are inclusive of their boundary values."
+			"Filter occurrences based on query parameters. \n\nRange parameters such as `year`, `month`, `uncertainty`, `elevation`, and `depth` are inclusive of their boundary values."
 		),
-		manual_parameters=MANUAL_PARAMETERS
+		manual_parameters=MANUAL_PARAMETERS,
 	)
 	def get(self, request):
 		return Response(OccurrenceSerializer(self.calculate(request), many=True).data)
@@ -467,10 +440,10 @@ class OccurrenceListDownloadView(OccurrenceFilter):
 		tags="Occurrences",
 		operation_id="Download filtered occurrences",
 		operation_description=(
-				"Download filtered occurrences based on query parameters. \n\n"
-				"Range parameters such as `year`, `month`, `uncertainty`, `elevation`, and `depth` are inclusive of their boundary values."
+			"Download filtered occurrences based on query parameters. \n\n"
+			"Range parameters such as `year`, `month`, `uncertainty`, `elevation`, and `depth` are inclusive of their boundary values."
 		),
-		manual_parameters=MANUAL_PARAMETERS
+		manual_parameters=MANUAL_PARAMETERS,
 	)
 	def get(self, request):
 		response = self.calculate(request)
@@ -486,10 +459,10 @@ class OccurrenceCountView(OccurrenceFilter):
 		tags="Occurrences",
 		operation_id="Count filtered occurrences",
 		operation_description=(
-				"Count filtered occurrences based on query parameters. \n\n"
-				"Range parameters such as `year`, `month`, `uncertainty`, `elevation`, and `depth` are inclusive of their boundary values."
+			"Count filtered occurrences based on query parameters. \n\n"
+			"Range parameters such as `year`, `month`, `uncertainty`, `elevation`, and `depth` are inclusive of their boundary values."
 		),
-		manual_parameters=MANUAL_PARAMETERS
+		manual_parameters=MANUAL_PARAMETERS,
 	)
 	def get(self, request):
 		return Response(self.calculate(request).count())
@@ -500,15 +473,7 @@ class OccurrenceCountBySourceView(APIView):
 		tags="Occurrences",
 		operation_id="Count occurrences by taxon and source",
 		operation_description="Get counts of occurrences grouped by source for a given taxon ID.",
-		manual_parameters=[
-			openapi.Parameter(
-				"taxonomy",
-				openapi.IN_QUERY,
-				description="Taxon ID",
-				type=openapi.TYPE_INTEGER,
-				required=True
-			)
-		]
+		manual_parameters=[openapi.Parameter("taxonomy", openapi.IN_QUERY, description="Taxon ID", type=openapi.TYPE_INTEGER, required=True)],
 	)
 	def get(self, request):
 		occur_form = OccurrenceForm(data=request.GET)
@@ -548,20 +513,12 @@ class OccurrenceCountByTaxonAndChildrenView(APIView):
 			}
 			contexts.append(context)
 		return contexts
-			
+
 	@custom_swag_schema(
 		tags="Occurrences",
 		operation_id="Count children occurrences",
 		operation_description="Get count of occurrences grouped by the children of a taxon according to its ID.",
-		manual_parameters=[
-			openapi.Parameter(
-				"taxonomy",
-				openapi.IN_QUERY,
-				description="Taxon ID",
-				type=openapi.TYPE_INTEGER,
-				required=True
-			)
-		]
+		manual_parameters=[openapi.Parameter("taxonomy", openapi.IN_QUERY, description="Taxon ID", type=openapi.TYPE_INTEGER, required=True)],
 	)
 	def get(self, request, in_geography_scope=True):
 		occur_form = OccurrenceForm(data=request.GET)
@@ -577,10 +534,7 @@ class OccurrenceCountByTaxonAndChildrenView(APIView):
 		try:
 			taxon_parent = TaxonomicLevel.objects.get(id=taxonomy)
 			if taxon_parent.rank >= 6:
-				raise CBBAPIException(
-					f"{TaxonomicLevel.TRANSLATE_RANK[taxon_parent.rank].upper()} is not valid for children stats, try genus or greater taxonomic levels",
-					400
-				)
+				raise CBBAPIException(f"{TaxonomicLevel.TRANSLATE_RANK[taxon_parent.rank].upper()} is not valid for children stats, try genus or greater taxonomic levels", 400)
 		except TaxonomicLevel.DoesNotExist:
 			raise CBBAPIException("Taxonomic level does not exist", 404)
 
@@ -667,7 +621,6 @@ class OccurrenceCountByTaxonAndChildrenView(APIView):
 
 class OccurrenceCountByTaxonDateBaseView:
 	def get_occurrences_by_taxonomy(self, taxonomy):
-
 		try:
 			taxonomy = TaxonomicLevel.objects.get(id=taxonomy).get_descendants(include_self=True)
 		except TaxonomicLevel.DoesNotExist:
@@ -676,15 +629,8 @@ class OccurrenceCountByTaxonDateBaseView:
 		return Occurrence.objects.filter(taxonomy__in=taxonomy, in_geography_scope=True)
 
 	def get_occurrence_counts_by_month(self, occurrences):
-		annotated_counts = (
-			occurrences.values('collection_date_month')
-			.annotate(count=Count('id'))
-			.order_by('collection_date_month')
-		)
-		counts_dict = {
-			item['collection_date_month']: item['count']
-			for item in annotated_counts
-		}
+		annotated_counts = occurrences.values("collection_date_month").annotate(count=Count("id")).order_by("collection_date_month")
+		counts_dict = {item["collection_date_month"]: item["count"] for item in annotated_counts}
 		months = {month: 0 for month in range(1, 13)}
 		months.update(counts_dict)
 		result = [{"month": month, "count": count} for month, count in months.items()]
@@ -692,24 +638,17 @@ class OccurrenceCountByTaxonDateBaseView:
 		return result
 
 	def get_occurrence_counts_by_year(self, occurrences):
-		min_year = occurrences.order_by('collection_date_year').first().collection_date_year if occurrences.exists() else None
-		max_year = occurrences.exclude(collection_date_year=None).order_by('-collection_date_year').first().collection_date_year if occurrences.exists() else None
+		min_year = occurrences.order_by("collection_date_year").first().collection_date_year if occurrences.exists() else None
+		max_year = occurrences.exclude(collection_date_year=None).order_by("-collection_date_year").first().collection_date_year if occurrences.exists() else None
 
 		if not min_year or not max_year:
 			return []
 
 		all_years = list(range(min_year, max_year + 1))
 
-		annotated_counts = (
-			occurrences.values('collection_date_year')
-			.annotate(count=Count('id'))
-			.order_by('collection_date_year')
-		)
+		annotated_counts = occurrences.values("collection_date_year").annotate(count=Count("id")).order_by("collection_date_year")
 
-		counts_dict = {
-			item['collection_date_year']: item['count']
-			for item in annotated_counts
-		}
+		counts_dict = {item["collection_date_year"]: item["count"] for item in annotated_counts}
 
 		response = []
 		for year in all_years:
@@ -746,15 +685,7 @@ class OccurrenceCountByTaxonMonthView(APIView, OccurrenceCountByTaxonDateBaseVie
 		tags="Occurrences",
 		operation_id="Count occurrences by taxon and month",
 		operation_description="Get counts of occurrences grouped by month for a given taxon ID.",
-		manual_parameters=[
-			openapi.Parameter(
-				"taxonomy",
-				openapi.IN_QUERY,
-				description="Taxon ID",
-				type=openapi.TYPE_INTEGER,
-				required=True
-			)
-		]
+		manual_parameters=[openapi.Parameter("taxonomy", openapi.IN_QUERY, description="Taxon ID", type=openapi.TYPE_INTEGER, required=True)],
 	)
 	def get(self, request):
 		return self.calculate(request, "collection_date_month", self.__class__)
@@ -765,15 +696,7 @@ class OccurrenceCountByTaxonYearView(APIView, OccurrenceCountByTaxonDateBaseView
 		tags="Occurrences",
 		operation_id="Count occurrences by taxon and year",
 		operation_description="Get counts of occurrences grouped by year for a given taxon ID.",
-		manual_parameters=[
-			openapi.Parameter(
-				"taxonomy",
-				openapi.IN_QUERY,
-				description="Taxon ID",
-				type=openapi.TYPE_INTEGER,
-				required=True
-			)
-		]
+		manual_parameters=[openapi.Parameter("taxonomy", openapi.IN_QUERY, description="Taxon ID", type=openapi.TYPE_INTEGER, required=True)],
 	)
 	def get(self, request):
 		return self.calculate(request, "collection_date_year", self.__class__)

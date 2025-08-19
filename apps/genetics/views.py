@@ -14,7 +14,8 @@ from .serializers import (
 	MarkerSerializer,
 	# SequenceSerializer,
 	SequenceAggregationSerializer,
-	SequenceCSVSerializer, SequenceMinimalSerializer
+	SequenceCSVSerializer,
+	SequenceMinimalSerializer,
 )
 from common.utils.views import CSVDownloadMixin
 from common.utils.serializers import get_paginated_response
@@ -23,26 +24,11 @@ from common.utils.utils import generate_csv, flatten_row, flatten_columns, remov
 from common.utils.custom_swag_schema import custom_swag_schema
 
 
-MANUAL_PARAMETERS = [
-	openapi.Parameter(
-		"id",
-		openapi.IN_QUERY,
-		description="Marker ID",
-		type=openapi.TYPE_INTEGER,
-		required=True
-	)
-]
+MANUAL_PARAMETERS = [openapi.Parameter("id", openapi.IN_QUERY, description="Marker ID", type=openapi.TYPE_INTEGER, required=True)]
 
 
 class MarkerCRUDView(APIView):
-
-	@custom_swag_schema(
-		tags="Genetic",
-		operation_id="Search marker by ID",
-		operation_description="Get details of a specific marker by its ID.",
-		manual_parameters=MANUAL_PARAMETERS
-	)
-
+	@custom_swag_schema(tags="Genetic", operation_id="Search marker by ID", operation_description="Get details of a specific marker by its ID.", manual_parameters=MANUAL_PARAMETERS)
 	def get(self, request):
 		marker_form = MarkerForm(data=self.request.GET)
 
@@ -81,8 +67,8 @@ class MarkerSearchView(APIView):
 				type=openapi.TYPE_BOOLEAN,
 				required=False,
 				default=False,
-			)
-		]
+			),
+		],
 	)
 	def get(self, request):
 		marker_form = MarkerForm(data=self.request.GET)
@@ -202,7 +188,7 @@ class MarkerListView(MarkerFilter):
 				type=openapi.TYPE_INTEGER,
 				required=True,
 			)
-		]
+		],
 	)
 	def get(self, request):
 		return Response(MarkerCountSerializer(super().get(request), many=True).data)
@@ -221,7 +207,7 @@ class MarkerCountView(MarkerFilter):
 				type=openapi.TYPE_INTEGER,
 				required=True,
 			)
-		]
+		],
 	)
 	def get(self, request):
 		return Response(super().get(request).count())
@@ -315,7 +301,7 @@ class SequenceCRUDView(APIView):
 				type=openapi.TYPE_INTEGER,
 				required=True,
 			)
-		]
+		],
 	)
 	def get(self, request):
 		seq_form = SequenceForm(data=self.request.GET)
@@ -409,22 +395,15 @@ class SequenceListView(SequenceFilter):
 				type=openapi.TYPE_INTEGER,
 				required=False,
 			),
-			openapi.Parameter(
-				"in_geography_scope",
-				openapi.IN_QUERY,
-				description="Geography ID",
-				type=openapi.TYPE_BOOLEAN,
-				required=False,
-				default=False
-			),
+			openapi.Parameter("in_geography_scope", openapi.IN_QUERY, description="Geography ID", type=openapi.TYPE_BOOLEAN, required=False, default=False),
 			openapi.Parameter(
 				"page",
 				openapi.IN_QUERY,
 				description="Page",
 				type=openapi.TYPE_INTEGER,
 				required=False,
-			)
-		]
+			),
+		],
 	)
 	def get(self, request):
 		query = super().get(request)
@@ -446,7 +425,7 @@ class SequenceCountView(SequenceFilter):
 				type=openapi.TYPE_INTEGER,
 				required=True,
 			)
-		]
+		],
 	)
 	def get(self, request):
 		return Response(super().get(request).count())
@@ -465,7 +444,7 @@ class SequenceListCSVView(SequenceFilter):
 				type=openapi.TYPE_INTEGER,
 				required=True,
 			)
-		]
+		],
 	)
 	def get(self, request):
 		query = super().get(request).prefetch_related("sources", "markers").select_related("occurrence", "occurrence__taxonomy")
@@ -477,7 +456,8 @@ class SequenceSourceCountView(APIView):
 		tags="Genetic",
 		operation_id="Count genetic occurrences of a taxon per source",
 		operation_description="Retrieve the genetic occurrence count of a taxon per source.",
-		manual_parameters=MANUAL_PARAMETERS + [
+		manual_parameters=MANUAL_PARAMETERS
+		+ [
 			openapi.Parameter(
 				"taxonomy",
 				openapi.IN_QUERY,
@@ -485,7 +465,7 @@ class SequenceSourceCountView(APIView):
 				type=openapi.TYPE_INTEGER,
 				required=True,
 			)
-		]
+		],
 	)
 	def get(self, request):
 		seq_form = SequenceForm(data=self.request.GET)
@@ -501,7 +481,7 @@ class SequenceSourceCountView(APIView):
 			taxon = TaxonomicLevel.objects.get(id=taxon_id)
 		except TaxonomicLevel.DoesNotExist:
 			raise CBBAPIException("Taxonomic level does not exist", 404)
-		
+
 		marker_id = seq_form.cleaned_data.get("id")
 
 		if not marker_id:
@@ -516,7 +496,6 @@ class SequenceSourceCountView(APIView):
 
 
 class SequenceSourceDownload(APIView):
-
 	def get(self, request):
 		seq_form = SequenceForm(data=self.request.GET)
 		if not seq_form.is_valid():
@@ -559,7 +538,8 @@ class SequenceSourceCSVDownloadView(SequenceSourceDownload):
 		tags="Genetic",
 		operation_id="Download genetic occurrences (CSV)",
 		operation_description="Retrieve a CSV with the genetic occurrences information of a taxon. It is possible filter for by its marker ID and source.",
-		manual_parameters=MANUAL_PARAMETERS + [
+		manual_parameters=MANUAL_PARAMETERS
+		+ [
 			openapi.Parameter(
 				"taxonomy",
 				openapi.IN_QUERY,
@@ -574,40 +554,49 @@ class SequenceSourceCSVDownloadView(SequenceSourceDownload):
 				type=openapi.TYPE_STRING,
 				required=False,
 			),
-		]
+		],
 	)
-
 	def get(self, request):
-
 		# Add the taxon name
-		column_list = ['id', 'taxon', 'taxonRank', 'isolate', 'definition', 'publishedDate', 'markers_name',
-					   'occurrence_basisOfRecord', 'occurrence_coordinateUncertaintyInMeters', 'occurrence_decimalLatitude',
-					   'occurrence_decimalLongitude', 'occurrence_depth', 'occurrence_elevation', 'occurrence_voucher', 'source_flat', 'id_flat']
+		column_list = [
+			"id",
+			"taxon",
+			"taxonRank",
+			"isolate",
+			"definition",
+			"publishedDate",
+			"markers_name",
+			"occurrence_basisOfRecord",
+			"occurrence_coordinateUncertaintyInMeters",
+			"occurrence_decimalLatitude",
+			"occurrence_decimalLongitude",
+			"occurrence_depth",
+			"occurrence_elevation",
+			"occurrence_voucher",
+			"source_flat",
+			"id_flat",
+		]
 
-		column_reorder = [i.replace('occurrence_', '') for i in column_list]
+		column_reorder = [i.replace("occurrence_", "") for i in column_list]
 
 		response = super().get(request)
 
-		a = flatten_row(response.data, ['markers'])
-		b = flatten_columns(a, ['occurrence'])
+		a = flatten_row(response.data, ["markers"])
+		b = flatten_columns(a, ["occurrence"])
 
 		# Add a key with the list of the sources
 		for item in b:
-			source_flat = [
-				s.get('source', {}).get('name')
-				for s in item.get('sources', [])
-				if s.get('source', {}).get('name') is not None
-			]
-			item['source_flat'] = source_flat[0]
+			source_flat = [s.get("source", {}).get("name") for s in item.get("sources", []) if s.get("source", {}).get("name") is not None]
+			item["source_flat"] = source_flat[0]
 
-			id_flat = item.get('sources', [])
-			item['id_flat'] = id_flat[0].get('externalId') if id_flat else None
+			id_flat = item.get("sources", [])
+			item["id_flat"] = id_flat[0].get("externalId") if id_flat else None
 
-			item['taxon'] = item.get('occurrence_taxonomy').get('name') if id else None
-			item['taxonRank'] = item.get('occurrence_taxonomy').get('taxonRank') if id else None
+			item["taxon"] = item.get("occurrence_taxonomy").get("name") if id else None
+			item["taxonRank"] = item.get("occurrence_taxonomy").get("taxonRank") if id else None
 
 		# Clean the key names and reorder the final csv
 		b_clean = [{k: item[k] for k in column_list if k in item} for item in b]
-		b_clean = [remove_from_keys(item, 'occurrence_') for item in b_clean]
+		b_clean = [remove_from_keys(item, "occurrence_") for item in b_clean]
 
 		return generate_csv(b_clean, filename="genetic_occurrences.csv", fieldnames=column_reorder)

@@ -92,7 +92,7 @@ def genetic_sources(line: dict, batch, occ):
 		data_type=Source.SEQUENCE,
 		batch=batch,
 		internal_name=line[INTERNAL_NAME],
-		basis_type=Basis.TRANSLATE_TYPE[line[SOURCE_TYPE]]
+		basis_type=Basis.TRANSLATE_TYPE[line[SOURCE_TYPE]],
 	)
 
 	os, new = OriginId.objects.get_or_create(
@@ -182,7 +182,7 @@ class Command(BaseCommand):
 					data_type=Source.TAXON,
 					batch=batch,
 					internal_name=line[INTERNAL_NAME],
-					basis_type=Basis.TRANSLATE_TYPE[line[SOURCE_TYPE]]
+					basis_type=Basis.TRANSLATE_TYPE[line[SOURCE_TYPE]],
 				)
 
 				parent_level = ""
@@ -229,7 +229,7 @@ class Command(BaseCommand):
 					data_type=Source.OCCURRENCE,
 					batch=batch,
 					internal_name=line[INTERNAL_NAME],
-					basis_type=Basis.TRANSLATE_TYPE[line[SOURCE_TYPE]]
+					basis_type=Basis.TRANSLATE_TYPE[line[SOURCE_TYPE]],
 				)
 
 				os, new = OriginId.objects.get_or_create(

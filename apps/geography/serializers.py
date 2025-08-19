@@ -16,12 +16,7 @@ class MinimalGeographicLevelSerializer(CaseModelSerializer):
 
 	class Meta:
 		model = GeographicLevel
-		fields = [
-			"id",
-			"parent",
-			"name",
-			"rank"
-		]
+		fields = ["id", "parent", "name", "rank"]
 
 
 class GeographicLevelSerializer(MinimalGeographicLevelSerializer):
@@ -34,9 +29,4 @@ class GeographicLevelSerializer(MinimalGeographicLevelSerializer):
 
 	class Meta:
 		model = GeographicLevel
-		fields = MinimalGeographicLevelSerializer.Meta.fields + [
-			"decimal_latitude",
-			"decimal_longitude",
-			"coordinate_uncertainty_in_meters",
-			"area"
-		]
+		fields = MinimalGeographicLevelSerializer.Meta.fields + ["decimal_latitude", "decimal_longitude", "coordinate_uncertainty_in_meters", "area"]

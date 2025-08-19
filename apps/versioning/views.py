@@ -10,40 +10,34 @@ from .models import Basis, OriginId, Source
 from .serializers import BasisSerializer, OriginIdSerializer, SourceSerializer, SourceCountSerializer
 
 from common.utils.custom_swag_schema import custom_swag_schema
+
 NAME = "name"
 
-MANUAL_PARAMETERS = [
-            openapi.Parameter(
-                "id",
-                openapi.IN_QUERY,
-                description="Unique identifier of the source to retrieve.",
-                type=openapi.TYPE_INTEGER,
-                required=True
-            )
-        ]
+MANUAL_PARAMETERS = [openapi.Parameter("id", openapi.IN_QUERY, description="Unique identifier of the source to retrieve.", type=openapi.TYPE_INTEGER, required=True)]
+
 
 class BasisSearchView(APIView):
 	@custom_swag_schema(
-        tags="Versioning",
-        operation_id="Get basis by name",
-        operation_description="Retrieve a Basis by name",
-        manual_parameters=[
-            openapi.Parameter(
-                "name",
-                openapi.IN_QUERY,
-                description="Name of the basis to search for.",
-                type=openapi.TYPE_STRING,
-                required=True,
-            ),
-            openapi.Parameter(
-                "exact",
-                openapi.IN_QUERY,
-                description="Whether to search for an exact match or not.",
-                type=openapi.TYPE_BOOLEAN,
-                required=False,
-            )
-        ]
-    )
+		tags="Versioning",
+		operation_id="Get basis by name",
+		operation_description="Retrieve a Basis by name",
+		manual_parameters=[
+			openapi.Parameter(
+				"name",
+				openapi.IN_QUERY,
+				description="Name of the basis to search for.",
+				type=openapi.TYPE_STRING,
+				required=True,
+			),
+			openapi.Parameter(
+				"exact",
+				openapi.IN_QUERY,
+				description="Whether to search for an exact match or not.",
+				type=openapi.TYPE_BOOLEAN,
+				required=False,
+			),
+		],
+	)
 	def get(self, request):
 		basis_form = BasisForm(self.request.GET)
 
@@ -68,12 +62,7 @@ class BasisSearchView(APIView):
 
 
 class BasisCRUDView(APIView):
-	@custom_swag_schema(
-        tags="Versioning",
-        operation_id="Get basis details",
-        operation_description="Get details of a specific basis.",
-        manual_parameters=MANUAL_PARAMETERS
-    )
+	@custom_swag_schema(tags="Versioning", operation_id="Get basis details", operation_description="Get details of a specific basis.", manual_parameters=MANUAL_PARAMETERS)
 	def get(self, request):
 		basis_form = BasisForm(data=self.request.GET)
 
@@ -108,7 +97,6 @@ class BasisFilter(APIView):
 			value = basis_form.cleaned_data.get(param)
 
 			if param is NAME:
-
 				if value:
 					filters["internal_name__iexact" if exact else "internal_name__icontains"] = value
 					continue
@@ -123,66 +111,66 @@ class BasisFilter(APIView):
 
 class BasisListView(BasisFilter):
 	@custom_swag_schema(
-        tags="Versioning",
-        operation_id="List basis",
-        operation_description="List of basis.",
+		tags="Versioning",
+		operation_id="List basis",
+		operation_description="List of basis.",
 		manual_parameters=[
-            openapi.Parameter(
-                "name",
-                openapi.IN_QUERY,
-                description="Name of the basis to search for.",
-                type=openapi.TYPE_STRING,
-                required=False,
-            ),
-            openapi.Parameter(
-                "exact",
-                openapi.IN_QUERY,
-                description="Whether to search for an exact match or not.",
-                type=openapi.TYPE_BOOLEAN,
-                required=False,
-            ),
 			openapi.Parameter(
-                "type",
-                openapi.IN_QUERY,
-                description="Type of the basis to search for.",
-                type=openapi.TYPE_STRING,
-                required=False,
-            ),
-        ]
-    )
+				"name",
+				openapi.IN_QUERY,
+				description="Name of the basis to search for.",
+				type=openapi.TYPE_STRING,
+				required=False,
+			),
+			openapi.Parameter(
+				"exact",
+				openapi.IN_QUERY,
+				description="Whether to search for an exact match or not.",
+				type=openapi.TYPE_BOOLEAN,
+				required=False,
+			),
+			openapi.Parameter(
+				"type",
+				openapi.IN_QUERY,
+				description="Type of the basis to search for.",
+				type=openapi.TYPE_STRING,
+				required=False,
+			),
+		],
+	)
 	def get(self, request):
 		return Response(BasisSerializer(super().get(request), many=True).data)
 
 
 class BasisCountView(BasisFilter):
 	@custom_swag_schema(
-        tags="Versioning",
-        operation_id="Count basis",
-        operation_description="Return the total number of the basis.",
+		tags="Versioning",
+		operation_id="Count basis",
+		operation_description="Return the total number of the basis.",
 		manual_parameters=[
-            openapi.Parameter(
-                "name",
-                openapi.IN_QUERY,
-                description="Name of the basis to search for.",
-                type=openapi.TYPE_STRING,
-                required=False,
-            ),
-            openapi.Parameter(
-                "exact",
-                openapi.IN_QUERY,
-                description="Whether to search for an exact match or not.",
-                type=openapi.TYPE_BOOLEAN,
-                required=False,
-            ),
 			openapi.Parameter(
-                "type",
-                openapi.IN_QUERY,
-                description="Type of the basis to search for.",
-                type=openapi.TYPE_STRING,
-                required=False,
-            ),
-        ]
-    )
+				"name",
+				openapi.IN_QUERY,
+				description="Name of the basis to search for.",
+				type=openapi.TYPE_STRING,
+				required=False,
+			),
+			openapi.Parameter(
+				"exact",
+				openapi.IN_QUERY,
+				description="Whether to search for an exact match or not.",
+				type=openapi.TYPE_BOOLEAN,
+				required=False,
+			),
+			openapi.Parameter(
+				"type",
+				openapi.IN_QUERY,
+				description="Type of the basis to search for.",
+				type=openapi.TYPE_STRING,
+				required=False,
+			),
+		],
+	)
 	def get(self, request):
 		return Response(super().get(request).count())
 
@@ -234,12 +222,7 @@ class BasisCountView(BasisFilter):
 
 
 class SourceCRUDView(APIView):
-	@custom_swag_schema(
-        tags="Versioning",
-        operation_id="Get source details",
-        operation_description="Get details of a specific source.",
-        manual_parameters=MANUAL_PARAMETERS
-    )
+	@custom_swag_schema(tags="Versioning", operation_id="Get source details", operation_description="Get details of a specific source.", manual_parameters=MANUAL_PARAMETERS)
 	def get(self, request):
 		source_form = SourceForm(data=self.request.GET)
 
@@ -257,6 +240,7 @@ class SourceCRUDView(APIView):
 
 		return Response(SourceSerializer(occurrence).data)
 
+
 class SourceFilter(APIView):
 	def get(self, request):
 		basis_name = self.request.GET.get("basis", None)
@@ -273,12 +257,12 @@ class SourceListView(SourceFilter):
 		operation_description="List all the Sources",
 		manual_parameters=[
 			openapi.Parameter(
-                "basis",
-                openapi.IN_QUERY,
-                description="Basis ID of the source to search for.",
-                type=openapi.TYPE_STRING,
-                required=False,
-            ),
+				"basis",
+				openapi.IN_QUERY,
+				description="Basis ID of the source to search for.",
+				type=openapi.TYPE_STRING,
+				required=False,
+			),
 		],
 		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
 	)
@@ -292,17 +276,18 @@ class SourceListCountView(SourceFilter):
 		operation_description="List all the Sources",
 		manual_parameters=[
 			openapi.Parameter(
-                "basis",
-                openapi.IN_QUERY,
-                description="Basis ID of the source to search for.",
-                type=openapi.TYPE_STRING,
-                required=False,
-            ),
+				"basis",
+				openapi.IN_QUERY,
+				description="Basis ID of the source to search for.",
+				type=openapi.TYPE_STRING,
+				required=False,
+			),
 		],
 		responses={200: "Success", 400: "Bad Request", 404: "Not Found"},
 	)
 	def get(self, request):
 		return Response(super().get(request).count())
+
 
 class SourceStatisticsFilter(APIView):
 	def get(self, request):
@@ -340,22 +325,13 @@ class SourceStatisticsView(SourceStatisticsFilter):
 
 
 class SourceCountView(SourceFilter):
-	@custom_swag_schema(
-        tags="Versioning",
-        operation_id="Count sources",
-        operation_description="Count the number of sources."
-    )
+	@custom_swag_schema(tags="Versioning", operation_id="Count sources", operation_description="Count the number of sources.")
 	def get(self, request):
 		return Response(super().get(request).count())
 
 
 class OriginIdCRUDView(APIView):
-	@custom_swag_schema(
-        tags="Versioning",
-        operation_id="Get origin id details",
-        operation_description="Get details of a specific source.",
-        manual_parameters=MANUAL_PARAMETERS
-    )
+	@custom_swag_schema(tags="Versioning", operation_id="Get origin id details", operation_description="Get details of a specific source.", manual_parameters=MANUAL_PARAMETERS)
 	def get(self, request):
 		os_form = OriginIdForm(data=self.request.GET)
 

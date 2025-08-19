@@ -1,6 +1,7 @@
 import re
 import string
 from apps.versioning.models import Source, Basis, OriginId
+
 # from django.core.exceptions import MultipleObjectsReturned
 from django.apps import apps
 from django.db.models import ForeignKey
@@ -36,7 +37,7 @@ def remove_from_keys(d: dict, substring: str) -> dict:
 		Values are unchanged.
 	"""
 
-	return {k.replace(substring, ''): v for k, v in d.items()}
+	return {k.replace(substring, ""): v for k, v in d.items()}
 
 
 def generate_csv(data, filename="data.csv", fieldnames: list = None):
@@ -72,7 +73,6 @@ def generate_csv(data, filename="data.csv", fieldnames: list = None):
 
 
 def get_or_create_source(source_type, extraction_method, data_type, batch, internal_name, url=None, basis_type=None):
-
 	if not internal_name:
 		raise ValueError("All records must have a basis\n")
 

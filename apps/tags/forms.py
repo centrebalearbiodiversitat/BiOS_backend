@@ -5,6 +5,7 @@ from common.utils.forms import TranslateForm, CamelCaseForm
 from .models import IUCNData
 import re
 
+
 class DirectiveForm(CamelCaseForm):
 	cites = forms.BooleanField(required=False)
 	ceea = forms.BooleanField(required=False)
@@ -16,7 +17,7 @@ class DirectiveForm(CamelCaseForm):
 		fields = "__all__"
 
 	def __init__(self, *args, **kwargs):
-		self.request_data = kwargs.get('data', None)
+		self.request_data = kwargs.get("data", None)
 		super().__init__(*args, **kwargs)
 
 	def clean(self):
@@ -39,7 +40,8 @@ class DirectiveForm(CamelCaseForm):
 		elif directive == "directiva_habitats":
 			cleaned_data["directiva_habitats"] = True
 			return cleaned_data
-		
+
+
 class HabitatForm(TranslateForm):
 	habitat = forms.CharField(max_length=50, required=False)
 
@@ -55,19 +57,17 @@ class IUCNDataForm(TranslateForm):
 	}
 
 	def __init__(self, *args, **kwargs):
-		self.request_data = kwargs.get('data', None)
+		self.request_data = kwargs.get("data", None)
 		super().__init__(*args, **kwargs)
-	
+
 	def clean(self):
 		cleaned_data = super().clean()
 
 		assessment = None
 		region = None
-		
+
 		if self.request_data:
-
 			for key, value in self.request_data.items():
-
 				regex = r"iucn_.*"
 				key = decamelize(key)
 				region = key.replace("iucn_", "")
@@ -78,9 +78,9 @@ class IUCNDataForm(TranslateForm):
 					break
 
 			if assessment:
-				cleaned_data['assessment'] = assessment
-				cleaned_data['region'] = region
-			
+				cleaned_data["assessment"] = assessment
+				cleaned_data["region"] = region
+
 		return cleaned_data
 
 
@@ -95,9 +95,9 @@ class SystemForm(CamelCaseForm):
 	freshwater = forms.BooleanField(required=False)
 	marine = forms.BooleanField(required=False)
 	terrestrial = forms.BooleanField(required=False)
-			
+
 	def __init__(self, *args, **kwargs):
-		self.request_data = kwargs.get('data', None)
+		self.request_data = kwargs.get("data", None)
 		super().__init__(*args, **kwargs)
 
 	def clean(self):
@@ -115,8 +115,5 @@ class SystemForm(CamelCaseForm):
 			cleaned_data["terrestrial"] = True
 			return cleaned_data
 
-
 	class Meta:
 		fields = ["taxonomy", "freshwater", "marine", "terrestrial"]
-			
-	

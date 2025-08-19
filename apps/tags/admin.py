@@ -25,7 +25,7 @@ admin.site.register(Habitat, HabitatAdmin)
 
 class HabitatTaxonomyAdmin(admin.ModelAdmin):
 	list_display = ("taxonomy", "habitat")
-	list_filter = ("habitat", )
+	list_filter = ("habitat",)
 	search_fields = ("taxonomy__name",)
 	autocomplete_fields = ("taxonomy", "sources")
 

@@ -93,16 +93,15 @@ class SearchTaxonomicLevelSerializer(CaseModelSerializer):
 
 
 class TaxonomicFilterSerializer(SearchTaxonomicLevelSerializer):
+	iucndata = IUCNDataSerializer(source="iucndata_set", many=True, read_only=True)
+	tag = TaxonTagSerializer(source="taxontag_set", many=True, read_only=True)
 
-    iucndata = IUCNDataSerializer(source="iucndata_set", many=True, read_only=True)
-    tag = TaxonTagSerializer(source="taxontag_set", many=True, read_only=True) 
+	class Meta(SearchTaxonomicLevelSerializer.Meta):
+		fields = SearchTaxonomicLevelSerializer.Meta.fields + [
+			"iucndata",
+			"tag",
+		]
 
-    class Meta(SearchTaxonomicLevelSerializer.Meta):
-
-        fields = SearchTaxonomicLevelSerializer.Meta.fields + [
-            "iucndata",
-            "tag",
-        ]
 
 class TaxonCompositionSerializer(BaseTaxonomicLevelSerializer):
 	total_species = serializers.IntegerField()

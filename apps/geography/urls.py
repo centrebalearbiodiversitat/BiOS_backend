@@ -16,5 +16,5 @@ urlpatterns = [
 	path("/level", GeographicLevelIdView.as_view(), name="geo_crud"),
 	path("/level/parent", GeographicLevelParent.as_view(), name="geo_level_parent"),
 	path("/level/children", GeographicLevelChildren.as_view(), name="geo_level_children"),
-	path("/search", GeographicLevelDetailView.as_view(), name="geo_search")
+	path("/search", GeographicLevelDetailView.as_view(), name="geo_search"),
 ]

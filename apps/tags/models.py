@@ -56,7 +56,6 @@ class Habitat(ReferencedModel):
 
 
 class IUCNData(ReferencedModel):
-	
 	NE = 0
 	DD = 1
 	LC = 2
@@ -87,11 +86,7 @@ class IUCNData(ReferencedModel):
 		(NA, "na"),
 	)
 
-	RG_CHOICES = (
-		(GLOBAL, "global"),
-		(EUROPE, "europe"),
-		(MEDITERRANEAN, "mediterranean")
-	)
+	RG_CHOICES = ((GLOBAL, "global"), (EUROPE, "europe"), (MEDITERRANEAN, "mediterranean"))
 
 	TRANSLATE_CS = {
 		NE: "ne",
@@ -118,14 +113,7 @@ class IUCNData(ReferencedModel):
 		"na": NA,
 	}
 
-	TRANSLATE_RG = {
-		GLOBAL: "global",
-		"global": GLOBAL,
-		EUROPE: "europe",
-		"europe": EUROPE,
-		MEDITERRANEAN: "mediterranean",
-		"mediterranean": MEDITERRANEAN
-	}
+	TRANSLATE_RG = {GLOBAL: "global", "global": GLOBAL, EUROPE: "europe", "europe": EUROPE, MEDITERRANEAN: "mediterranean", "mediterranean": MEDITERRANEAN}
 
 	taxonomy = models.ForeignKey(TaxonomicLevel, on_delete=models.CASCADE, db_index=True)
 	assessment = models.PositiveSmallIntegerField(choices=CS_CHOICES, default=NE)

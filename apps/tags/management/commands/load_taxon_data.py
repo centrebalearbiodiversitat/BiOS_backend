@@ -86,13 +86,10 @@ def load_taxon_data_from_json(line, taxonomy, batch):
 					defaults={
 						"assessment": assessment,
 						"batch": batch,
-					}
+					},
 				)
 
-				origin, _ = OriginId.objects.get_or_create(
-					external_id=f"{taxon_id}/{url_id}",
-					source=source
-				)
+				origin, _ = OriginId.objects.get_or_create(external_id=f"{taxon_id}/{url_id}", source=source)
 
 				iucn_data.sources.add(origin)
 
@@ -104,7 +101,7 @@ def load_taxon_data_from_json(line, taxonomy, batch):
 				"marine": line["marine"],
 				"terrestrial": line["terrestrial"],
 				"batch": batch,
-			}
+			},
 		)
 
 		origin, _ = OriginId.objects.get_or_create(source=source, external_id=taxon_id)
@@ -119,13 +116,7 @@ def load_taxon_data_from_json(line, taxonomy, batch):
 			raise Exception(f"Invalid habitat IDs: {invalid_ids}")
 
 		for single_habitat_object in valid_habitats:
-			habitat_taxonomy, _ = HabitatTaxonomy.objects.update_or_create(
-				taxonomy=taxonomy,
-				habitat=single_habitat_object,
-				defaults={
-					"batch": batch
-				}
-			)
+			habitat_taxonomy, _ = HabitatTaxonomy.objects.update_or_create(taxonomy=taxonomy, habitat=single_habitat_object, defaults={"batch": batch})
 
 			origin, _ = OriginId.objects.get_or_create(source=source, external_id=taxon_id)
 			habitat_taxonomy.sources.add(origin)

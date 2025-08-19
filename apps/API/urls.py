@@ -8,14 +8,14 @@ from rest_framework import permissions
 
 
 class BothHttpAndHttpsSchemaGenerator(OpenAPISchemaGenerator):
-    def get_schema(self, request=None, public=False):
-        schema = super().get_schema(request, public)
-        if settings.DEBUG:
-            schema.schemes = ["http"]
-        else:
-            schema.schemes = ["https"]
-        
-        return schema
+	def get_schema(self, request=None, public=False):
+		schema = super().get_schema(request, public)
+		if settings.DEBUG:
+			schema.schemes = ["http"]
+		else:
+			schema.schemes = ["https"]
+
+		return schema
 
 
 schema_view = get_schema_view(

@@ -13,10 +13,17 @@ CORS_ALLOWED_ORIGINS = ["http://localhost:8000"]
 # LOGGING = {
 # 	"version": 1,
 # 	"disable_existing_loggers": False,
+# 	"formatters": {
+# 		"simple": {
+# 			"format": "{levelname} \n{message} \n{asctime} \n{module} \n{filename} \n{lineno}",
+# 			"style": "{",
+# 		},
+# 	},
 # 	"handlers": {
 # 		"console": {
 # 			"level": "DEBUG",
 # 			"class": "logging.StreamHandler",
+# 			"formatter": "simple",
 # 		},
 # 		"file": {
 # 			"level": "DEBUG",
@@ -30,5 +37,19 @@ CORS_ALLOWED_ORIGINS = ["http://localhost:8000"]
 # 			"level": "DEBUG",
 # 			"propagate": False,
 # 		},
+#         'apps.API.urls': {  # Reemplaza con la ruta correcta a tu archivo
+#             'handlers': ['console'],
+#             'level': 'DEBUG',
+#             'propagate': False,
+#         },
+#         'drf_yasg': {
+#             'handlers': ['console'],
+#             'level': 'DEBUG',
+#             'propagate': False,
+#         },
+#         '': {
+#             'handlers': ['console'],
+#             'level': 'INFO',  # Nivel de logging por defecto
+#         },
 # 	},
 # }

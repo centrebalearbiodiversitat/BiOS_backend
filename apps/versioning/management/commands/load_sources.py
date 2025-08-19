@@ -14,10 +14,11 @@ class Command(BaseCommand):
 	@transaction.atomic
 	def handle(self, *args, **options):
 		csv_file = options["csv_file"]
+		
 		with open(csv_file, "r") as file:
 			reader = csv.DictReader(file, delimiter=";")
+
 			for row in reader:
-				print(row)
 				internal_name = row["internal_name"]
 
 				try:

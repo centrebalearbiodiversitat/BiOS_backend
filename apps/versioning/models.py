@@ -65,7 +65,7 @@ class Basis(models.Model):
 		MUSEUM,
 	}
 
-	internal_name = models.CharField(max_length=255, unique=True)
+	internal_name = models.CharField(max_length=255)
 	name = models.CharField(max_length=1023, blank=True, null=True)
 	acronym = models.CharField(max_length=50, null=True, blank=True)
 	type = models.PositiveSmallIntegerField(choices=TYPE_CHOICES)
@@ -91,6 +91,7 @@ class Basis(models.Model):
 		indexes = [
 			models.Index(Upper("internal_name"), name="basis_internal_name_upper_idx"),
 		]
+		unique_together = ("internal_name", "type")
 
 
 class SourceManager(models.Manager):

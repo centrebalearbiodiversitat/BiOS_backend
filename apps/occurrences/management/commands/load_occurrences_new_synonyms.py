@@ -8,7 +8,7 @@ from django.contrib.gis.geos import Point, GEOSGeometry
 from apps.genetics.models import Sequence, Marker
 from apps.occurrences.models import Occurrence
 from apps.taxonomy.models import TaxonomicLevel
-from apps.versioning.models import Batch, OriginId, Source
+from apps.versioning.models import Batch, OriginId, Source, Basis
 from common.utils.utils import get_or_create_source, is_batch_referenced
 
 EXTERNAL_ID = "sample_id"
@@ -92,6 +92,7 @@ def genetic_sources(line: dict, batch, occ):
 		data_type=Source.SEQUENCE,
 		batch=batch,
 		internal_name=line[INTERNAL_NAME],
+		basis_type=Basis.TRANSLATE_TYPE[line[SOURCE_TYPE]]
 	)
 
 	os, new = OriginId.objects.get_or_create(
@@ -172,15 +173,16 @@ class Command(BaseCommand):
 			batch = Batch.objects.create()
 
 			line: dict
+
 			for line in data:
 				line = parse_line(line)
-
 				source = get_or_create_source(
 					source_type=line[SOURCE_TYPE],
 					extraction_method=Source.API,
 					data_type=Source.TAXON,
 					batch=batch,
 					internal_name=line[INTERNAL_NAME],
+					basis_type=Basis.TRANSLATE_TYPE[line[SOURCE_TYPE]]
 				)
 
 				parent_level = ""
@@ -227,6 +229,7 @@ class Command(BaseCommand):
 					data_type=Source.OCCURRENCE,
 					batch=batch,
 					internal_name=line[INTERNAL_NAME],
+					basis_type=Basis.TRANSLATE_TYPE[line[SOURCE_TYPE]]
 				)
 
 				os, new = OriginId.objects.get_or_create(

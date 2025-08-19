@@ -10,7 +10,9 @@ from common.utils.utils import is_batch_referenced
 def populate_basis(line, batch):
 	Basis.objects.update_or_create(
 		internal_name__iexact=line.get("internal_name", ""),
+		type=Basis.TRANSLATE_TYPE[line["type"]],
 		defaults={
+			"internal_name": line.get("internal_name", None),
 			"name": line["name"],
 			"type": Basis.TRANSLATE_TYPE[line["type"]],
 			"acronym": line.get("acronym", None),

@@ -86,7 +86,11 @@ class IUCNData(ReferencedModel):
 		(NA, "na"),
 	)
 
-	RG_CHOICES = ((GLOBAL, "global"), (EUROPE, "europe"), (MEDITERRANEAN, "mediterranean"))
+	RG_CHOICES = (
+		(GLOBAL, "global"),
+		(EUROPE, "europe"),
+		(MEDITERRANEAN, "mediterranean")
+	)
 
 	TRANSLATE_CS = {
 		NE: "ne",
@@ -113,7 +117,14 @@ class IUCNData(ReferencedModel):
 		"na": NA,
 	}
 
-	TRANSLATE_RG = {GLOBAL: "global", "global": GLOBAL, EUROPE: "europe", "europe": EUROPE, MEDITERRANEAN: "mediterranean", "mediterranean": MEDITERRANEAN}
+	TRANSLATE_RG = {
+		GLOBAL: "global",
+		"global": GLOBAL,
+		EUROPE: "europe",
+		"europe": EUROPE,
+		MEDITERRANEAN: "mediterranean",
+		"mediterranean": MEDITERRANEAN
+	}
 
 	taxonomy = models.ForeignKey(TaxonomicLevel, on_delete=models.CASCADE, db_index=True)
 	assessment = models.PositiveSmallIntegerField(choices=CS_CHOICES, default=NE)
@@ -124,7 +135,6 @@ class IUCNData(ReferencedModel):
 
 	class Meta:
 		verbose_name_plural = "IUCN"
-		# Unique values for taxonomy and region. We cannot have a taxon with the same regions.
 		unique_together = ["taxonomy", "region"]
 
 
@@ -137,7 +147,7 @@ class HabitatTaxonomy(ReferencedModel):
 
 	class Meta:
 		verbose_name_plural = "Habitat Taxonomy"
-		unique_together = ["taxonomy", "habitat"]  # Unique values for taxonomy and habitat.
+		unique_together = ["taxonomy", "habitat"]
 
 
 class Directive(ReferencedModel):

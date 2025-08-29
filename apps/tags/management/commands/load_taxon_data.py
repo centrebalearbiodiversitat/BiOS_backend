@@ -19,28 +19,25 @@ iucn_regex = re.compile(r"^[A-Z]{2}/[a-z]{2}$")
 
 
 def check_taxon(line):
-	taxonomy = TaxonomicLevel.objects.find(taxon=line["origin_taxon"])
+	taxonomy = TaxonomicLevel.objects.find(taxon=line["origin_taxon"]).filter(rank=TaxonomicLevel.TRANSLATE_RANK[line["taxon_rank"]])
 
 	if taxonomy.count() == 0:
 		raise Exception(f"Taxonomy not found.\n{line}")
 	elif taxonomy.count() > 1:
-		raise Exception(f"Multiple taxonomy found.\n{line}")
+		raise Exception(f"Multiple taxonomy found.\n{line}\n{taxonomy}")
 
 	return taxonomy.first()
 
 
-def transform_iucn_status(line):
-	for field in IUCN_FIELDS:
-		# Check if the IUCN_FIELDS exists into the line and check if line is a dictionary
-		if isinstance(line.get(field), dict):
-			nested_dict = line[field]
+def transform_iucn_status(iucn_scope):
+	if "status" in iucn_scope and iucn_scope["status"] is not None:
+		current_status_value = str(iucn_scope["status"])
 
-			if "status" in nested_dict and nested_dict["status"] is not None:
-				current_status_value = str(nested_dict["status"])
+		# Check if the status value matches the expected regex pattern
+		if re.match(iucn_regex, current_status_value):
+			iucn_scope["status"] = current_status_value[-2:].upper()
 
-				# Check if the status value matches the expected regex pattern
-				if re.match(iucn_regex, current_status_value):
-					nested_dict["status"] = current_status_value[-2:].upper()
+	return iucn_scope
 
 
 # Important: This is valid only for IUCN json files.
@@ -55,43 +52,42 @@ def load_taxon_data_from_json(line, taxonomy, batch):
 		internal_name=INTERNAL_NAME,
 	)
 
-	try:
-		with transaction.atomic():
-			# Assessment
-			for field in IUCN_FIELDS:
-				field_data = line.get(field)
+	# Assessment
+	for field in IUCN_FIELDS:
+		field_data = line.get(field)
 
-				if not field_data:
-					continue
+		if not field_data:
+			continue
 
-				status = field_data.get("status")
-				url = field_data.get("url")
+		field_data = transform_iucn_status(field_data)
+		status = field_data.get("status")
+		url = field_data.get("url")
 
-				if status is None or not url:
-					continue
+		if status is None or not url:
+			continue
 
-				url_id = url.rstrip("/").split("/")[-1]
+		url_id = url.rstrip("/").split("/")[-1]
 
-				if not url_id:
-					continue
+		if not url_id:
+			continue
 
-				region_key = field.split("_")[1].lower()
-				region = IUCNData.TRANSLATE_RG.get(region_key)
+		region_key = field.split("_")[1].lower()
+		region = IUCNData.TRANSLATE_RG.get(region_key)
 
-				assessment = IUCNData.TRANSLATE_CS.get(status.lower(), IUCNData.NE)
+		assessment = IUCNData.TRANSLATE_CS.get(status.lower(), IUCNData.NE)
 
-				iucn_data, _ = IUCNData.objects.update_or_create(
-					taxonomy=taxonomy,
-					region=region,
-					defaults={
-						"assessment": assessment,
-						"batch": batch,
-					},
-				)
+		iucn_data, _ = IUCNData.objects.update_or_create(
+			taxonomy=taxonomy,
+			region=region,
+			defaults={
+				"assessment": assessment,
+				"batch": batch,
+			},
+		)
 
-				origin, _ = OriginId.objects.get_or_create(external_id=f"{taxon_id}/{url_id}", source=source)
+		origin, _ = OriginId.objects.get_or_create(external_id=f"{taxon_id}/{url_id}", source=source)
 
-				iucn_data.sources.add(origin)
+		iucn_data.sources.add(origin)
 
 		# System
 		system, _ = System.objects.update_or_create(
@@ -116,13 +112,16 @@ def load_taxon_data_from_json(line, taxonomy, batch):
 			raise Exception(f"Invalid habitat IDs: {invalid_ids}")
 
 		for single_habitat_object in valid_habitats:
-			habitat_taxonomy, _ = HabitatTaxonomy.objects.update_or_create(taxonomy=taxonomy, habitat=single_habitat_object, defaults={"batch": batch})
+			habitat_taxonomy, _ = HabitatTaxonomy.objects.update_or_create(
+				taxonomy=taxonomy,
+				habitat=single_habitat_object,
+				defaults={
+					"batch": batch
+				}
+			)
 
 			origin, _ = OriginId.objects.get_or_create(source=source, external_id=taxon_id)
 			habitat_taxonomy.sources.add(origin)
-
-	except Exception as e:
-		print(f"⚠️ Error in field '{field}': {e}")
 
 
 class Command(BaseCommand):
@@ -142,12 +141,12 @@ class Command(BaseCommand):
 
 			for line in json_data:
 				try:
-					transform_iucn_status(line)
 					taxonomy = check_taxon(line)
 					load_taxon_data_from_json(line, taxonomy, batch)
 				except:
 					exception = True
 					print(traceback.format_exc(), line)
+					break
 
 		if exception:
 			raise Exception(f"Errors found: Rollback control")

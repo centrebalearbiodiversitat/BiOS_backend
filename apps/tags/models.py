@@ -117,7 +117,7 @@ class IUCNData(ReferencedModel):
 
 	taxonomy = models.ForeignKey(TaxonomicLevel, on_delete=models.CASCADE, db_index=True)
 	assessment = models.PositiveSmallIntegerField(choices=CS_CHOICES, default=NE)
-	region = models.PositiveSmallIntegerField(choices=RG_CHOICES, default=None)
+	region = models.PositiveSmallIntegerField(choices=RG_CHOICES)
 
 	def __str__(self):
 		return f"{self.taxonomy} - assessment: {self.assessment}, region: {self.region}"

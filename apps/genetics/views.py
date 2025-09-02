@@ -1,4 +1,4 @@
-from django.db.models import Count, Q, OuterRef, Subquery, Case, When, Value, IntegerField
+from django.db.models import Count, Q, OuterRef, Case, When, Value, IntegerField
 from drf_yasg import openapi
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -362,7 +362,7 @@ class SequenceFilter(APIView):
 				taxon = TaxonomicLevel.objects.get(id=taxon)
 				filters |= Q(occurrence__taxonomy=taxon) | Q(occurrence__taxonomy__lft__gte=taxon.lft, occurrence__taxonomy__rght__lte=taxon.rght)
 			except TaxonomicLevel.DoesNotExist:
-				raise CBBAPIException("Taxon does not exist.", 404)
+				raise CBBAPIException("Taxonomic level does not exist.", 404)
 
 		marker = seq_form.cleaned_data.get("marker")
 		if marker:
@@ -517,7 +517,7 @@ class SequenceSourceDownload(APIView):
 			try:
 				marker = Marker.objects.get(id=marker_id)
 			except Marker.DoesNotExist:
-				raise CBBAPIException("Source does not exist", 404)
+				raise CBBAPIException("Marker does not exist", 404)
 
 			queryset = queryset.filter(markers=marker)
 

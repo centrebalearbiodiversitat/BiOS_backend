@@ -18,7 +18,6 @@ from .serializers import (
 from apps.geography.models import GeographicLevel
 from apps.tags.forms import IUCNDataForm, DirectiveForm, SystemForm, TaxonTagForm
 from common.utils.views import CSVDownloadMixin
-
 from common.utils.custom_swag_schema import custom_swag_schema
 
 
@@ -143,32 +142,23 @@ class OccurrenceFilter(APIView):
 
 		return filters
 
-	def get_coordinate_filter(self, filters, field_name, latitude_min, latitude_max, longitude_min, longitude_max):
-		# Cambiar este condicional, o pasar valores por defecto
-		if all([latitude_min is not None, latitude_max is not None, longitude_min is not None, longitude_max is not None]):
-			try:
-				min_lat = float(latitude_min)
-				max_lat = float(latitude_max)
-				min_lon = float(longitude_min)
-				max_lon = float(longitude_max)
+	@staticmethod
+	def get_coordinate_filter(latitude_min, latitude_max, longitude_min, longitude_max):
+		try:
+			min_lat = float(latitude_min)
+			max_lat = float(latitude_max)
+			min_lon = float(longitude_min)
+			max_lon = float(longitude_max)
 
-				if min_lat > max_lat or min_lon > max_lon:
-					print("Error: Minimum values are greater than maximum values.")
+			if min_lat > max_lat or min_lon > max_lon:
+				raise CBBAPIException("Minimum coordinate values are greater than maximum coordinate values.", 400)
 
-					return filters
+			area = Polygon(((min_lon, min_lat), (min_lon, max_lat), (max_lon, max_lat), (max_lon, min_lat), (min_lon, min_lat)), srid=4326)
+			spatial_filter = Q(**{f"location__within": area})
 
-				area = Polygon(((min_lon, min_lat), (min_lon, max_lat), (max_lon, max_lat), (max_lon, min_lat), (min_lon, min_lat)), srid=4326)
-				spatial_filter = Q(**{f"{field_name}__within": area})
-
-				return filters & spatial_filter
-
-			except (ValueError, TypeError) as e:
-				print(f"Error when processing coordinates: {e}")
-				return filters
-
-		else:
-			print("Not all valid limits were provided for the coordinates. No spatial filter has been applied.")
-			return filters
+			return spatial_filter
+		except (ValueError, TypeError) as e:
+			raise CBBAPIException(f"Bad coordinates format.", 400)
 
 	def calculate(self, request, in_geography_scope=True):
 		occur_form = OccurrenceForm(data=request.GET)
@@ -247,16 +237,13 @@ class OccurrenceFilter(APIView):
 				occur_form.cleaned_data.get(f"{param}_min"),
 				occur_form.cleaned_data.get(f"{param}_max"),
 			)
-		filters = self.get_coordinate_filter(
-			filters,
-			"location",
-			occur_form.cleaned_data.get("decimal_latitude_min"),
-			occur_form.cleaned_data.get("decimal_latitude_max"),
-			occur_form.cleaned_data.get("decimal_longitude_min"),
-			occur_form.cleaned_data.get("decimal_longitude_max"),
-		)
 
-		occurrences = Occurrence.objects.filter(filters).distinct()
+		occurrences = Occurrence.objects.filter(filters)
+		print(occurrences.count())
+		geometry = occur_form.cleaned_data.get("geometry")
+		if geometry is not None:
+			print("Geometry:", geometry, type(geometry), geometry.srid)
+			occurrences = occurrences.filter(location__within=geometry)
 
 		gl = occur_form.cleaned_data.get("geographical_location", None)
 		if gl:
@@ -269,7 +256,7 @@ class OccurrenceFilter(APIView):
 		if in_geography_scope:
 			occurrences = occurrences.filter(in_geography_scope=in_geography_scope)
 
-		return occurrences
+		return occurrences.distinct()
 
 
 class OccurrenceCRUDView(APIView):
@@ -502,8 +489,10 @@ class OccurrenceCountBySourceView(APIView):
 
 
 class OccurrenceCountByTaxonAndChildrenView(APIView):
-	def check_ancestors(self, children_id, parents_list, count):
-		taxon_children = TaxonomicLevel.objects.get(id=children_id)
+	@staticmethod
+	def check_ancestors(children_id, parents_list, count):
+		if not TaxonomicLevel.objects.exists(id=children_id):
+			raise CBBAPIException("Taxonomic level does not exist", 404)
 
 		contexts = []
 		for parent in parents_list:
@@ -554,6 +543,7 @@ class OccurrenceCountByTaxonAndChildrenView(APIView):
 			.annotate(count=Count("id"))
 			.order_by("descendant_taxonomy")
 		)
+
 		response = []
 		for i in annotated_occ:
 			ancestor = self.check_ancestors(i["descendant_taxon_id"], childrens, i["count"])

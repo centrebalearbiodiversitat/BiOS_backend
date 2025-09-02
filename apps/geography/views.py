@@ -11,7 +11,12 @@ from .serializers import GeographicLevelSerializer, MinimalGeographicLevelSerial
 from common.utils.custom_swag_schema import custom_swag_schema
 
 
-MANUAL_PARAMETERS = [openapi.Parameter("id", openapi.IN_QUERY, description="Geographic level ID", type=openapi.TYPE_INTEGER, required=True)]
+MANUAL_PARAMETERS = [
+	openapi.Parameter(
+		"id", openapi.IN_QUERY, description="Geographic level ID",
+		type=openapi.TYPE_INTEGER, required=True
+	)
+]
 
 
 class GeographicLevelFilter(APIView):

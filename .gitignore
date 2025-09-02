@@ -103,7 +103,6 @@ docker-compose.*.yml
 
 .vscode
 
-cbb/settings/developer/*
 /data*/
 /public/
 /CHECKED/

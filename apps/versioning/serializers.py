@@ -2,10 +2,8 @@ from rest_framework import serializers
 from apps.versioning.models import Basis, Source, OriginId
 from common.utils.serializers import CaseModelSerializer
 
-
-class BasisSerializer(CaseModelSerializer):
+class MinimalBasisSerializer(CaseModelSerializer):
 	name = serializers.SerializerMethodField()
-	type = serializers.CharField(source="translate_type")
 
 	def get_name(self, obj):
 		return obj.get_name()
@@ -16,6 +14,14 @@ class BasisSerializer(CaseModelSerializer):
 			"id",
 			"name",
 			"acronym",
+		]
+
+class BasisSerializer(MinimalBasisSerializer):
+	type = serializers.CharField(source="translate_type")
+
+	class Meta:
+		model = Basis
+		fields = MinimalBasisSerializer.Meta.fields + [
 			"type",
 			"url",
 			"description",
@@ -73,14 +79,11 @@ class OriginIdSerializer(CaseModelSerializer):
 
 
 class SourceMinimalSerializer(CaseModelSerializer):
-	name = serializers.SerializerMethodField()
-
-	def get_name(self, obj):
-		return obj.basis.get_name()
+	basis = MinimalBasisSerializer(read_only=True)
 
 	class Meta:
 		model = Source
-		fields = ["id", "name"]
+		fields = ["basis"]
 
 
 class OriginIdMinimalSerializer(CaseModelSerializer):

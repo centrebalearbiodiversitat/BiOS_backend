@@ -11,7 +11,7 @@ class BaseOccurrenceSerializer(CaseModelSerializer):
 
 	class Meta:
 		model = Occurrence
-		fields = (
+		fields = [
 			"id",
 			# "basis_of_record",
 			"coordinate_uncertainty_in_meters",
@@ -27,7 +27,7 @@ class BaseOccurrenceSerializer(CaseModelSerializer):
 			# "taxonomy",
 			# "voucher",
 			# "year",
-		)
+		]
 
 	def get_basis_of_record(self, obj):
 		return Occurrence.TRANSLATE_BASIS_OF_RECORD[obj.basis_of_record]
@@ -51,7 +51,13 @@ class BaseOccurrenceWithTaxonSerializer(BaseOccurrenceSerializer):
 	taxonomy = MinimalTaxonomicLevelSerializer()
 
 	class Meta(BaseOccurrenceSerializer.Meta):
-		fields = BaseOccurrenceSerializer.Meta.fields + ("taxonomy", "basis_of_record", "depth", "elevation", "voucher")
+		fields = BaseOccurrenceSerializer.Meta.fields + [
+			"taxonomy",
+			"basis_of_record",
+			"depth",
+			"elevation",
+			"voucher"
+		]
 
 
 class OccurrenceSerializer(BaseOccurrenceSerializer):
@@ -67,7 +73,7 @@ class OccurrenceSerializer(BaseOccurrenceSerializer):
 
 	class Meta:
 		model = Occurrence
-		fields = (
+		fields = [
 			"id",
 			"basis_of_record",
 			"coordinate_uncertainty_in_meters",
@@ -82,7 +88,7 @@ class OccurrenceSerializer(BaseOccurrenceSerializer):
 			"voucher",
 			"year",
 			"sources",
-		)
+		]
 
 	# def get_location(self, obj):
 	# 	return GeographicLevelSerializer(GeographicLevel.objects.filter(area__intersects=obj.location).order_by("-rank").first()).data
@@ -148,4 +154,7 @@ class DynamicSourceSerializer(serializers.Serializer):
 	source = serializers.CharField()  # Renamed for clarity
 
 	def to_representation(self, instance):
-		return {"source": instance["sources__source__basis__internal_name"], "count": instance["count"]}
+		return {
+			"source": instance["sources__source__basis__internal_name"],
+			"count": instance["count"]
+		}

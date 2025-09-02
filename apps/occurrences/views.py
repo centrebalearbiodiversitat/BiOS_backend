@@ -135,12 +135,18 @@ MANUAL_PARAMETERS = [
 
 class OccurrenceFilter(APIView):
 	def filter_by_range(self, filters, field_name, min_value, max_value):
-		if min_value is not None:
-			filters &= Q(**{f"{field_name}__gte": min_value})
-		if max_value is not None:
-			filters &= Q(**{f"{field_name}__lte": max_value})
+		conditional_filters = Q()
 
-		return filters
+		if min_value is not None:
+			conditional_filters &= Q(**{f"{field_name}__gte": min_value})
+		if max_value is not None:
+			conditional_filters &= Q(**{f"{field_name}__lte": max_value})
+
+		if conditional_filters == Q():
+			return filters
+
+		return filters & conditional_filters & Q(**{f"{field_name}__isnull": False})
+
 
 	@staticmethod
 	def get_coordinate_filter(latitude_min, latitude_max, longitude_min, longitude_max):
@@ -239,14 +245,13 @@ class OccurrenceFilter(APIView):
 			)
 
 		occurrences = Occurrence.objects.filter(filters)
-		print(occurrences.count())
+
 		geometry = occur_form.cleaned_data.get("geometry")
 		if geometry is not None:
-			print("Geometry:", geometry, type(geometry), geometry.srid)
 			occurrences = occurrences.filter(location__within=geometry)
 
 		gl = occur_form.cleaned_data.get("geographical_location", None)
-		if gl:
+		if gl is not None:
 			try:
 				gl = GeographicLevel.objects.get(id=gl)
 				occurrences = occurrences.filter(location__within=gl.area)
@@ -489,20 +494,6 @@ class OccurrenceCountBySourceView(APIView):
 
 
 class OccurrenceCountByTaxonAndChildrenView(APIView):
-	@staticmethod
-	def check_ancestors(children_id, parents_list, count):
-		if not TaxonomicLevel.objects.exists(id=children_id):
-			raise CBBAPIException("Taxonomic level does not exist", 404)
-
-		contexts = []
-		for parent in parents_list:
-			context = {
-				"taxonomy": parent.name,
-				"count": count,
-			}
-			contexts.append(context)
-		return contexts
-
 	@custom_swag_schema(
 		tags="Occurrences",
 		operation_id="Count children occurrences",
@@ -546,11 +537,27 @@ class OccurrenceCountByTaxonAndChildrenView(APIView):
 
 		response = []
 		for i in annotated_occ:
-			ancestor = self.check_ancestors(i["descendant_taxon_id"], childrens, i["count"])
+			ancestor = OccurrenceCountByTaxonAndChildrenView.check_ancestors(
+				i["descendant_taxon_id"], childrens, i["count"]
+			)
 			response.append(ancestor)
 
 		return JsonResponse(response, safe=False)
 
+	@staticmethod
+	def check_ancestors(children_id, parents_list, count):
+		if not TaxonomicLevel.objects.exists(id=children_id):
+			raise CBBAPIException("Taxonomic level does not exist", 404)
+
+		contexts = []
+		for parent in parents_list:
+			context = {
+				"taxonomy": parent.name,
+				"count": count,
+			}
+			contexts.append(context)
+
+		return contexts
 
 # class OccurrenceCountByTaxonDateBaseView:
 # 	def calculate(self, request, date_key, view_class):

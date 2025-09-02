@@ -114,7 +114,6 @@ class TaxonFilter(TaxonSearch):
 			query = self.search(request).exclude(~Q(id__in=query))
 
 		iucn_form = IUCNDataForm(data=request.GET)
-
 		if not iucn_form.is_valid():
 			raise CBBAPIException(iucn_form.errors, 400)
 
@@ -123,7 +122,6 @@ class TaxonFilter(TaxonSearch):
 				filtered_data[f"iucndata__{key}"] = value
 
 		directive_form = DirectiveForm(data=request.GET)
-
 		if not directive_form.is_valid():
 			raise CBBAPIException(directive_form.errors, 400)
 
@@ -132,7 +130,6 @@ class TaxonFilter(TaxonSearch):
 				filtered_data[f"directive__{key}"] = value
 
 		system_form = SystemForm(data=request.GET)
-
 		if not system_form.is_valid():
 			raise CBBAPIException(system_form.errors, 400)
 
@@ -141,7 +138,6 @@ class TaxonFilter(TaxonSearch):
 				filtered_data[f"system__{key}"] = value
 
 		tag_form = TaxonTagForm(data=request.GET)
-
 		if not tag_form.is_valid():
 			raise CBBAPIException(tag_form.errors, 400)
 
@@ -153,7 +149,6 @@ class TaxonFilter(TaxonSearch):
 				filters &= Q(**{field: value})
 
 		source = taxon_form.cleaned_data.get("source", None)
-
 		if source:
 			filters &= Q(sources__source__basis__internal_name__icontains=source)
 		query = query.filter(filters)

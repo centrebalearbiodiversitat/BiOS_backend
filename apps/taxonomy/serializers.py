@@ -68,7 +68,9 @@ class AncestorsTaxonomicLevelSerializer(BaseTaxonomicLevelSerializer):
 		return MinimalTaxonomicLevelSerializer(obj.get_ancestors(), many=True).data
 
 	class Meta(BaseTaxonomicLevelSerializer.Meta):
-		fields = BaseTaxonomicLevelSerializer.Meta.fields + ["ancestors"]
+		fields = BaseTaxonomicLevelSerializer.Meta.fields + [
+			"ancestors"
+		]
 
 
 class SearchTaxonomicLevelSerializer(CaseModelSerializer):
@@ -92,12 +94,12 @@ class SearchTaxonomicLevelSerializer(CaseModelSerializer):
 		fields = ["id", "name", "taxon_rank", "scientific_name_authorship", "accepted", "accepted_modifier"]
 
 
-class TaxonomicFilterSerializer(SearchTaxonomicLevelSerializer):
+class TaxonomicFilterSerializer(AncestorsTaxonomicLevelSerializer):
 	iucndata = IUCNDataSerializer(source="iucndata_set", many=True, read_only=True)
 	tag = TaxonTagSerializer(source="taxontag_set", many=True, read_only=True)
 
-	class Meta(SearchTaxonomicLevelSerializer.Meta):
-		fields = SearchTaxonomicLevelSerializer.Meta.fields + [
+	class Meta(AncestorsTaxonomicLevelSerializer.Meta):
+		fields = AncestorsTaxonomicLevelSerializer.Meta.fields + [
 			"iucndata",
 			"tag",
 		]

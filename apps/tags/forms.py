@@ -1,9 +1,9 @@
+import re
+
 from django import forms
 from humps import decamelize
 from common.utils.forms import TranslateForm, CamelCaseForm
-
 from .models import IUCNData
-import re
 
 
 class DirectiveForm(CamelCaseForm):
@@ -12,34 +12,6 @@ class DirectiveForm(CamelCaseForm):
 	lespre = forms.BooleanField(required=False)
 	directiva_aves = forms.BooleanField(required=False)
 	directiva_habitats = forms.BooleanField(required=False)
-
-	class Meta:
-		fields = "__all__"
-
-	def __init__(self, *args, **kwargs):
-		self.request_data = kwargs.get("data", None)
-		super().__init__(*args, **kwargs)
-
-	def clean(self):
-		cleaned_data = super().clean()
-
-		directive = self.request_data.get("directive", None)
-
-		if directive == "cites":
-			cleaned_data["cites"] = True
-			return cleaned_data
-		elif directive == "ceea":
-			cleaned_data["ceea"] = True
-			return cleaned_data
-		elif directive == "lespre":
-			cleaned_data["lespre"] = True
-			return cleaned_data
-		elif directive == "directiva_aves":
-			cleaned_data["directiva_aves"] = True
-			return cleaned_data
-		elif directive == "directiva_habitats":
-			cleaned_data["directiva_habitats"] = True
-			return cleaned_data
 
 
 class HabitatForm(TranslateForm):

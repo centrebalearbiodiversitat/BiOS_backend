@@ -6,7 +6,7 @@ from common.utils.serializers import BaseSerializer, CaseModelSerializer
 
 
 class DirectiveSerializer(CaseModelSerializer):
-	sources = OriginIdSerializer(many=True)
+	sources = OriginIdMinimalSerializer(many=True)
 
 	class Meta(BaseSerializer.Meta):
 		model = Directive
@@ -34,7 +34,7 @@ class TagSerializer(CaseModelSerializer):
 
 class TaxonTagSerializer(CaseModelSerializer):
 	tag = TagSerializer()
-	sources = OriginIdSerializer(many=True)
+	sources = OriginIdMinimalSerializer(many=True)
 
 	class Meta(BaseSerializer.Meta):
 		model = TaxonTag

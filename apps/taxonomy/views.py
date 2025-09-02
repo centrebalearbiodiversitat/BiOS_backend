@@ -153,7 +153,7 @@ class TaxonFilter(TaxonSearch):
 			filters &= Q(sources__source__basis__internal_name__icontains=source)
 		query = query.filter(filters)
 
-		return query
+		return query.order_by("rank", "images")
 
 
 class TaxonSearchView(APIView, TaxonSearch):

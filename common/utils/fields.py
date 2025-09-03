@@ -9,7 +9,6 @@ class LoweCaseCharField(models.CharField):
 
 
 class SRIDPolygonField(gis_forms.PolygonField):
-
 	def validate(self, value):
 		super().validate(value)
 

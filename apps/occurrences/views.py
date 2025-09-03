@@ -147,7 +147,6 @@ class OccurrenceFilter(APIView):
 
 		return filters & conditional_filters & Q(**{f"{field_name}__isnull": False})
 
-
 	@staticmethod
 	def get_coordinate_filter(latitude_min, latitude_max, longitude_min, longitude_max):
 		try:
@@ -537,9 +536,7 @@ class OccurrenceCountByTaxonAndChildrenView(APIView):
 
 		response = []
 		for i in annotated_occ:
-			ancestor = OccurrenceCountByTaxonAndChildrenView.check_ancestors(
-				i["descendant_taxon_id"], childrens, i["count"]
-			)
+			ancestor = OccurrenceCountByTaxonAndChildrenView.check_ancestors(i["descendant_taxon_id"], childrens, i["count"])
 			response.append(ancestor)
 
 		return JsonResponse(response, safe=False)
@@ -558,6 +555,7 @@ class OccurrenceCountByTaxonAndChildrenView(APIView):
 			contexts.append(context)
 
 		return contexts
+
 
 # class OccurrenceCountByTaxonDateBaseView:
 # 	def calculate(self, request, date_key, view_class):

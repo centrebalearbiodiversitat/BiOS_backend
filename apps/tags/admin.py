@@ -28,7 +28,7 @@ class HabitatTaxonomyAdmin(admin.ModelAdmin):
 	list_filter = ("habitat",)
 	search_fields = ("taxonomy__name",)
 	autocomplete_fields = ("taxonomy", "sources")
-	readonly_fields = ("batch", )
+	readonly_fields = ("batch",)
 
 
 admin.site.register(HabitatTaxonomy, HabitatTaxonomyAdmin)
@@ -39,7 +39,7 @@ class IUCNDataAdmin(admin.ModelAdmin):
 	list_filter = ("assessment", "region")
 	search_fields = ("taxonomy__name",)
 	autocomplete_fields = ("taxonomy", "sources")
-	readonly_fields = ("batch", )
+	readonly_fields = ("batch",)
 
 
 admin.site.register(IUCNData, IUCNDataAdmin)
@@ -66,7 +66,7 @@ class TaxonTagAdmin(admin.ModelAdmin):
 	search_fields = ("taxonomy__name",)
 	autocomplete_fields = ("taxonomy", "sources")
 	list_filter = ("tag__tag_type",)
-	readonly_fields = ("batch", )
+	readonly_fields = ("batch",)
 
 	@admin.display(ordering="tag__name")
 	def tag_name(self, obj):

@@ -2,6 +2,7 @@ from rest_framework import serializers
 from apps.versioning.models import Basis, Source, OriginId
 from common.utils.serializers import CaseModelSerializer
 
+
 class MinimalBasisSerializer(CaseModelSerializer):
 	name = serializers.SerializerMethodField()
 
@@ -15,6 +16,7 @@ class MinimalBasisSerializer(CaseModelSerializer):
 			"name",
 			"acronym",
 		]
+
 
 class BasisSerializer(MinimalBasisSerializer):
 	type = serializers.CharField(source="translate_type")

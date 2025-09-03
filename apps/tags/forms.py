@@ -28,9 +28,9 @@ class IUCNDataForm(TranslateForm):
 	}
 
 	def clean(self):
-		cleaned_data =  super().clean()
+		cleaned_data = super().clean()
 
-		if (cleaned_data.get("assessment") == '') != (cleaned_data.get("region") == ''):
+		if (cleaned_data.get("assessment") == "") != (cleaned_data.get("region") == ""):
 			raise CBBAPIException("Assessment and Region must be specified.", 400)
 
 		return cleaned_data

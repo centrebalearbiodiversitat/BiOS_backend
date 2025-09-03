@@ -51,13 +51,7 @@ class BaseOccurrenceWithTaxonSerializer(BaseOccurrenceSerializer):
 	taxonomy = MinimalTaxonomicLevelSerializer()
 
 	class Meta(BaseOccurrenceSerializer.Meta):
-		fields = BaseOccurrenceSerializer.Meta.fields + [
-			"taxonomy",
-			"basis_of_record",
-			"depth",
-			"elevation",
-			"voucher"
-		]
+		fields = BaseOccurrenceSerializer.Meta.fields + ["taxonomy", "basis_of_record", "depth", "elevation", "voucher"]
 
 
 class OccurrenceSerializer(BaseOccurrenceSerializer):
@@ -154,7 +148,4 @@ class DynamicSourceSerializer(serializers.Serializer):
 	source = serializers.CharField()  # Renamed for clarity
 
 	def to_representation(self, instance):
-		return {
-			"source": instance["sources__source__basis__internal_name"],
-			"count": instance["count"]
-		}
+		return {"source": instance["sources__source__basis__internal_name"], "count": instance["count"]}

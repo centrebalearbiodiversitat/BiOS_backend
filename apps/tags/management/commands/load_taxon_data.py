@@ -6,78 +6,120 @@ import re
 from django.core.management.base import BaseCommand
 from django.db import transaction
 from apps.taxonomy.models import TaxonomicLevel
-from apps.tags.models import Habitat, IUCNData, System
+from apps.tags.models import Habitat, IUCNData, System, HabitatTaxonomy
 from apps.versioning.models import Batch, OriginId, Source, Basis
 from common.utils.utils import get_or_create_source, is_batch_referenced
 
+
+INTERNAL_NAME = "IUCN"
 EXTERNAL_ID = "origin_id"
-IUCN = "IUCN"
-
-
-def check_taxon(line):
-	taxonomy = TaxonomicLevel.objects.find(taxon=line["origin_taxon"])
-
-	if taxonomy.count() == 0:
-		raise Exception(f"Taxonomy not found.\n{line}")
-	elif taxonomy.count() > 1:
-		raise Exception(f"Multiple taxonomy found.\n{line}")
-
-	return taxonomy.first()
-
+IUCN_FIELDS = ["iucn_global", "iucn_europe", "iucn_mediterranean"]
 
 iucn_regex = re.compile(r"^[A-Z]{2}/[a-z]{2}$")
 
 
-def transform_iucn_status(line):
-	iucn_fields = ["iucn_global", "iucn_europe", "iucn_mediterranean"]
-	for field in line.keys() & iucn_fields:
-		if field in line and line[field]:
-			if re.match(iucn_regex, line[field]):
-				line[field] = line[field][-2:].upper()
-
-
-def load_taxon_data_from_json(line, taxonomy, batch):
-	os = None
-	if line[EXTERNAL_ID]:
-		source = get_or_create_source(
-			source_type=Basis.DATABASE,
-			extraction_method=Source.API,
-			data_type=Source.TAXON_DATA,
-			batch=batch,
-			internal_name=IUCN,
-		)
-		os, new_source = OriginId.objects.get_or_create(external_id=line[EXTERNAL_ID], source=source)
-
-	iucn_data, _ = IUCNData.objects.update_or_create(
-		taxonomy=taxonomy,
-		defaults={
-			"iucn_global": IUCNData.TRANSLATE_CS[line["iucn_global"].lower()] if line["iucn_global"] else IUCNData.NE,
-			"iucn_europe": IUCNData.TRANSLATE_CS[line["iucn_europe"].lower()] if line["iucn_europe"] else IUCNData.NE,
-			"iucn_mediterranean": IUCNData.TRANSLATE_CS[line["iucn_mediterranean"].lower()] if line["iucn_mediterranean"] else IUCNData.NE,
-			"batch": batch,
-		},
+def check_taxon(line):
+	taxonomy = TaxonomicLevel.objects.find(taxon=line["origin_taxon"]).filter(
+		rank=TaxonomicLevel.TRANSLATE_RANK[line["taxon_rank"]]
 	)
 
-	if os:  # if there is data available
+	if taxonomy.count() == 0:
+		raise Exception(f"Taxonomy not found.\n{line}")
+	elif taxonomy.count() > 1:
+		raise Exception(f"Multiple taxonomy found.\n{line}\n{taxonomy}")
+
+	return taxonomy.first()
+
+
+def transform_iucn_status(iucn_scope):
+	if "status" in iucn_scope and iucn_scope["status"] is not None:
+		current_status_value = str(iucn_scope["status"])
+
+		# Check if the status value matches the expected regex pattern
+		if re.match(iucn_regex, current_status_value):
+			iucn_scope["status"] = current_status_value[-2:].upper()
+
+	return iucn_scope
+
+
+# Important: This is valid only for IUCN json files.
+def load_taxon_data_from_json(line, taxonomy, batch):
+	taxon_id = line.get(EXTERNAL_ID)
+
+	source = get_or_create_source(
+		source_type=Basis.DATABASE,
+		extraction_method=Source.API,
+		data_type=Source.TAXON_DATA,
+		batch=batch,
+		internal_name=INTERNAL_NAME,
+	)
+
+	# Assessment
+	for field in IUCN_FIELDS:
+		field_data = line.get(field)
+
+		if not field_data:
+			continue
+
+		field_data = transform_iucn_status(field_data)
+		status = field_data.get("status")
+		url = field_data.get("url")
+
+		if status is None or not url:
+			continue
+
+		url_id = url.rstrip("/").split("/")[-1]
+
+		if not url_id:
+			continue
+
+		region_key = field.split("_")[1].lower()
+		region = IUCNData.TRANSLATE_RG.get(region_key)
+
+		assessment = IUCNData.TRANSLATE_CS.get(status.lower(), IUCNData.NE)
+
+		iucn_data, _ = IUCNData.objects.update_or_create(
+			taxonomy=taxonomy,
+			region=region,
+			defaults={
+				"assessment": assessment,
+				"batch": batch,
+			},
+		)
+
+		origin, _ = OriginId.objects.get_or_create(external_id=f"{taxon_id}/{url_id}", source=source)
+
+		iucn_data.sources.add(origin)
+
+		# System
+		system, _ = System.objects.update_or_create(
+			taxonomy=taxonomy,
+			defaults={
+				"freshwater": line["freshwater"],
+				"marine": line["marine"],
+				"terrestrial": line["terrestrial"],
+				"batch": batch,
+			},
+		)
+
+		origin, _ = OriginId.objects.get_or_create(source=source, external_id=taxon_id)
+		system.sources.add(origin)
+
+		# Habitats
 		habitat_ids = set(line["habitat"] or [])
 		valid_habitats = Habitat.objects.filter(sources__external_id__in=habitat_ids)
+
 		if len(valid_habitats) != len(habitat_ids):
 			invalid_ids = habitat_ids - set(valid_habitats.values_list("sources__external_id", flat=True))
 			raise Exception(f"Invalid habitat IDs: {invalid_ids}")
-		iucn_data.habitats.set(valid_habitats)
-		iucn_data.sources.add(os)
 
-	system, _ = System.objects.update_or_create(
-		taxonomy=taxonomy,
-		defaults={
-			"freshwater": line["freshwater"],
-			"marine": line["marine"],
-			"terrestrial": line["terrestrial"],
-			"batch": batch,
-		},
-	)
-	if os:  # if there is data available
-		system.sources.add(os)
+		for single_habitat_object in valid_habitats:
+			habitat_taxonomy, _ = HabitatTaxonomy.objects.update_or_create(
+				taxonomy=taxonomy, habitat=single_habitat_object, defaults={"batch": batch}
+			)
+
+			origin, _ = OriginId.objects.get_or_create(source=source, external_id=taxon_id)
+			habitat_taxonomy.sources.add(origin)
 
 
 class Command(BaseCommand):
@@ -97,12 +139,12 @@ class Command(BaseCommand):
 
 			for line in json_data:
 				try:
-					transform_iucn_status(line)
 					taxonomy = check_taxon(line)
 					load_taxon_data_from_json(line, taxonomy, batch)
 				except:
 					exception = True
 					print(traceback.format_exc(), line)
+					break
 
 		if exception:
 			raise Exception(f"Errors found: Rollback control")

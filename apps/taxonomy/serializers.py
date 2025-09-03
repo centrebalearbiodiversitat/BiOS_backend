@@ -1,7 +1,7 @@
 from rest_framework import serializers
 
 from apps.taxonomy.models import Authorship, TaxonomicLevel
-from apps.versioning.serializers import OriginIdSerializer
+from apps.versioning.serializers import OriginIdMinimalSerializer
 from common.utils.serializers import CaseModelSerializer
 
 
@@ -25,7 +25,7 @@ class BaseTaxonomicLevelSerializer(CaseModelSerializer):
 	taxon_rank = serializers.SerializerMethodField()
 	name = serializers.SerializerMethodField()
 	accepted_modifier = serializers.SerializerMethodField()
-	images = OriginIdSerializer(many=True)
+	images = OriginIdMinimalSerializer(many=True)
 	parent = serializers.SerializerMethodField()
 
 	def get_accepted_modifier(self, obj):
@@ -86,6 +86,20 @@ class SearchTaxonomicLevelSerializer(CaseModelSerializer):
 	class Meta:
 		model = TaxonomicLevel
 		fields = ["id", "name", "taxon_rank", "scientific_name_authorship", "accepted", "accepted_modifier"]
+
+
+class TaxonomicFilterSerializer(AncestorsTaxonomicLevelSerializer):
+	# iucndata = IUCNDataSerializer(source="iucndata_set", many=True, read_only=True)
+	# tag = TaxonTagSerializer(source="taxontag_set", many=True, read_only=True)
+
+	class Meta(AncestorsTaxonomicLevelSerializer.Meta):
+		fields = (
+			AncestorsTaxonomicLevelSerializer.Meta.fields
+			+ [
+				# "iucndata",
+				# "tag",
+			]
+		)
 
 
 class TaxonCompositionSerializer(BaseTaxonomicLevelSerializer):

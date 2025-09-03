@@ -1,12 +1,12 @@
 from rest_framework import serializers
 
 from apps.tags.models import Directive, IUCNData, TaxonTag, Habitat, Tag, System
-from apps.versioning.serializers import OriginIdSerializer
+from apps.versioning.serializers import OriginIdMinimalSerializer
 from common.utils.serializers import BaseSerializer, CaseModelSerializer
 
 
 class DirectiveSerializer(CaseModelSerializer):
-	sources = OriginIdSerializer(many=True)
+	sources = OriginIdMinimalSerializer(many=True)
 
 	class Meta(BaseSerializer.Meta):
 		model = Directive
@@ -14,7 +14,7 @@ class DirectiveSerializer(CaseModelSerializer):
 
 
 class HabitatSerializer(CaseModelSerializer):
-	sources = OriginIdSerializer(many=True)
+	sources = OriginIdMinimalSerializer(many=True)
 
 	class Meta:
 		model = Habitat
@@ -34,7 +34,7 @@ class TagSerializer(CaseModelSerializer):
 
 class TaxonTagSerializer(CaseModelSerializer):
 	tag = TagSerializer()
-	sources = OriginIdSerializer(many=True)
+	sources = OriginIdMinimalSerializer(many=True)
 
 	class Meta(BaseSerializer.Meta):
 		model = TaxonTag
@@ -42,7 +42,7 @@ class TaxonTagSerializer(CaseModelSerializer):
 
 
 class SystemSerializer(CaseModelSerializer):
-	sources = OriginIdSerializer(many=True)
+	sources = OriginIdMinimalSerializer(many=True)
 
 	class Meta:
 		model = System
@@ -50,11 +50,10 @@ class SystemSerializer(CaseModelSerializer):
 
 
 class IUCNDataSerializer(CaseModelSerializer):
-	iucn_global = serializers.CharField(source="get_iucn_global_display")
-	iucn_europe = serializers.CharField(source="get_iucn_europe_display")
-	iucn_mediterranean = serializers.CharField(source="get_iucn_mediterranean_display")
-	sources = OriginIdSerializer(many=True)
+	assessment = serializers.CharField(source="get_assessment_display")
+	region = serializers.CharField(source="get_region_display")
+	sources = OriginIdMinimalSerializer(many=True)
 
 	class Meta(BaseSerializer.Meta):
 		model = IUCNData
-		exclude = ("id", "taxonomy", "batch", "habitats")
+		exclude = ("id", "taxonomy", "batch")

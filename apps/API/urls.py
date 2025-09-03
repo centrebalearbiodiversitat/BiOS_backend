@@ -14,6 +14,7 @@ class BothHttpAndHttpsSchemaGenerator(OpenAPISchemaGenerator):
 			schema.schemes = ["http"]
 		else:
 			schema.schemes = ["https"]
+
 		return schema
 
 
@@ -23,7 +24,7 @@ schema_view = get_schema_view(
 		default_version="v1",
 		description="Documentation for our API usage",
 		terms_of_service="",
-		contact=openapi.Contact(email="centrebalear@uib.cat"),
+		contact=openapi.Contact(email="centre.biodiversitat@uib.es"),
 		license=openapi.License(name="BSD License"),
 	),
 	public=True,

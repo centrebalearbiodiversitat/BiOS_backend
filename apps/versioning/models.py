@@ -65,7 +65,7 @@ class Basis(models.Model):
 		MUSEUM,
 	}
 
-	internal_name = models.CharField(max_length=255, unique=True)
+	internal_name = models.CharField(max_length=255)
 	name = models.CharField(max_length=1023, blank=True, null=True)
 	acronym = models.CharField(max_length=50, null=True, blank=True)
 	type = models.PositiveSmallIntegerField(choices=TYPE_CHOICES)
@@ -91,6 +91,7 @@ class Basis(models.Model):
 		indexes = [
 			models.Index(Upper("internal_name"), name="basis_internal_name_upper_idx"),
 		]
+		unique_together = ("internal_name", "type")
 
 
 class SourceManager(models.Manager):
@@ -159,7 +160,9 @@ class Source(models.Model):
 	data_type = models.PositiveSmallIntegerField(choices=DATA_TYPE_CHOICES)
 	url = models.URLField(null=True, blank=True, default=None)  # revisar
 	batch = models.ForeignKey(Batch, on_delete=models.CASCADE, null=True, blank=True, default=None)
-	basis = models.ForeignKey(Basis, on_delete=models.CASCADE, related_name="source", null=True, blank=True, default=None, db_index=True)
+	basis = models.ForeignKey(
+		Basis, on_delete=models.CASCADE, related_name="source", null=True, blank=True, default=None, db_index=True
+	)
 
 	def clean(self):
 		super().clean()
@@ -197,7 +200,9 @@ class OriginId(models.Model):
 	def clean(self):
 		super().clean()
 		if not self.external_id and self.source.basis.type not in Basis.TYPE_EXEMPT_OF_IDS:
-			raise ValidationError(f"External ID is None and is not allowed with origin type '{self.source.basis.translate_type().upper()}'")
+			raise ValidationError(
+				f"External ID is None and is not allowed with origin type '{self.source.basis.translate_type().upper()}'"
+			)
 
 	def __str__(self):
 		if self.external_id:

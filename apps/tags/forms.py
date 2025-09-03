@@ -1,8 +1,9 @@
+import re
+
 from django import forms
-
 from common.utils.forms import TranslateForm, CamelCaseForm
-
 from .models import IUCNData
+from ..API.exceptions import CBBAPIException
 
 
 class DirectiveForm(CamelCaseForm):
@@ -12,34 +13,34 @@ class DirectiveForm(CamelCaseForm):
 	directiva_aves = forms.BooleanField(required=False)
 	directiva_habitats = forms.BooleanField(required=False)
 
-	class Meta:
-		fields = "__all__"
+
+class HabitatForm(forms.Form):
+	habitat = forms.CharField(max_length=50, required=False)
 
 
 class IUCNDataForm(TranslateForm):
-	iucn_global = forms.CharField(max_length=100, required=False)
-	iucn_europe = forms.CharField(max_length=100, required=False)
-	iucn_mediterranean = forms.CharField(max_length=100, required=False)
-	habitat = forms.IntegerField(required=False)
+	assessment = forms.CharField(max_length=50, required=False)
+	region = forms.CharField(max_length=100, required=False)
 
 	CHOICES_FIELD = {
-		"iucn_global": IUCNData.TRANSLATE_CS,
-		"iucn_europe": IUCNData.TRANSLATE_CS,
-		"iucn_mediterranean": IUCNData.TRANSLATE_CS,
+		"assessment": IUCNData.TRANSLATE_CS,
+		"region": IUCNData.TRANSLATE_RG,
 	}
+
+	def clean(self):
+		cleaned_data = super().clean()
+
+		if (cleaned_data.get("assessment") == "") != (cleaned_data.get("region") == ""):
+			raise CBBAPIException("Assessment and Region must be specified.", 400)
+
+		return cleaned_data
 
 
 class TaxonTagForm(CamelCaseForm):
 	tag = forms.CharField(required=False)
-
-	class Meta:
-		fields = ["taxonomy", "tag"]
 
 
 class SystemForm(CamelCaseForm):
 	freshwater = forms.BooleanField(required=False)
 	marine = forms.BooleanField(required=False)
 	terrestrial = forms.BooleanField(required=False)
-
-	class Meta:
-		fields = ["taxonomy", "freshwater", "marine", "terrestrial"]

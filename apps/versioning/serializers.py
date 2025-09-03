@@ -3,9 +3,8 @@ from apps.versioning.models import Basis, Source, OriginId
 from common.utils.serializers import CaseModelSerializer
 
 
-class BasisSerializer(CaseModelSerializer):
+class MinimalBasisSerializer(CaseModelSerializer):
 	name = serializers.SerializerMethodField()
-	type = serializers.CharField(source="translate_type")
 
 	def get_name(self, obj):
 		return obj.get_name()
@@ -16,6 +15,15 @@ class BasisSerializer(CaseModelSerializer):
 			"id",
 			"name",
 			"acronym",
+		]
+
+
+class BasisSerializer(MinimalBasisSerializer):
+	type = serializers.CharField(source="translate_type")
+
+	class Meta:
+		model = Basis
+		fields = MinimalBasisSerializer.Meta.fields + [
 			"type",
 			"url",
 			"description",
@@ -66,6 +74,22 @@ class SourceCountSerializer(SourceSerializer):
 
 class OriginIdSerializer(CaseModelSerializer):
 	source = SourceSerializer(read_only=True)
+
+	class Meta:
+		model = OriginId
+		exclude = ("id",)
+
+
+class SourceMinimalSerializer(CaseModelSerializer):
+	basis = MinimalBasisSerializer(read_only=True)
+
+	class Meta:
+		model = Source
+		fields = ["basis"]
+
+
+class OriginIdMinimalSerializer(CaseModelSerializer):
+	source = SourceMinimalSerializer(read_only=True)
 
 	class Meta:
 		model = OriginId

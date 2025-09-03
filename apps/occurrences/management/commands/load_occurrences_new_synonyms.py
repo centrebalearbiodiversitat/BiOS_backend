@@ -8,7 +8,7 @@ from django.contrib.gis.geos import Point, GEOSGeometry
 from apps.genetics.models import Sequence, Marker
 from apps.occurrences.models import Occurrence
 from apps.taxonomy.models import TaxonomicLevel
-from apps.versioning.models import Batch, OriginId, Source
+from apps.versioning.models import Batch, OriginId, Source, Basis
 from common.utils.utils import get_or_create_source, is_batch_referenced
 
 EXTERNAL_ID = "sample_id"
@@ -92,6 +92,7 @@ def genetic_sources(line: dict, batch, occ):
 		data_type=Source.SEQUENCE,
 		batch=batch,
 		internal_name=line[INTERNAL_NAME],
+		basis_type=Basis.TRANSLATE_TYPE[line[SOURCE_TYPE]],
 	)
 
 	os, new = OriginId.objects.get_or_create(
@@ -167,20 +168,27 @@ class Command(BaseCommand):
 		file_name = options["file"]
 		with open(file_name, "r") as file:
 			data = json.load(file)
-			cbb_scope_geometry = gpd.read_file("apps/occurrences/management/commands/geometry/sea_uncertainess_no_holes/sea_uncertainess_no_holes.shp").loc[0].geometry
+			cbb_scope_geometry = (
+				gpd.read_file(
+					"apps/occurrences/management/commands/geometry/sea_uncertainess_no_holes/sea_uncertainess_no_holes.shp"
+				)
+				.loc[0]
+				.geometry
+			)
 			cbb_scope_geometry = GEOSGeometry(cbb_scope_geometry.wkt)
 			batch = Batch.objects.create()
 
 			line: dict
+
 			for line in data:
 				line = parse_line(line)
-
 				source = get_or_create_source(
 					source_type=line[SOURCE_TYPE],
 					extraction_method=Source.API,
 					data_type=Source.TAXON,
 					batch=batch,
 					internal_name=line[INTERNAL_NAME],
+					basis_type=Basis.TRANSLATE_TYPE[line[SOURCE_TYPE]],
 				)
 
 				parent_level = ""
@@ -192,7 +200,9 @@ class Command(BaseCommand):
 							# If there are taxon collisions, then try again with the parent
 							if parent_level:
 								if taxon_count > 1:
-									taxon = TaxonomicLevel.objects.find(taxon=f"{parent_level} {line[taxon_key]}").filter(rank=taxon_rank)
+									taxon = TaxonomicLevel.objects.find(
+										taxon=f"{parent_level} {line[taxon_key]}"
+									).filter(rank=taxon_rank)
 									taxon_count = taxon.count()
 
 								if taxon_count > 1:
@@ -204,10 +214,14 @@ class Command(BaseCommand):
 								create_origin_id(taxon, line[taxon_id_key], source)
 						parent_level = line[taxon_key]
 
-				taxonomy = TaxonomicLevel.objects.find(taxon=line["originalName"]).filter(rank=TaxonomicLevel.TRANSLATE_RANK[line["taxonRank"].lower()])
+				taxonomy = TaxonomicLevel.objects.find(taxon=line["originalName"]).filter(
+					rank=TaxonomicLevel.TRANSLATE_RANK[line["taxonRank"].lower()]
+				)
 				taxon_count = taxonomy.count()
 				if taxon_count > 1:
-					taxonomy = TaxonomicLevel.objects.find(taxon=f"{parent_level} {line['originalName']}").filter(rank=TaxonomicLevel.TRANSLATE_RANK[line["taxonRank"].lower()])
+					taxonomy = TaxonomicLevel.objects.find(taxon=f"{parent_level} {line['originalName']}").filter(
+						rank=TaxonomicLevel.TRANSLATE_RANK[line["taxonRank"].lower()]
+					)
 					taxon_count = taxonomy.count()
 
 				if taxon_count == 0:
@@ -227,6 +241,7 @@ class Command(BaseCommand):
 					data_type=Source.OCCURRENCE,
 					batch=batch,
 					internal_name=line[INTERNAL_NAME],
+					basis_type=Basis.TRANSLATE_TYPE[line[SOURCE_TYPE]],
 				)
 
 				os, new = OriginId.objects.get_or_create(
@@ -252,17 +267,29 @@ class Command(BaseCommand):
 					)
 
 				if new:
-					location = (Point(list(reversed(line["lat_lon"])), srid=4326)) if line.get("lat_lon", None) else None
+					location = (
+						(Point(list(reversed(line["lat_lon"])), srid=4326)) if line.get("lat_lon", None) else None
+					)
 					occ = Occurrence.objects.create(
 						taxonomy=taxonomy.first(),
 						batch=batch,
 						voucher=line["voucher"] if line["voucher"] else None,
-						basis_of_record=Occurrence.TRANSLATE_BASIS_OF_RECORD.get(line["basisOfRecord"].lower() if line["basisOfRecord"] else None),
-						collection_date_year=(int(line["year"]) if line["year"] and 1500 < line["year"] < 3000 else None),
-						collection_date_month=(int(line["month"]) if line["month"] and 0 < line["month"] <= 12 else None),
+						basis_of_record=Occurrence.TRANSLATE_BASIS_OF_RECORD.get(
+							line["basisOfRecord"].lower() if line["basisOfRecord"] else None
+						),
+						collection_date_year=(
+							int(line["year"]) if line["year"] and 1500 < line["year"] < 3000 else None
+						),
+						collection_date_month=(
+							int(line["month"]) if line["month"] and 0 < line["month"] <= 12 else None
+						),
 						collection_date_day=int(line["day"]) if line["day"] and 0 < line["month"] <= 31 else None,
 						location=location,
-						coordinate_uncertainty_in_meters=(int(line["coordinateUncertaintyInMeters"]) if line["coordinateUncertaintyInMeters"] else None),
+						coordinate_uncertainty_in_meters=(
+							int(line["coordinateUncertaintyInMeters"])
+							if line["coordinateUncertaintyInMeters"]
+							else None
+						),
 						elevation=int(line["elevation"]) if line["elevation"] else None,
 						depth=int(line["depth"]) if line["depth"] else None,
 						recorded_by=line["recordedBy"],
@@ -276,7 +303,10 @@ class Command(BaseCommand):
 					occ.sources.add(os_dk)
 				occ.save()
 
-				if "genetic_features" in line and not OriginId.objects.filter(sequence__sources__external_id__iexact=line[EXTERNAL_ID]).exists():
+				if (
+					"genetic_features" in line
+					and not OriginId.objects.filter(sequence__sources__external_id__iexact=line[EXTERNAL_ID]).exists()
+				):
 					genetic_sources(line, batch, occ)
 
 			is_batch_referenced(batch)

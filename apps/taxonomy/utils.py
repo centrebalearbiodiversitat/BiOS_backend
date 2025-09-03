@@ -57,7 +57,14 @@ def generate_csv_taxon_list(checklist):
 
 	subqueries = {}
 	for rank, key in TaxonomicLevel.RANK_CHOICES[:4]:
-		subqueries[key.lower()] = Coalesce(Subquery(TaxonomicLevel.objects.filter(lft__lte=OuterRef("lft"), rght__gte=OuterRef("rght"), rank=rank).values("name")[:1]), None)
+		subqueries[key.lower()] = Coalesce(
+			Subquery(
+				TaxonomicLevel.objects.filter(lft__lte=OuterRef("lft"), rght__gte=OuterRef("rght"), rank=rank).values(
+					"name"
+				)[:1]
+			),
+			None,
+		)
 
 	checklist = checklist.annotate(**subqueries)
 

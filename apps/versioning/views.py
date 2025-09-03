@@ -108,7 +108,7 @@ class BasisFilter(APIView):
 		for param in basis_form.cleaned_data:
 			value = basis_form.cleaned_data.get(param)
 
-			if param is "name":
+			if param == "name":
 				if value:
 					filters["internal_name__iexact" if exact else "internal_name__icontains"] = value
 					continue

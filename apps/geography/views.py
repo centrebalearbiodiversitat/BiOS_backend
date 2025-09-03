@@ -11,7 +11,11 @@ from .serializers import GeographicLevelSerializer, MinimalGeographicLevelSerial
 from common.utils.custom_swag_schema import custom_swag_schema
 
 
-MANUAL_PARAMETERS = [openapi.Parameter("id", openapi.IN_QUERY, description="Geographic level ID", type=openapi.TYPE_INTEGER, required=True)]
+MANUAL_PARAMETERS = [
+	openapi.Parameter(
+		"id", openapi.IN_QUERY, description="Geographic level ID", type=openapi.TYPE_INTEGER, required=True
+	)
+]
 
 
 class GeographicLevelFilter(APIView):
@@ -59,7 +63,14 @@ class GeographicLevelDetailView(APIView):
 				description="Name of the geographic level to search for.",
 				required=True,
 			),
-			openapi.Parameter(name="exact", in_=openapi.IN_QUERY, type=openapi.TYPE_BOOLEAN, description="Indicates whether to search for an exact match.", required=False, default=False),
+			openapi.Parameter(
+				name="exact",
+				in_=openapi.IN_QUERY,
+				type=openapi.TYPE_BOOLEAN,
+				description="Indicates whether to search for an exact match.",
+				required=False,
+				default=False,
+			),
 		],
 	)
 	def get(self, request):
@@ -78,7 +89,9 @@ class GeographicLevelDetailView(APIView):
 
 		filters["name__iexact" if exact else "name__icontains"] = query
 
-		return Response(MinimalGeographicLevelSerializer(GeographicLevel.objects.filter(**filters)[:10], many=True).data)
+		return Response(
+			MinimalGeographicLevelSerializer(GeographicLevel.objects.filter(**filters)[:10], many=True).data
+		)
 
 
 class GeographicLevelIdView(APIView):

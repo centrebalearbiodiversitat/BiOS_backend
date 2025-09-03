@@ -24,11 +24,18 @@ from common.utils.utils import generate_csv, flatten_row, flatten_columns, remov
 from common.utils.custom_swag_schema import custom_swag_schema
 
 
-MANUAL_PARAMETERS = [openapi.Parameter("id", openapi.IN_QUERY, description="Marker ID", type=openapi.TYPE_INTEGER, required=True)]
+MANUAL_PARAMETERS = [
+	openapi.Parameter("id", openapi.IN_QUERY, description="Marker ID", type=openapi.TYPE_INTEGER, required=True)
+]
 
 
 class MarkerCRUDView(APIView):
-	@custom_swag_schema(tags="Genetic", operation_id="Search marker by ID", operation_description="Get details of a specific marker by its ID.", manual_parameters=MANUAL_PARAMETERS)
+	@custom_swag_schema(
+		tags="Genetic",
+		operation_id="Search marker by ID",
+		operation_description="Get details of a specific marker by its ID.",
+		manual_parameters=MANUAL_PARAMETERS,
+	)
 	def get(self, request):
 		marker_form = MarkerForm(data=self.request.GET)
 
@@ -145,7 +152,9 @@ class MarkerFilter(APIView):
 			raise CBBAPIException("Taxonomic level does not exist", 404)
 
 		# Filter all markers by taxon
-		seq_queryset = Sequence.objects.filter(occurrence__taxonomy__in=taxon.get_descendants(include_self=True)).distinct()
+		seq_queryset = Sequence.objects.filter(
+			occurrence__taxonomy__in=taxon.get_descendants(include_self=True)
+		).distinct()
 
 		in_geography_scope = marker_form.cleaned_data.get("in_geography_scope", None)
 		if in_geography_scope is not None:
@@ -154,7 +163,9 @@ class MarkerFilter(APIView):
 		# queryset = Marker.objects.filter(sequence__in=seq_queryset)
 		# queryset = queryset.annotate(total=Count("id")).order_by("-total")
 
-		accepted_marker = Marker.objects.filter(Q(accepted=True, id=OuterRef("id")) | Q(synonyms=OuterRef("id"), accepted=True))
+		accepted_marker = Marker.objects.filter(
+			Q(accepted=True, id=OuterRef("id")) | Q(synonyms=OuterRef("id"), accepted=True)
+		)
 
 		queryset = Marker.objects.filter(sequence__in=seq_queryset)
 		queryset = queryset.annotate(accepted_id=accepted_marker.values("id")[:1]).annotate(total=Count("id"))
@@ -360,7 +371,9 @@ class SequenceFilter(APIView):
 		if taxon:
 			try:
 				taxon = TaxonomicLevel.objects.get(id=taxon)
-				filters |= Q(occurrence__taxonomy=taxon) | Q(occurrence__taxonomy__lft__gte=taxon.lft, occurrence__taxonomy__rght__lte=taxon.rght)
+				filters |= Q(occurrence__taxonomy=taxon) | Q(
+					occurrence__taxonomy__lft__gte=taxon.lft, occurrence__taxonomy__rght__lte=taxon.rght
+				)
 			except TaxonomicLevel.DoesNotExist:
 				raise CBBAPIException("Taxonomic level does not exist.", 404)
 
@@ -395,7 +408,14 @@ class SequenceListView(SequenceFilter):
 				type=openapi.TYPE_INTEGER,
 				required=False,
 			),
-			openapi.Parameter("in_geography_scope", openapi.IN_QUERY, description="Geography ID", type=openapi.TYPE_BOOLEAN, required=False, default=False),
+			openapi.Parameter(
+				"in_geography_scope",
+				openapi.IN_QUERY,
+				description="Geography ID",
+				type=openapi.TYPE_BOOLEAN,
+				required=False,
+				default=False,
+			),
 			openapi.Parameter(
 				"page",
 				openapi.IN_QUERY,
@@ -447,8 +467,16 @@ class SequenceListCSVView(SequenceFilter):
 		],
 	)
 	def get(self, request):
-		query = super().get(request).prefetch_related("sources", "markers").select_related("occurrence", "occurrence__taxonomy")
-		return CSVDownloadMixin.generate_csv(CSVDownloadMixin.flatten_json(SequenceCSVSerializer(query, many=True).data, ["markers"]), filename="genetic_info.csv")
+		query = (
+			super()
+			.get(request)
+			.prefetch_related("sources", "markers")
+			.select_related("occurrence", "occurrence__taxonomy")
+		)
+		return CSVDownloadMixin.generate_csv(
+			CSVDownloadMixin.flatten_json(SequenceCSVSerializer(query, many=True).data, ["markers"]),
+			filename="genetic_info.csv",
+		)
 
 
 class SequenceSourceCountView(APIView):
@@ -491,7 +519,12 @@ class SequenceSourceCountView(APIView):
 		except Marker.DoesNotExist:
 			raise CBBAPIException("Marker does not exist", 404)
 
-		queryset = Sequence.objects.filter(Q(occurrence__taxonomy=taxon) & Q(markers=marker)).values("sources__source__basis__internal_name").annotate(count=Count("id")).order_by("-count")
+		queryset = (
+			Sequence.objects.filter(Q(occurrence__taxonomy=taxon) & Q(markers=marker))
+			.values("sources__source__basis__internal_name")
+			.annotate(count=Count("id"))
+			.order_by("-count")
+		)
 		return Response(SequenceAggregationSerializer(queryset, many=True).data)
 
 
@@ -510,7 +543,11 @@ class SequenceSourceDownload(APIView):
 		except TaxonomicLevel.DoesNotExist:
 			raise CBBAPIException("Taxonomic level does not exist", 404)
 
-		queryset = Sequence.objects.prefetch_related("markers", "sources", "markers__synonyms").select_related("occurrence", "occurrence__taxonomy").filter(occurrence__taxonomy=taxon)
+		queryset = (
+			Sequence.objects.prefetch_related("markers", "sources", "markers__synonyms")
+			.select_related("occurrence", "occurrence__taxonomy")
+			.filter(occurrence__taxonomy=taxon)
+		)
 
 		marker_id = seq_form.cleaned_data.get("marker")
 		if marker_id:
@@ -586,7 +623,11 @@ class SequenceSourceCSVDownloadView(SequenceSourceDownload):
 
 		# Add a key with the list of the sources
 		for item in b:
-			source_flat = [s.get("source", {}).get("name") for s in item.get("sources", []) if s.get("source", {}).get("name") is not None]
+			source_flat = [
+				s.get("source", {}).get("name")
+				for s in item.get("sources", [])
+				if s.get("source", {}).get("name") is not None
+			]
 			item["source_flat"] = source_flat[0]
 
 			id_flat = item.get("sources", [])

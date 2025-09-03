@@ -5,8 +5,12 @@ from common.utils.forms import IdFieldForm, TranslateForm, CamelCaseForm
 
 class LatLonForm(IdFieldForm, TranslateForm):
 	geometry = SRIDPolygonField(required=False, srid=4326, label="Geometry")
-	coordinate_uncertainty_in_meters_min = forms.IntegerField(required=False, min_value=0, label="Minimum Coordinate Uncertainty (meters)")
-	coordinate_uncertainty_in_meters_max = forms.IntegerField(required=False, min_value=0, label="Maximum Coordinate Uncertainty (meters)")
+	coordinate_uncertainty_in_meters_min = forms.IntegerField(
+		required=False, min_value=0, label="Minimum Coordinate Uncertainty (meters)"
+	)
+	coordinate_uncertainty_in_meters_max = forms.IntegerField(
+		required=False, min_value=0, label="Maximum Coordinate Uncertainty (meters)"
+	)
 	elevation_min = forms.IntegerField(required=False, label="Minimum Elevation")
 	elevation_max = forms.IntegerField(required=False, label="Maximum Elevation")
 	depth_min = forms.IntegerField(required=False, label="Minimum Depth")
@@ -17,8 +21,14 @@ class LatLonForm(IdFieldForm, TranslateForm):
 		coordinate_uncertainty_in_meters_min = cleaned_data.get("coordinate_uncertainty_in_meters_min")
 		coordinate_uncertainty_in_meters_max = cleaned_data.get("coordinate_uncertainty_in_meters_max")
 
-		if coordinate_uncertainty_in_meters_min and coordinate_uncertainty_in_meters_max and coordinate_uncertainty_in_meters_min > coordinate_uncertainty_in_meters_max:
-			raise forms.ValidationError("Minimum coordinate uncertainty cannot be greater than maximum coordinate uncertainty.")
+		if (
+			coordinate_uncertainty_in_meters_min
+			and coordinate_uncertainty_in_meters_max
+			and coordinate_uncertainty_in_meters_min > coordinate_uncertainty_in_meters_max
+		):
+			raise forms.ValidationError(
+				"Minimum coordinate uncertainty cannot be greater than maximum coordinate uncertainty."
+			)
 
 		return cleaned_data
 

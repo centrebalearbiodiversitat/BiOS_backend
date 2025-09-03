@@ -19,7 +19,9 @@ iucn_regex = re.compile(r"^[A-Z]{2}/[a-z]{2}$")
 
 
 def check_taxon(line):
-	taxonomy = TaxonomicLevel.objects.find(taxon=line["origin_taxon"]).filter(rank=TaxonomicLevel.TRANSLATE_RANK[line["taxon_rank"]])
+	taxonomy = TaxonomicLevel.objects.find(taxon=line["origin_taxon"]).filter(
+		rank=TaxonomicLevel.TRANSLATE_RANK[line["taxon_rank"]]
+	)
 
 	if taxonomy.count() == 0:
 		raise Exception(f"Taxonomy not found.\n{line}")
@@ -112,7 +114,9 @@ def load_taxon_data_from_json(line, taxonomy, batch):
 			raise Exception(f"Invalid habitat IDs: {invalid_ids}")
 
 		for single_habitat_object in valid_habitats:
-			habitat_taxonomy, _ = HabitatTaxonomy.objects.update_or_create(taxonomy=taxonomy, habitat=single_habitat_object, defaults={"batch": batch})
+			habitat_taxonomy, _ = HabitatTaxonomy.objects.update_or_create(
+				taxonomy=taxonomy, habitat=single_habitat_object, defaults={"batch": batch}
+			)
 
 			origin, _ = OriginId.objects.get_or_create(source=source, external_id=taxon_id)
 			habitat_taxonomy.sources.add(origin)

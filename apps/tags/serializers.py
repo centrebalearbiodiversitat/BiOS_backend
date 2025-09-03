@@ -1,7 +1,7 @@
 from rest_framework import serializers
 
 from apps.tags.models import Directive, IUCNData, TaxonTag, Habitat, Tag, System
-from apps.versioning.serializers import OriginIdSerializer, OriginIdMinimalSerializer
+from apps.versioning.serializers import OriginIdMinimalSerializer
 from common.utils.serializers import BaseSerializer, CaseModelSerializer
 
 

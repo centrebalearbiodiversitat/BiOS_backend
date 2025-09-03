@@ -10,11 +10,24 @@ from common.utils.forms import TaxonomyForm
 from common.utils.custom_swag_schema import custom_swag_schema
 
 
-MANUAL_PARAMETERS = [openapi.Parameter("taxonomy", openapi.IN_QUERY, description="Taxon ID", type=openapi.TYPE_INTEGER, required=True)]
+MANUAL_PARAMETERS = [
+	openapi.Parameter(
+		"taxonomy",
+		openapi.IN_QUERY,
+		description="Taxon ID",
+		type=openapi.TYPE_INTEGER,
+		required=True
+	)
+]
 
 
 class TaxonTagListView(APIView):
-	@custom_swag_schema(tags="Tags", operation_id="Get tags by taxon ID", operation_description="Retrieve the tags by taxon ID.", manual_parameters=MANUAL_PARAMETERS)
+	@custom_swag_schema(
+		tags="Tags",
+		operation_id="Get tags by taxon ID",
+		operation_description="Retrieve the tags by taxon ID.",
+		manual_parameters=MANUAL_PARAMETERS
+	)
 	def get(self, request):
 		taxon_form = TaxonomyForm(self.request.GET)
 
@@ -31,7 +44,12 @@ class TaxonTagListView(APIView):
 
 
 class DirectiveListView(APIView):
-	@custom_swag_schema(tags="Tags", operation_id="Get directive by taxon ID", operation_description="Retrieve directives instance by taxon ID.", manual_parameters=MANUAL_PARAMETERS)
+	@custom_swag_schema(
+		tags="Tags",
+		operation_id="Get directive by taxon ID",
+		operation_description="Retrieve directives instance by taxon ID.",
+		manual_parameters=MANUAL_PARAMETERS
+	)
 	def get(self, request):
 		directive_form = TaxonomyForm(self.request.GET)
 
@@ -52,7 +70,10 @@ class DirectiveListView(APIView):
 
 class HabitatsListView(APIView):
 	@custom_swag_schema(
-		tags="Tags", operation_id="Get habitats by taxon ID", operation_description="Retrieve the habitats in which a taxon is found by taxon ID.", manual_parameters=MANUAL_PARAMETERS
+		tags="Tags",
+		operation_id="Get habitats by taxon ID",
+		operation_description="Retrieve the habitats in which a taxon is found by taxon ID.",
+		manual_parameters=MANUAL_PARAMETERS
 	)
 	def get(self, request):
 		taxon_form = TaxonomyForm(data=request.GET)
@@ -61,7 +82,7 @@ class HabitatsListView(APIView):
 			raise CBBAPIException(taxon_form.errors, 400)
 
 		taxonomy = taxon_form.cleaned_data.get("taxonomy", None)
-		if not taxonomy:
+		if taxonomy is None:
 			raise CBBAPIException("Missing taxonomy id parameter", 400)
 
 		try:
@@ -78,7 +99,10 @@ class HabitatsListView(APIView):
 
 class IUCNDataListView(APIView):
 	@custom_swag_schema(
-		tags="Tags", operation_id="Get IUCN assessment by taxon ID", operation_description="Retrieve the assessment of a taxon by taxon ID.", manual_parameters=MANUAL_PARAMETERS
+		tags="Tags",
+		operation_id="Get IUCN assessment by taxon ID",
+		operation_description="Retrieve the assessment of a taxon by taxon ID.",
+		manual_parameters=MANUAL_PARAMETERS
 	)
 	def get(self, request):
 		iucn_form = TaxonomyForm(self.request.GET)
@@ -91,7 +115,6 @@ class IUCNDataListView(APIView):
 			raise CBBAPIException("Missing taxonomy id parameter", code=400)
 		try:
 			taxon = TaxonomicLevel.objects.get(id=taxon_id)
-
 		except IUCNData.DoesNotExist:
 			raise CBBAPIException("Conservation status does not exist", code=404)
 
@@ -102,7 +125,10 @@ class IUCNDataListView(APIView):
 
 class SystemListView(APIView):
 	@custom_swag_schema(
-		tags="Tags", operation_id="Get system by taxon ID", operation_description="Retrieve the system information of a taxon by taxon ID.", manual_parameters=MANUAL_PARAMETERS
+		tags="Tags",
+		operation_id="Get system by taxon ID",
+		operation_description="Retrieve the system information of a taxon by taxon ID.",
+		manual_parameters=MANUAL_PARAMETERS
 	)
 	def get(self, request):
 		system_form = TaxonomyForm(data=request.GET)
@@ -114,10 +140,10 @@ class SystemListView(APIView):
 		if not taxonomy:
 			raise CBBAPIException("Missing taxonomy id parameter", 400)
 
-		# try:
-		# 	taxon_parent = TaxonomicLevel.objects.get(id=taxonomy)
-		# except TaxonomicLevel.DoesNotExist:
-		# 	raise CBBAPIException("Taxonomic level does not exist", 404)
+		try:
+			taxonomy = TaxonomicLevel.objects.get(id=taxonomy)
+		except TaxonomicLevel.DoesNotExist:
+			raise CBBAPIException("Taxonomic level does not exist", 404)
 
 		# descendants = taxon_parent.get_descendants(include_self=True)
 

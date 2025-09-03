@@ -2,7 +2,6 @@ import re
 import string
 from apps.versioning.models import Source, Basis, OriginId
 
-# from django.core.exceptions import MultipleObjectsReturned
 from django.apps import apps
 from django.db.models import ForeignKey
 from django.http import HttpResponse

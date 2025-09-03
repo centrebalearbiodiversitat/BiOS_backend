@@ -11,7 +11,6 @@ from .serializers import BasisSerializer, OriginIdSerializer, SourceSerializer, 
 
 from common.utils.custom_swag_schema import custom_swag_schema
 
-NAME = "name"
 
 MANUAL_PARAMETERS = [openapi.Parameter("id", openapi.IN_QUERY, description="Unique identifier of the source to retrieve.", type=openapi.TYPE_INTEGER, required=True)]
 
@@ -91,12 +90,12 @@ class BasisFilter(APIView):
 
 		exact = basis_form.cleaned_data.get("exact", False)
 		basis_form.cleaned_data.pop("exact", None)
-		filters = {}
 
+		filters = {}
 		for param in basis_form.cleaned_data:
 			value = basis_form.cleaned_data.get(param)
 
-			if param is NAME:
+			if param is "name":
 				if value:
 					filters["internal_name__iexact" if exact else "internal_name__icontains"] = value
 					continue
@@ -245,10 +244,12 @@ class SourceFilter(APIView):
 	def get(self, request):
 		basis_name = self.request.GET.get("basis", None)
 
-		if basis_name:
-			return Source.objects.filter(basis__name__icontains=basis_name).select_related("basis")
-		else:
-			return Source.objects.all().select_related("basis")
+		sources = Source.objects.filter()
+
+		if basis_name is not None:
+			sources = sources.filter(basis__name__icontains=basis_name)
+
+		return sources.select_related("basis")
 
 
 class SourceListView(SourceFilter):

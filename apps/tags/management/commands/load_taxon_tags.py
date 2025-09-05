@@ -25,13 +25,24 @@ def check_taxon(line):
 	return taxonomy.first()
 
 
+def parse_bool(value):
+	if isinstance(value, bool):
+		return value
+	elif value.lower() == "true":
+		return True
+	elif value.lower() == "false":
+		return False
+	else:
+		raise Exception(f"Invalid boolean value: {value}")
+
+
 def load_taxon_tags(line, taxonomy, batch):
 	if line["taxon_rank"] not in ["species", "subspecies", "variety"]:
 		raise Exception(f"Taxon rank not allowed.\n{line}")
 
 	source = get_or_create_source(
 		source_type=line[SOURCE_TYPE].lower(),
-		extraction_method=Source.TRANSLATE_EXTRACTION_METHOD[line[SOURCE_METHOD].lower()],
+		extraction_method=Source.EXPERT,
 		data_type=Source.TAXON_DATA,
 		batch=batch,
 		internal_name=line[INTERNAL_NAME],
@@ -45,16 +56,16 @@ def load_taxon_tags(line, taxonomy, batch):
 	os, _ = OriginId.objects.get_or_create(source=source)
 	# if the 3 systems are None, it means IUCN has no available data
 	if system.freshwater is None and system.marine is None and system.terrestrial is None:
-		system.freshwater = line["freshwater"]
-		system.marine = line["marine"]
-		system.terrestrial = line["terrestrial"]
+		system.freshwater = parse_bool(line["freshwater"])
+		system.marine = parse_bool(line["marine"])
+		system.terrestrial = parse_bool(line["terrestrial"])
 		system.sources.clear()
 		system.sources.add(os)
 		system.save()
 
 	doe_value = line.get("degreeOfEstablishment")
 	try:
-		doe_tag = Tag.objects.get(name=doe_value, tag_type=Tag.DOE)
+		doe_tag = Tag.objects.get(name__iexact=doe_value, tag_type=Tag.DOE)
 		taxon_tag, _ = TaxonTag.objects.get_or_create(
 			taxonomy=taxonomy,
 			tag=doe_tag,
@@ -67,11 +78,11 @@ def load_taxon_tags(line, taxonomy, batch):
 	directive, _ = Directive.objects.get_or_create(
 		taxonomy=taxonomy,
 		defaults={
-			"cites": line["cites"],
-			"ceea": line["ceea"],
-			"lespre": line["lespre"],
-			"directiva_aves": line["directiva_aves"],
-			"directiva_habitats": line["directiva_habitats"],
+			"cites": parse_bool(line["cites"]),
+			"ceea": parse_bool(line["ceea"]),
+			"lespre": parse_bool(line["lespre"]),
+			"directiva_aves": parse_bool(line["directiva_aves"]),
+			"directiva_habitats": parse_bool(line["directiva_habitats"]),
 			"batch": batch,
 		},
 	)
@@ -95,6 +106,8 @@ class Command(BaseCommand):
 			headers = [cell.value for cell in next(sheet.iter_rows(min_row=1, max_row=1))]
 			for row in sheet.iter_rows(min_row=2, values_only=True):
 				line = dict(zip(headers, row))
+				if line["origin_taxon"] is None:
+					continue
 				try:
 					taxonomy = check_taxon(line)
 					load_taxon_tags(line, taxonomy, batch)

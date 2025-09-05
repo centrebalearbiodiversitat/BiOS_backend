@@ -80,12 +80,12 @@ class OriginIdSerializer(CaseModelSerializer):
 		exclude = ("id",)
 
 
-class SourceMinimalSerializer(CaseModelSerializer):
+class SourceMinimalSerializer(SourceSerializer):
 	basis = MinimalBasisSerializer(read_only=True)
 
 	class Meta:
 		model = Source
-		fields = ["basis"]
+		fields = SourceSerializer.Meta.fields
 
 
 class OriginIdMinimalSerializer(CaseModelSerializer):

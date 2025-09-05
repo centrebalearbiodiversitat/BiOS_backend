@@ -1,7 +1,7 @@
 from rest_framework import serializers
 
 from apps.taxonomy.models import Authorship, TaxonomicLevel
-from apps.versioning.serializers import OriginIdMinimalSerializer
+from apps.versioning.serializers import OriginIdSerializer, OriginIdMinimalSerializer
 from common.utils.serializers import CaseModelSerializer
 
 

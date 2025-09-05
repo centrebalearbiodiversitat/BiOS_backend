@@ -7,6 +7,7 @@ services:
     shm_size: 1gb
     volumes:
       - db-data:/var/lib/postgresql/data
+      - .:/code
     ports:
       - "5432:5432"
     env_file: .env

@@ -51,7 +51,7 @@ def load_taxon_tags(line, taxonomy, batch):
 	try:
 		system = System.objects.get(taxonomy=taxonomy)
 	except System.DoesNotExist:
-		raise Exception(f"Taxon systems not found. Taxon data (iucn) not loaded yet?\n{line}")
+		raise Exception(f"Priority check: Taxon systems not found. Taxon data (iucn) not loaded yet? Otherwise iucn will overwrite expert data\n{line}")
 
 	os, _ = OriginId.objects.get_or_create(source=source)
 	# if the 3 systems are None, it means IUCN has no available data

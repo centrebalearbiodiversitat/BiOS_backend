@@ -33,7 +33,7 @@ class Command(BaseCommand):
 	def populate_habitat(self, batch):
 		for name, iucn_id in HABITATS:
 			source = get_or_create_source(
-				source_type=Basis.DATABASE,
+				source_type=Basis.TRANSLATE_TYPE[Basis.DATABASE],
 				extraction_method=Source.API,
 				data_type=Source.TAXON_DATA,
 				batch=batch,

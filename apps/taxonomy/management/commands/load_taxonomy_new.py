@@ -43,7 +43,6 @@ STATUS = "status"
 TAXON_ID = "taxon_id"
 
 
-@transaction.atomic
 def create_taxonomic_level(line, parent, batch, idx_name, rank):
 	if idx_name == VARIETY and idx_name not in line:
 		return parent
@@ -117,13 +116,11 @@ def create_taxonomic_level(line, parent, batch, idx_name, rank):
 			if child.sources.filter(source=os.source, external_id__iexact=os.external_id).exists():
 				raise Exception(f"Origin ID already existing. {os}\n{line}")
 			child.sources.add(os)
-			child.save()
 		elif not child.sources.filter(id=os.id).exists():
 			raise Exception(f"Origin ID already existing. {os}\n{line}")
 
 		if auths:
 			child.authorship.add(*auths)
-			child.save()
 
 		if child.accepted != accepted or child.accepted_modifier != accepted_modifier:
 			raise Exception(f"Trying to change taxonomy level status. {child.readable_rank()}:{child.name}\n{line}")
@@ -143,7 +140,6 @@ def create_taxonomic_level(line, parent, batch, idx_name, rank):
 				)
 
 			accepted_tl.synonyms.add(child)
-			accepted_tl.save()
 	else:
 		child = TaxonomicLevel.objects.filter(parent=parent, rank=rank, name__iexact=line[idx_name])
 
@@ -248,7 +244,6 @@ class Command(BaseCommand):
 				for line in csv_file:
 					parent = biota
 					clean_up_input_line(line)
-
 					try:
 						for level in LEVELS:
 							parent = create_taxonomic_level(line, parent, batch, level, LEVELS_PARAMS[level])

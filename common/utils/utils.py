@@ -75,7 +75,8 @@ def get_or_create_source(source_type, extraction_method, data_type, batch, inter
 	if not internal_name:
 		raise ValueError("All records must have a basis\n")
 
-	basis_lookup = {"internal_name__iexact": internal_name.strip()}
+	internal_name = internal_name.strip()
+	basis_lookup = {"internal_name__iexact": internal_name}
 	basis_defaults = {
 		"type": Basis.TRANSLATE_TYPE[source_type],
 		"internal_name": internal_name,

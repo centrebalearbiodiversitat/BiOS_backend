@@ -144,7 +144,6 @@ class Command(BaseCommand):
 				except:
 					exception = True
 					print(traceback.format_exc(), line)
-					break
 
 		if exception:
 			raise Exception(f"Errors found: Rollback control")

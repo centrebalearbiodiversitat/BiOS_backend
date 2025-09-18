@@ -16,9 +16,9 @@ SOURCE_METHOD = "extraction_method"
 
 
 def check_taxon(line):
-	taxonomy = TaxonomicLevel.objects.find(
-		taxon=line["origin_taxon"]
-	).filter(rank=TaxonomicLevel.TRANSLATE_RANK[line["taxon_rank"]])
+	taxonomy = TaxonomicLevel.objects.find(taxon=line["origin_taxon"]).filter(
+		rank=TaxonomicLevel.TRANSLATE_RANK[line["taxon_rank"]]
+	)
 
 	if taxonomy.count() == 0:
 		raise Exception(f"Taxonomy not found.")
@@ -115,7 +115,14 @@ class Command(BaseCommand):
 			reader = load_workbook(file_name)
 			sheet = reader.active
 			headers = [cell.value for cell in next(sheet.iter_rows(min_row=1, max_row=1))]
-			for row in tqdm(list(sheet.iter_rows(min_row=2, values_only=True)), ncols=50, colour="yellow", smoothing=0, miniters=100, delay=20):
+			for row in tqdm(
+				list(sheet.iter_rows(min_row=2, values_only=True)),
+				ncols=50,
+				colour="yellow",
+				smoothing=0,
+				miniters=100,
+				delay=20,
+			):
 				line = dict(zip(headers, row))
 				if line["origin_taxon"] is None:
 					continue

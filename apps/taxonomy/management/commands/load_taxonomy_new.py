@@ -1,5 +1,6 @@
 import csv
 import re
+import sys
 import traceback
 
 from django.core.management.base import BaseCommand
@@ -8,6 +9,7 @@ from django.db import transaction
 from apps.taxonomy.models import Authorship, TaxonomicLevel
 from apps.versioning.models import Batch, OriginId, Source, Basis
 from common.utils.utils import str_clean_up, get_or_create_source, is_batch_referenced
+from tqdm import tqdm
 
 KINGDOM = "kingdom"
 PHYLUM = "phylum"
@@ -241,7 +243,7 @@ class Command(BaseCommand):
 			)
 
 			with TaxonomicLevel.objects.delay_mptt_updates():
-				for line in csv_file:
+				for line in tqdm(list(csv_file), ncols=50, colour="yellow", smoothing=0, miniters=100, delay=20):
 					parent = biota
 					clean_up_input_line(line)
 					try:

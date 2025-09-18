@@ -191,7 +191,7 @@ class Source(models.Model):
 class OriginId(models.Model):
 	external_id = models.CharField(max_length=255, blank=True, null=True)
 	source = models.ForeignKey(Source, on_delete=models.CASCADE)
-	attribution = models.CharField(max_length=512, null=True, default=None, blank=True)
+	attribution = models.TextField(max_length=512, null=True, default=None, blank=True)
 
 	def save(self, force_insert=False, force_update=False, using=None, update_fields=None):
 		self.clean()

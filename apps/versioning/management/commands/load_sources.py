@@ -1,8 +1,9 @@
 import csv
+
 from django.core.management.base import BaseCommand
 from django.db import transaction
-
 from apps.versioning.models import Source
+from tqdm import tqdm
 
 
 class Command(BaseCommand):
@@ -16,7 +17,7 @@ class Command(BaseCommand):
 		csv_file = options["csv_file"]
 		with open(csv_file, "r") as file:
 			reader = csv.DictReader(file, delimiter=";")
-			for row in reader:
+			for row in tqdm(reader, ncols=50, colour="yellow", smoothing=0, miniters=100, delay=20):
 				internal_name = row["internal_name"]
 				try:
 					Source.objects.filter(

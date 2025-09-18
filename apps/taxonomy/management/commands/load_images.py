@@ -2,10 +2,10 @@ import json
 
 from django.core.management.base import BaseCommand
 from django.db import transaction
-
 from apps.taxonomy.models import TaxonomicLevel
 from apps.versioning.models import OriginId, Batch, Source, Basis
 from common.utils.utils import get_or_create_source, is_batch_referenced
+from tqdm import tqdm
 
 EXTERNAL_ID = "image_id"
 INATURALIST = "INaturalist"
@@ -58,7 +58,7 @@ class Command(BaseCommand):
 		with open(file_name, encoding="utf-8") as file:
 			data = json.load(file)
 			batch = Batch.objects.create()
-			for line in data:
+			for line in tqdm(data, ncols=50, colour="yellow", smoothing=0, miniters=100, delay=20):
 				try:
 					add_taxonomic_image(line, batch)
 				except Exception as e:

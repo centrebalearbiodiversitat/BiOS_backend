@@ -9,6 +9,7 @@ from apps.taxonomy.models import TaxonomicLevel
 from apps.tags.models import Habitat, IUCNData, System, HabitatTaxonomy
 from apps.versioning.models import Batch, OriginId, Source, Basis
 from common.utils.utils import get_or_create_source, is_batch_referenced
+from tqdm import tqdm
 
 
 INTERNAL_NAME = "IUCN"
@@ -45,6 +46,9 @@ def transform_iucn_status(iucn_scope):
 # Important: This is valid only for IUCN json files.
 def load_taxon_data_from_json(line, taxonomy, batch):
 	taxon_id = line.get(EXTERNAL_ID)
+
+	if taxon_id is None:
+		return
 
 	source = get_or_create_source(
 		source_type=Basis.DATABASE,
@@ -91,35 +95,35 @@ def load_taxon_data_from_json(line, taxonomy, batch):
 
 		iucn_data.sources.add(origin)
 
-		# System
-		system, _ = System.objects.update_or_create(
-			taxonomy=taxonomy,
-			defaults={
-				"freshwater": line["freshwater"],
-				"marine": line["marine"],
-				"terrestrial": line["terrestrial"],
-				"batch": batch,
-			},
+	# System
+	system, _ = System.objects.update_or_create(
+		taxonomy=taxonomy,
+		defaults={
+			"freshwater": line["freshwater"],
+			"marine": line["marine"],
+			"terrestrial": line["terrestrial"],
+			"batch": batch,
+		},
+	)
+
+	origin, _ = OriginId.objects.get_or_create(source=source, external_id=taxon_id)
+	system.sources.add(origin)
+
+	# Habitats
+	habitat_ids = set(line["habitat"] or [])
+	valid_habitats = Habitat.objects.filter(sources__external_id__in=habitat_ids)
+
+	if len(valid_habitats) != len(habitat_ids):
+		invalid_ids = habitat_ids - set(valid_habitats.values_list("sources__external_id", flat=True))
+		raise Exception(f"Invalid habitat IDs: {invalid_ids}")
+
+	for single_habitat_object in valid_habitats:
+		habitat_taxonomy, _ = HabitatTaxonomy.objects.update_or_create(
+			taxonomy=taxonomy, habitat=single_habitat_object, defaults={"batch": batch}
 		)
 
 		origin, _ = OriginId.objects.get_or_create(source=source, external_id=taxon_id)
-		system.sources.add(origin)
-
-		# Habitats
-		habitat_ids = set(line["habitat"] or [])
-		valid_habitats = Habitat.objects.filter(sources__external_id__in=habitat_ids)
-
-		if len(valid_habitats) != len(habitat_ids):
-			invalid_ids = habitat_ids - set(valid_habitats.values_list("sources__external_id", flat=True))
-			raise Exception(f"Invalid habitat IDs: {invalid_ids}")
-
-		for single_habitat_object in valid_habitats:
-			habitat_taxonomy, _ = HabitatTaxonomy.objects.update_or_create(
-				taxonomy=taxonomy, habitat=single_habitat_object, defaults={"batch": batch}
-			)
-
-			origin, _ = OriginId.objects.get_or_create(source=source, external_id=taxon_id)
-			habitat_taxonomy.sources.add(origin)
+		habitat_taxonomy.sources.add(origin)
 
 
 class Command(BaseCommand):
@@ -137,7 +141,7 @@ class Command(BaseCommand):
 		with open(file_name, "r") as json_file:
 			json_data = json.load(json_file)
 
-			for line in json_data:
+			for line in tqdm(json_data, ncols=50, colour="yellow", smoothing=0, miniters=100, delay=20):
 				try:
 					taxonomy = check_taxon(line)
 					load_taxon_data_from_json(line, taxonomy, batch)

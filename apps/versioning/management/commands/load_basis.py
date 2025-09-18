@@ -5,6 +5,7 @@ from django.core.management.base import BaseCommand
 from django.db import transaction
 from apps.versioning.models import Batch, Basis
 from common.utils.utils import is_batch_referenced
+from tqdm import tqdm
 
 
 def populate_basis(line, batch):
@@ -42,7 +43,7 @@ class Command(BaseCommand):
 			batch = Batch.objects.create()
 
 		try:
-			for line in json_file:
+			for line in tqdm(json_file, ncols=50, colour="yellow", smoothing=0, miniters=100, delay=20):
 				populate_basis(line, batch)
 		except Exception as e:
 			print(traceback.format_exc())

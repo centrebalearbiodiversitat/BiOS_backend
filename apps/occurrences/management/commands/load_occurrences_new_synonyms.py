@@ -10,6 +10,7 @@ from apps.occurrences.models import Occurrence
 from apps.taxonomy.models import TaxonomicLevel
 from apps.versioning.models import Batch, OriginId, Source, Basis
 from common.utils.utils import get_or_create_source, is_batch_referenced
+from tqdm import tqdm
 
 EXTERNAL_ID = "sample_id"
 INTERNAL_NAME = "occurrenceSource"
@@ -180,7 +181,7 @@ class Command(BaseCommand):
 
 			line: dict
 
-			for line in data:
+			for line in tqdm(data, ncols=50, colour="yellow", smoothing=0, miniters=100, delay=20):
 				line = parse_line(line)
 				source = get_or_create_source(
 					source_type=line[SOURCE_TYPE],

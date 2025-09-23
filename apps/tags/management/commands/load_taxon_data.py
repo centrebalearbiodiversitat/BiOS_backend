@@ -92,7 +92,6 @@ def load_taxon_data_from_json(line, taxonomy, batch):
 		)
 
 		origin, _ = OriginId.objects.get_or_create(external_id=f"{taxon_id}/{url_id}", source=source)
-
 		iucn_data.sources.add(origin)
 
 	# System
@@ -137,7 +136,7 @@ class Command(BaseCommand):
 
 		exception = False
 		batch = Batch.objects.create()
-
+	
 		with open(file_name, "r") as json_file:
 			json_data = json.load(json_file)
 

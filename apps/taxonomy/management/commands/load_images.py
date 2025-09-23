@@ -17,14 +17,12 @@ def add_taxonomic_image(line, batch):
 		return
 
 	if line[EXTERNAL_ID]:
-		taxon = TaxonomicLevel.objects.find(line["taxon"])
-		taxon_count = taxon.count()
+		taxa = TaxonomicLevel.objects.find(line["taxon"])
+		taxon_count = taxa.count()
 		if taxon_count == 0:
 			raise Exception(f"Taxon not found.\n{line}")
-		elif taxon_count > 1:
-			raise Exception(f"Multiple taxa found\n{line}")
-
-		taxon = taxon.first()
+		# elif taxon_count > 1:
+		# 	raise Exception(f"Multiple taxa found\n{line}")
 
 		source = get_or_create_source(
 			basis_type=Basis.DATABASE,
@@ -38,11 +36,13 @@ def add_taxonomic_image(line, batch):
 		os, _ = OriginId.objects.get_or_create(
 			external_id=line[EXTERNAL_ID], source=source, defaults={"attribution": line["attribution"]}
 		)
-		if not taxon.images.filter(id=os.id):
-			taxon.images.clear()
-			taxon.images.add(os)
 
-		taxon.save()
+		for taxon in taxa:
+			if not taxon.images.filter(id=os.id):
+				taxon.images.clear()
+				taxon.images.add(os)
+
+			taxon.save()
 
 
 class Command(BaseCommand):

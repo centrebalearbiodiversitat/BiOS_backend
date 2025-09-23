@@ -136,7 +136,7 @@ class Command(BaseCommand):
 
 		exception = False
 		batch = Batch.objects.create()
-	
+
 		with open(file_name, "r") as json_file:
 			json_data = json.load(json_file)
 

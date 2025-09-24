@@ -101,7 +101,7 @@ def load_taxon_data_from_json(line, taxonomy, batch):
 		iucn_data.sources.add(origin)
 
 	# System
-	system, _ = System.objects.update_or_create(
+	system, is_system_new = System.objects.update_or_create(
 		taxonomy=taxonomy,
 		defaults={
 			"freshwater": line["freshwater"],
@@ -112,6 +112,12 @@ def load_taxon_data_from_json(line, taxonomy, batch):
 	)
 
 	origin, _ = OriginId.objects.get_or_create(source=source, external_id=taxon_id)
+	if not is_system_new:
+		sources = list(system.sources.all())
+		for s in sources:
+			if s.system_set.count() == 0:
+				s.delete()
+		system.sources.clear()
 	system.sources.add(origin)
 
 	# Habitats
@@ -123,11 +129,16 @@ def load_taxon_data_from_json(line, taxonomy, batch):
 		raise Exception(f"Invalid habitat IDs: {invalid_ids}")
 
 	for single_habitat_object in valid_habitats:
-		habitat_taxonomy, _ = HabitatTaxonomy.objects.update_or_create(
+		habitat_taxonomy, is_ht_new = HabitatTaxonomy.objects.update_or_create(
 			taxonomy=taxonomy, habitat=single_habitat_object, defaults={"batch": batch}
 		)
 
-		origin, _ = OriginId.objects.get_or_create(source=source, external_id=taxon_id)
+		if not is_ht_new:
+			sources = list(habitat_taxonomy.sources.all())
+			for s in sources:
+				if s.system_set.count() == 0:
+					s.delete()
+			habitat_taxonomy.sources.clear()
 		habitat_taxonomy.sources.add(origin)
 
 

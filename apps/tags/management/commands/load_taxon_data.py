@@ -82,7 +82,7 @@ def load_taxon_data_from_json(line, taxonomy, batch):
 
 		assessment = IUCNData.TRANSLATE_CS.get(status.lower(), IUCNData.NE)
 
-		iucn_data, _ = IUCNData.objects.update_or_create(
+		iucn_data, is_iucn_new = IUCNData.objects.update_or_create(
 			taxonomy=taxonomy,
 			region=region,
 			defaults={
@@ -92,6 +92,12 @@ def load_taxon_data_from_json(line, taxonomy, batch):
 		)
 
 		origin, _ = OriginId.objects.get_or_create(external_id=f"{taxon_id}/{url_id}", source=source)
+		if not is_iucn_new:
+			sources = list(iucn_data.sources.all())
+			for s in sources:
+				if s.iucndata_set.count() == 0:
+					s.delete()
+			iucn_data.sources.clear()
 		iucn_data.sources.add(origin)
 
 	# System

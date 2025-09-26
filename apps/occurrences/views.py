@@ -659,6 +659,7 @@ class OccurrenceCountByTaxonDateBaseView:
 		return result
 
 	def get_occurrence_counts_by_year(self, occurrences):
+		occurrences = occurrences.filter(collection_date_year__isnull=False)
 		min_year = (
 			occurrences.order_by("collection_date_year").first().collection_date_year if occurrences.exists() else None
 		)

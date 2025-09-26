@@ -114,7 +114,7 @@ def create_taxonomic_level(line, parent, batch, idx_name, rank):
 				"external_id": line[TAXON_ID],
 			},
 		)
-		if new_source:
+		if new_source or os.taxonomiclevel_set.count() == 0:
 			if child.sources.filter(source=os.source, external_id__iexact=os.external_id).exists():
 				raise Exception(f"Origin ID already existing. {os}\n{line}")
 			child.sources.add(os)

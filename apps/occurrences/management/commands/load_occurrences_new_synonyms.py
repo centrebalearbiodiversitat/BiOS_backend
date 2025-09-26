@@ -267,7 +267,7 @@ class Command(BaseCommand):
 						external_id=line["datasetKey"],
 					)
 
-				if new:
+				if new or os.occurrence_set.count() == 0:
 					location = (
 						(Point(list(reversed(line["lat_lon"])), srid=4326)) if line.get("lat_lon", None) else None
 					)

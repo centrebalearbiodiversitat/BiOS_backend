@@ -103,6 +103,7 @@ class OccurrenceSerializer(BaseOccurrenceSerializer):
 			"sources",
 		]
 
+
 class OccurrenceWithLocationsSerializer(OccurrenceSerializer):
 	location = serializers.SerializerMethodField(default=None)
 
@@ -112,6 +113,7 @@ class OccurrenceWithLocationsSerializer(OccurrenceSerializer):
 
 	class Meta(OccurrenceSerializer.Meta):
 		fields = OccurrenceSerializer.Meta.fields + ["location"]
+
 
 class DownloadOccurrenceSerializer(OccurrenceSerializer):
 	taxonomy = serializers.PrimaryKeyRelatedField(read_only=True)

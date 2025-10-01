@@ -13,7 +13,8 @@ from apps.occurrences.serializers import (
 	BaseOccurrenceSerializer,
 	DownloadOccurrenceSerializer,
 	OccurrenceCountByDateSerializer,
-	DynamicSourceSerializer, OccurrenceWithLocationsSerializer,
+	DynamicSourceSerializer,
+	OccurrenceWithLocationsSerializer,
 )
 from apps.geography.models import GeographicLevel
 from apps.tags.forms import IUCNDataForm, DirectiveForm, SystemForm, TaxonTagForm

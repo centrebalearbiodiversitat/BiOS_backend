@@ -9,7 +9,7 @@ from apps.genetics.models import Sequence, Marker
 from apps.occurrences.models import Occurrence
 from apps.taxonomy.models import TaxonomicLevel
 from apps.versioning.models import Batch, OriginId, Source, Basis
-from common.utils.utils import get_or_create_source, is_batch_referenced
+from common.utils.utils import get_or_create_source, is_batch_referenced, REMOVE_PUNCTUATION
 from tqdm import tqdm
 
 EXTERNAL_ID = "sample_id"
@@ -110,10 +110,9 @@ def genetic_sources(line: dict, batch, occ):
 	markers_to_add = []
 	for production in line["genetic_features"]:
 		if production["gene"]:
-			normalized_gene_name = re.sub(r"[-\s_]", "", production["gene"].lower())
+			normalized_gene_name = re.sub(r"[-\s_]", "", production["gene"].lower().translate(REMOVE_PUNCTUATION))
 			# if normalized_gene_name in BIO_MARKERS:
 			if any(m in normalized_gene_name for m in BIO_MARKERS):
-				has_seq_markers = True
 				marker, is_new = Marker.objects.get_or_create(
 					name__iexact=production["gene"],
 					defaults={
@@ -123,6 +122,11 @@ def genetic_sources(line: dict, batch, occ):
 						"product": production["product"],
 					},
 				)
+
+				if not marker.is_relevant:
+					continue
+
+				has_seq_markers = True
 
 				if production["product"] and marker.product is None:
 					marker.product = production["product"]

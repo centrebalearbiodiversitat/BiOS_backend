@@ -45,6 +45,7 @@ STATUS = "status"
 TAXON_ID = "taxon_id"
 
 
+@transaction.atomic
 def create_taxonomic_level(line, parent, batch, idx_name, rank):
 	if idx_name == VARIETY and idx_name not in line:
 		return parent
@@ -223,7 +224,6 @@ class Command(BaseCommand):
 		parser.add_argument("file", type=str)
 		parser.add_argument("-d", nargs="?", type=str, default=";")
 
-	@transaction.atomic
 	def handle(self, *args, **options):
 		file_name = options["file"]
 		delimiter = options["d"]

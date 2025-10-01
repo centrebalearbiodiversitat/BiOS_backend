@@ -6,14 +6,14 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from apps.taxonomy.models import TaxonomicLevel
 from apps.API.exceptions import CBBAPIException
-from .forms import OccurrenceForm
-from .models import Occurrence
-from .serializers import (
+from apps.occurrences.forms import OccurrenceForm
+from apps.occurrences.models import Occurrence
+from apps.occurrences.serializers import (
 	OccurrenceSerializer,
 	BaseOccurrenceSerializer,
 	DownloadOccurrenceSerializer,
 	OccurrenceCountByDateSerializer,
-	DynamicSourceSerializer,
+	DynamicSourceSerializer, OccurrenceWithLocationsSerializer,
 )
 from apps.geography.models import GeographicLevel
 from apps.tags.forms import IUCNDataForm, DirectiveForm, SystemForm, TaxonTagForm
@@ -302,7 +302,7 @@ class OccurrenceCRUDView(APIView):
 		except Occurrence.DoesNotExist:
 			raise CBBAPIException("Occurrence does not exist", 404)
 
-		return Response(OccurrenceSerializer(occurrence).data)
+		return Response(OccurrenceWithLocationsSerializer(occurrence).data)
 
 
 class OccurrenceMapView(OccurrenceFilter):

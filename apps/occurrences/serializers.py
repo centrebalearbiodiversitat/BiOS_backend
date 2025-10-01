@@ -1,6 +1,8 @@
 from rest_framework import serializers
 from common.utils.serializers import CaseModelSerializer
 from .models import Occurrence
+from ..geography.models import GeographicLevel
+from ..geography.serializers import GeographicLevelSerializer, MinimalGeographicLevelSerializer
 from ..taxonomy.serializers import BaseTaxonomicLevelSerializer, MinimalTaxonomicLevelSerializer
 from ..versioning.serializers import OriginIdSerializer, OriginIdMinimalSerializer
 
@@ -65,6 +67,23 @@ class OccurrenceSerializer(BaseOccurrenceSerializer):
 	taxonomy = BaseTaxonomicLevelSerializer()
 	sources = OriginIdMinimalSerializer(many=True)
 
+	def get_basis_of_record(self, obj):
+		return obj.translate_basis_of_record()
+
+	def get_event_date(self, obj):
+		year = obj.collection_date_year
+		month = obj.collection_date_month
+		day = obj.collection_date_day
+
+		if year and month and day:
+			return f"{year}-{month:02}-{day:02}"
+		elif year and month:
+			return f"{year}-{month:02}"
+		elif year:
+			return f"{year}"
+		else:
+			return None
+
 	class Meta:
 		model = Occurrence
 		fields = [
@@ -84,26 +103,15 @@ class OccurrenceSerializer(BaseOccurrenceSerializer):
 			"sources",
 		]
 
-	# def get_location(self, obj):
-	# 	return GeographicLevelSerializer(GeographicLevel.objects.filter(area__intersects=obj.location).order_by("-rank").first()).data
+class OccurrenceWithLocationsSerializer(OccurrenceSerializer):
+	location = serializers.SerializerMethodField(default=None)
 
-	def get_basis_of_record(self, obj):
-		return obj.translate_basis_of_record()
+	def get_location(self, obj):
+		gl = GeographicLevel.objects.filter(area__intersects=obj.location).order_by("-rank").first()
+		return MinimalGeographicLevelSerializer(gl).data if gl else None
 
-	def get_event_date(self, obj):
-		year = obj.collection_date_year
-		month = obj.collection_date_month
-		day = obj.collection_date_day
-
-		if year and month and day:
-			return f"{year}-{month:02}-{day:02}"
-		elif year and month:
-			return f"{year}-{month:02}"
-		elif year:
-			return f"{year}"
-		else:
-			return None
-
+	class Meta(OccurrenceSerializer.Meta):
+		fields = OccurrenceSerializer.Meta.fields + ["location"]
 
 class DownloadOccurrenceSerializer(OccurrenceSerializer):
 	taxonomy = serializers.PrimaryKeyRelatedField(read_only=True)

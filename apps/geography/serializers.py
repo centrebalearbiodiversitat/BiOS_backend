@@ -5,14 +5,11 @@ from django.core.serializers import serialize
 
 
 class MinimalGeographicLevelSerializer(CaseModelSerializer):
-	rank = serializers.SerializerMethodField()
-	name = serializers.SerializerMethodField()
+	rank = serializers.CharField(source="get_readable_rank", default=None)
+	name = serializers.CharField(default=None)
 
 	def get_rank(self, obj):
-		return obj.get_readable_rank()
-
-	def get_name(self, obj):
-		return str(obj)
+		return None if obj is None else obj.get_readable_rank()
 
 	class Meta:
 		model = GeographicLevel

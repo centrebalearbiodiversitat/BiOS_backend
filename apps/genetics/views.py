@@ -165,7 +165,7 @@ class MarkerFilter(APIView):
 
 		accepted_marker = Marker.objects.filter(
 			Q(accepted=True, id=OuterRef("id")) | Q(synonyms=OuterRef("id"), accepted=True)
-		)
+		).filter(is_relevant=True)
 
 		queryset = Marker.objects.filter(sequence__in=seq_queryset)
 		queryset = queryset.annotate(accepted_id=accepted_marker.values("id")[:1]).annotate(total=Count("id"))

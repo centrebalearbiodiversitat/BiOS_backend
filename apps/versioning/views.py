@@ -337,7 +337,7 @@ class SourceStatisticsFilter(APIView):
 			OriginId.objects.filter(
 				Q(iucndata__sources__source=OuterRef("id")) | Q(taxontag__sources__source=OuterRef("id"))
 			)
-			.values("id")
+			.values("source")
 			.annotate(ent_count=Count("id"))
 			.values("ent_count")
 		)
@@ -347,7 +347,9 @@ class SourceStatisticsFilter(APIView):
 			),
 			all=True,
 		)
-
+		print(Source.objects.filter(basis_id=basis_id, data_type=Source.TAXON_DATA).annotate(
+				count=Coalesce(Subquery(oq_taxon_data[:1]), 0)
+			).values())
 		return sources.union(sources)
 
 

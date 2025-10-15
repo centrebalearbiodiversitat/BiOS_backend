@@ -322,26 +322,30 @@ class SourceStatisticsFilter(APIView):
 
 		oq = (
 			OriginId.objects.filter(source=OuterRef("id"))
-				.exclude(source__data_type=Source.OCCURRENCE, occurrence__in_geography_scope=False)
-				.values("source")
-				.annotate(ent_count=Count("id"))
-				.values("ent_count")
+			.exclude(source__data_type=Source.OCCURRENCE, occurrence__in_geography_scope=False)
+			.values("source")
+			.annotate(ent_count=Count("id"))
+			.values("ent_count")
 		)
-		sources = Source.objects.filter(basis_id=basis_id).exclude(data_type=Source.TAXON_DATA).annotate(count=Coalesce(Subquery(oq[:1]), 0))
+		sources = (
+			Source.objects.filter(basis_id=basis_id)
+			.exclude(data_type=Source.TAXON_DATA)
+			.annotate(count=Coalesce(Subquery(oq[:1]), 0))
+		)
 
 		oq_taxon_data = (
 			OriginId.objects.filter(
-				Q(iucndata__sources__source=OuterRef("id")) |
-				Q(taxontag__sources__source=OuterRef("id"))
+				Q(iucndata__sources__source=OuterRef("id")) | Q(taxontag__sources__source=OuterRef("id"))
 			)
 			.values("id")
 			.annotate(ent_count=Count("id"))
 			.values("ent_count")
 		)
 		sources = sources.union(
-			Source.objects.filter(basis_id=basis_id, data_type=Source.TAXON_DATA)
-							.annotate(count=Coalesce(Subquery(oq_taxon_data[:1]), 0)),
-			all=True
+			Source.objects.filter(basis_id=basis_id, data_type=Source.TAXON_DATA).annotate(
+				count=Coalesce(Subquery(oq_taxon_data[:1]), 0)
+			),
+			all=True,
 		)
 
 		return sources.union(sources)

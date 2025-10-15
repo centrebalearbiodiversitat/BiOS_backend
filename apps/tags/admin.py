@@ -97,7 +97,7 @@ class DirectiveAdmin(ReadOnlyBatch):
 	search_fields = ("taxonomy__name",)
 	autocomplete_fields = ("taxonomy",)
 
-	readonly_fields = ("taxonomy", )
+	readonly_fields = ("taxonomy",)
 	fieldsets = (
 		(None, {"fields": ["taxonomy"]}),
 		(

@@ -2,9 +2,10 @@ from django.contrib import admin
 from mptt.admin import MPTTModelAdmin
 
 from apps.taxonomy.models import Authorship, TaxonomicLevel
+from common.utils.admin import ReadOnlyBatch
 
 
-class BaseTaxonLevelAdmin(MPTTModelAdmin):
+class BaseTaxonLevelAdmin(MPTTModelAdmin, ReadOnlyBatch):
 	list_display = [
 		"scientific_name",
 		"rank",
@@ -56,7 +57,7 @@ class BaseTaxonLevelAdmin(MPTTModelAdmin):
 admin.site.register(TaxonomicLevel, BaseTaxonLevelAdmin)
 
 
-class AuthorshipAdmin(admin.ModelAdmin):
+class AuthorshipAdmin(ReadOnlyBatch):
 	search_fields = ["unidecode_name"]
 	list_display = ["name"]
 

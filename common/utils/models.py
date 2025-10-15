@@ -26,7 +26,7 @@ class ReferencedModel(models.Model):
 	objects = ReferencedManager()
 
 	batch = models.ForeignKey("versioning.Batch", on_delete=models.CASCADE)
-	sources = models.ManyToManyField("versioning.OriginId")
+	sources = models.ManyToManyField("versioning.OriginId", db_index=True)
 
 	@staticmethod
 	def clean_sources(**kwargs):

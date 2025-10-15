@@ -1,9 +1,10 @@
 from django.contrib import admin
 
 from apps.occurrences.models import Occurrence
+from common.utils.admin import ReadOnlyBatch
 
 
-class OccurrenceAdmin(admin.ModelAdmin):
+class OccurrenceAdmin(ReadOnlyBatch):
 	fields = [
 		"taxonomy",
 		"voucher",

@@ -63,6 +63,7 @@ def load_taxon_tags(line, taxonomy, batch):
 	# 	raise Exception(f"Priority check: Taxon systems not found. Taxon data (iucn) not loaded yet? Otherwise iucn will overwrite expert data")
 
 	os, _ = OriginId.objects.get_or_create(source=source, defaults={"attribution": line.get("attribution")})
+
 	# if the 3 systems are None, it means IUCN has no available data
 	if system.freshwater is None and system.marine is None and system.terrestrial is None:
 		system.freshwater = parse_bool(line["freshwater"])
@@ -75,18 +76,20 @@ def load_taxon_tags(line, taxonomy, batch):
 	doe_value = line.get("degreeOfEstablishment")
 	try:
 		doe_tag = Tag.objects.get(name__iexact=doe_value, tag_type=Tag.DOE)
-		taxon_tag, _ = TaxonTag.objects.get_or_create(
+		taxon_tag, _ = TaxonTag.objects.update_or_create(
 			taxonomy=taxonomy,
 			defaults={
 				"batch": batch,
 				"tag": doe_tag,
 			},
 		)
+		taxon_tag.sources.clear()
 		taxon_tag.sources.add(os)
+		taxon_tag.save()
 	except Tag.DoesNotExist:
 		raise Exception(f"No Tag.DOE was found with the value '{doe_value}'")
 
-	directive, _ = Directive.objects.get_or_create(
+	directive, _ = Directive.objects.update_or_create(
 		taxonomy=taxonomy,
 		defaults={
 			"cites": parse_bool(line["cites"], True),
@@ -97,7 +100,9 @@ def load_taxon_tags(line, taxonomy, batch):
 			"batch": batch,
 		},
 	)
+	directive.sources.clear()
 	directive.sources.add(os)
+	directive.save()
 
 
 class Command(BaseCommand):

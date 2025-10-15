@@ -1,6 +1,7 @@
 from django.contrib import admin
 
 from apps.tags.models import Habitat, TaxonTag, Tag, System, IUCNData, Directive, HabitatTaxonomy
+from common.utils.admin import ReadOnlyBatch
 
 
 class TagAdmin(admin.ModelAdmin):
@@ -12,7 +13,7 @@ class TagAdmin(admin.ModelAdmin):
 admin.site.register(Tag, TagAdmin)
 
 
-class HabitatAdmin(admin.ModelAdmin):
+class HabitatAdmin(ReadOnlyBatch):
 	search_fields = ["name"]
 	list_display = ["name"]
 	fields = ["name", "sources"]
@@ -23,29 +24,27 @@ class HabitatAdmin(admin.ModelAdmin):
 admin.site.register(Habitat, HabitatAdmin)
 
 
-class HabitatTaxonomyAdmin(admin.ModelAdmin):
+class HabitatTaxonomyAdmin(ReadOnlyBatch):
 	list_display = ("taxonomy", "habitat")
 	list_filter = ("habitat",)
 	search_fields = ("taxonomy__name",)
 	autocomplete_fields = ("taxonomy", "sources")
-	readonly_fields = ("batch",)
 
 
 admin.site.register(HabitatTaxonomy, HabitatTaxonomyAdmin)
 
 
-class IUCNDataAdmin(admin.ModelAdmin):
+class IUCNDataAdmin(ReadOnlyBatch):
 	list_display = ("taxonomy", "assessment", "region")
 	list_filter = ("assessment", "region")
 	search_fields = ("taxonomy__name",)
 	autocomplete_fields = ("taxonomy", "sources")
-	readonly_fields = ("batch",)
 
 
 admin.site.register(IUCNData, IUCNDataAdmin)
 
 
-class SystemAdmin(admin.ModelAdmin):
+class SystemAdmin(ReadOnlyBatch):
 	list_display = ("taxonomy", "freshwater", "marine", "terrestrial")
 	list_filter = ("freshwater", "marine", "terrestrial")
 	search_fields = ("taxonomy__name",)
@@ -61,12 +60,11 @@ class SystemAdmin(admin.ModelAdmin):
 admin.site.register(System, SystemAdmin)
 
 
-class TaxonTagAdmin(admin.ModelAdmin):
+class TaxonTagAdmin(ReadOnlyBatch):
 	list_display = ("taxonomy", "tag_name", "tag_type")
 	search_fields = ("taxonomy__name",)
 	autocomplete_fields = ("taxonomy", "sources")
 	list_filter = ("tag__tag_type",)
-	readonly_fields = ("batch",)
 
 	@admin.display(ordering="tag__name")
 	def tag_name(self, obj):
@@ -80,7 +78,7 @@ class TaxonTagAdmin(admin.ModelAdmin):
 admin.site.register(TaxonTag, TaxonTagAdmin)
 
 
-class DirectiveAdmin(admin.ModelAdmin):
+class DirectiveAdmin(ReadOnlyBatch):
 	list_display = (
 		"taxonomy",
 		"cites",
@@ -99,7 +97,7 @@ class DirectiveAdmin(admin.ModelAdmin):
 	search_fields = ("taxonomy__name",)
 	autocomplete_fields = ("taxonomy",)
 
-	readonly_fields = ["taxonomy"]
+	readonly_fields = ("taxonomy", )
 	fieldsets = (
 		(None, {"fields": ["taxonomy"]}),
 		(

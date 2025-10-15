@@ -1,13 +1,14 @@
-from django.db.models import OuterRef, Subquery, Count, IntegerField
+from django.db.models import OuterRef, Subquery, Count, IntegerField, Q, ManyToManyField, Sum
 from django.db.models.functions import Coalesce
 from drf_yasg import openapi
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from ..API.exceptions import CBBAPIException
-from .forms import BasisForm, OriginIdForm, SourceForm
-from .models import Basis, OriginId, Source
-from .serializers import BasisSerializer, OriginIdSerializer, SourceSerializer, SourceCountSerializer
+from django.apps import apps
+from apps.API.exceptions import CBBAPIException
+from apps.versioning.forms import BasisForm, OriginIdForm, SourceForm
+from apps.versioning.models import Basis, OriginId, Source
+from apps.versioning.serializers import BasisSerializer, OriginIdSerializer, SourceSerializer, SourceCountSerializer
 
 from common.utils.custom_swag_schema import custom_swag_schema
 
@@ -87,11 +88,11 @@ class BasisCRUDView(APIView):
 			raise CBBAPIException("Missing id parameter", 400)
 
 		try:
-			occurrence = Basis.objects.get(id=basis_id)
+			basis = Basis.objects.get(id=basis_id)
 		except Basis.DoesNotExist:
 			raise CBBAPIException("Basis does not exist", 404)
 
-		return Response(BasisSerializer(occurrence).data)
+		return Response(BasisSerializer(basis).data)
 
 
 class BasisFilter(APIView):
@@ -321,15 +322,29 @@ class SourceStatisticsFilter(APIView):
 
 		oq = (
 			OriginId.objects.filter(source=OuterRef("id"))
-			.exclude(source__data_type=Source.OCCURRENCE, occurrence__in_geography_scope=False)
-			.values("source")
+				.exclude(source__data_type=Source.OCCURRENCE, occurrence__in_geography_scope=False)
+				.values("source")
+				.annotate(ent_count=Count("id"))
+				.values("ent_count")
+		)
+		sources = Source.objects.filter(basis_id=basis_id).exclude(data_type=Source.TAXON_DATA).annotate(count=Coalesce(Subquery(oq[:1]), 0))
+
+		oq_taxon_data = (
+			OriginId.objects.filter(
+				Q(iucndata__sources__source=OuterRef("id")) |
+				Q(taxontag__sources__source=OuterRef("id"))
+			)
+			.values("id")
 			.annotate(ent_count=Count("id"))
 			.values("ent_count")
 		)
+		sources = sources.union(
+			Source.objects.filter(basis_id=basis_id, data_type=Source.TAXON_DATA)
+							.annotate(count=Coalesce(Subquery(oq_taxon_data[:1]), 0)),
+			all=True
+		)
 
-		sources = Source.objects.filter(basis_id=basis_id).annotate(count=Coalesce(Subquery(oq[:1]), 0))
-
-		return sources
+		return sources.union(sources)
 
 
 class SourceStatisticsView(SourceStatisticsFilter):

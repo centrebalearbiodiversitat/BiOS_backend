@@ -347,9 +347,11 @@ class SourceStatisticsFilter(APIView):
 			),
 			all=True,
 		)
-		print(Source.objects.filter(basis_id=basis_id, data_type=Source.TAXON_DATA).annotate(
-				count=Coalesce(Subquery(oq_taxon_data[:1]), 0)
-			).values())
+		print(
+			Source.objects.filter(basis_id=basis_id, data_type=Source.TAXON_DATA)
+			.annotate(count=Coalesce(Subquery(oq_taxon_data[:1]), 0))
+			.values()
+		)
 		return sources.union(sources)
 
 

@@ -275,7 +275,11 @@ class TaxonomyTest(TestResultHandler):
 				"originId": "N",
 				"attribution": None,
 			},
-			{"source": {"name": "GBIF", "url": None, "origin": "database", "dataType": "taxon"}, "originId": "1", "attribution": None},
+			{
+				"source": {"name": "GBIF", "url": None, "origin": "database", "dataType": "taxon"},
+				"originId": "1",
+				"attribution": None,
+			},
 		]
 		self.assert_and_log(self.assertJSONEqual, response.content, expected_data)
 

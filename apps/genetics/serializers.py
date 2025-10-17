@@ -2,8 +2,8 @@ from rest_framework import serializers
 
 from common.utils.serializers import CaseModelSerializer
 from .models import Marker, Sequence
-from apps.versioning.serializers import OriginIdSerializer
-from apps.occurrences.serializers import OccurrenceSerializer
+from apps.versioning.serializers import OriginIdSerializer, OriginIdMinimalSerializer
+from apps.occurrences.serializers import BaseOccurrenceWithTaxonSerializer
 
 
 class MarkerCountSerializer(CaseModelSerializer):
@@ -11,7 +11,7 @@ class MarkerCountSerializer(CaseModelSerializer):
 
 	class Meta:
 		model = Marker
-		fields = ["id", "name", "total"]
+		fields = ["id", "name", "total", "product"]
 
 
 class BaseMarkerSerializer(CaseModelSerializer):
@@ -33,7 +33,17 @@ class MarkerSerializer(BaseMarkerSerializer):
 class SequenceSerializer(CaseModelSerializer):
 	sources = OriginIdSerializer(many=True)
 	markers = BaseMarkerSerializer(many=True)
-	occurrence = OccurrenceSerializer()
+	occurrence = BaseOccurrenceWithTaxonSerializer()
+
+	class Meta:
+		model = Sequence
+		exclude = ("batch",)
+
+
+class SequenceMinimalSerializer(CaseModelSerializer):
+	sources = OriginIdMinimalSerializer(many=True)
+	markers = BaseMarkerSerializer(many=True)
+	occurrence = BaseOccurrenceWithTaxonSerializer()
 
 	class Meta:
 		model = Sequence
@@ -44,7 +54,7 @@ class SequenceCSVSerializer(CaseModelSerializer):
 	taxonomy = serializers.SerializerMethodField()
 	source = serializers.SerializerMethodField()
 	external_id = serializers.SerializerMethodField()
-	markers = serializers.SerializerMethodField()
+	markers = MarkerSerializer(many=True)
 
 	def get_taxonomy(self, obj):
 		return str(obj.occurrence.taxonomy)

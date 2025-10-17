@@ -2,10 +2,10 @@ import json
 
 from django.core.management.base import BaseCommand
 from django.db import transaction
-
 from apps.taxonomy.models import TaxonomicLevel
-from apps.versioning.models import OriginId, Batch, Source
-from common.utils.utils import get_or_create_source
+from apps.versioning.models import OriginId, Batch, Source, Basis
+from common.utils.utils import get_or_create_source, is_batch_referenced
+from tqdm import tqdm
 
 EXTERNAL_ID = "image_id"
 INATURALIST = "INaturalist"
@@ -17,24 +17,32 @@ def add_taxonomic_image(line, batch):
 		return
 
 	if line[EXTERNAL_ID]:
-		taxon = TaxonomicLevel.objects.find(line["taxon"])
-		taxon_count = taxon.count()
+		taxa = TaxonomicLevel.objects.find(line["taxon"])
+		taxon_count = taxa.count()
 		if taxon_count == 0:
 			raise Exception(f"Taxon not found.\n{line}")
-		elif taxon_count > 1:
-			raise Exception(f"Multiple taxa found\n{line}")
+		# elif taxon_count > 1:
+		# 	raise Exception(f"Multiple taxa found\n{line}")
 
-		taxon = taxon.first()
+		source = get_or_create_source(
+			basis_type=Basis.DATABASE,
+			source_type=Basis.DATABASE,
+			extraction_method=Source.API,
+			data_type=Source.IMAGE,
+			batch=batch,
+			internal_name=INATURALIST,
+		)
 
-		source = get_or_create_source(source_type=Source.DATABASE, extraction_method=Source.API, data_type=Source.IMAGE, batch=batch, internal_name=INATURALIST)
+		os, _ = OriginId.objects.get_or_create(
+			external_id=line[EXTERNAL_ID], source=source, defaults={"attribution": line["attribution"]}
+		)
 
-		os, _ = OriginId.objects.get_or_create(external_id=line[EXTERNAL_ID], source=source, defaults={"attribution": line["attribution"]})
+		for taxon in taxa:
+			if not taxon.images.filter(id=os.id):
+				taxon.images.clear()
+				taxon.images.add(os)
 
-		if not taxon.images.filter(id=os.id):
-			taxon.images.clear()
-			taxon.images.add(os)
-
-		taxon.save()
+			taxon.save()
 
 
 class Command(BaseCommand):
@@ -45,14 +53,12 @@ class Command(BaseCommand):
 
 	@transaction.atomic
 	def handle(self, *args, **options):
-		file_name = options["file"]
 		exception = False
-
+		file_name = options["file"]
 		with open(file_name, encoding="utf-8") as file:
 			data = json.load(file)
 			batch = Batch.objects.create()
-
-			for line in data:
+			for line in tqdm(data, ncols=50, colour="yellow", smoothing=0, miniters=100, delay=20):
 				try:
 					add_taxonomic_image(line, batch)
 				except Exception as e:
@@ -61,3 +67,5 @@ class Command(BaseCommand):
 
 			if exception:
 				raise Exception("Errors found: Rollback control")
+
+			is_batch_referenced(batch)

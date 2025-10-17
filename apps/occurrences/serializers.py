@@ -1,8 +1,10 @@
 from rest_framework import serializers
 from common.utils.serializers import CaseModelSerializer
 from .models import Occurrence
-from ..taxonomy.serializers import BaseTaxonomicLevelSerializer
-from ..versioning.serializers import OriginIdSerializer
+from ..geography.models import GeographicLevel
+from ..geography.serializers import GeographicLevelSerializer, MinimalGeographicLevelSerializer
+from ..taxonomy.serializers import BaseTaxonomicLevelSerializer, MinimalTaxonomicLevelSerializer
+from ..versioning.serializers import OriginIdSerializer, OriginIdMinimalSerializer
 
 
 class BaseOccurrenceSerializer(CaseModelSerializer):
@@ -11,7 +13,7 @@ class BaseOccurrenceSerializer(CaseModelSerializer):
 
 	class Meta:
 		model = Occurrence
-		fields = (
+		fields = [
 			"id",
 			# "basis_of_record",
 			"coordinate_uncertainty_in_meters",
@@ -27,7 +29,7 @@ class BaseOccurrenceSerializer(CaseModelSerializer):
 			# "taxonomy",
 			# "voucher",
 			# "year",
-		)
+		]
 
 	def get_basis_of_record(self, obj):
 		return Occurrence.TRANSLATE_BASIS_OF_RECORD[obj.basis_of_record]
@@ -47,6 +49,13 @@ class BaseOccurrenceSerializer(CaseModelSerializer):
 			return None
 
 
+class BaseOccurrenceWithTaxonSerializer(BaseOccurrenceSerializer):
+	taxonomy = MinimalTaxonomicLevelSerializer()
+
+	class Meta(BaseOccurrenceSerializer.Meta):
+		fields = BaseOccurrenceSerializer.Meta.fields + ["taxonomy", "basis_of_record", "depth", "elevation", "voucher"]
+
+
 class OccurrenceSerializer(BaseOccurrenceSerializer):
 	basis_of_record = serializers.SerializerMethodField()
 
@@ -56,11 +65,28 @@ class OccurrenceSerializer(BaseOccurrenceSerializer):
 	year = serializers.IntegerField(source="collection_date_year")
 
 	taxonomy = BaseTaxonomicLevelSerializer()
-	sources = OriginIdSerializer(many=True)
+	sources = OriginIdMinimalSerializer(many=True)
+
+	def get_basis_of_record(self, obj):
+		return obj.translate_basis_of_record()
+
+	def get_event_date(self, obj):
+		year = obj.collection_date_year
+		month = obj.collection_date_month
+		day = obj.collection_date_day
+
+		if year and month and day:
+			return f"{year}-{month:02}-{day:02}"
+		elif year and month:
+			return f"{year}-{month:02}"
+		elif year:
+			return f"{year}"
+		else:
+			return None
 
 	class Meta:
 		model = Occurrence
-		fields = (
+		fields = [
 			"id",
 			"basis_of_record",
 			"coordinate_uncertainty_in_meters",
@@ -75,27 +101,18 @@ class OccurrenceSerializer(BaseOccurrenceSerializer):
 			"voucher",
 			"year",
 			"sources",
-		)
+		]
 
-	# def get_location(self, obj):
-	# 	return GeographicLevelSerializer(GeographicLevel.objects.filter(area__intersects=obj.location).order_by("-rank").first()).data
 
-	def get_basis_of_record(self, obj):
-		return Occurrence.TRANSLATE_BASIS_OF_RECORD[obj.basis_of_record]
+class OccurrenceWithLocationsSerializer(OccurrenceSerializer):
+	location = serializers.SerializerMethodField(default=None)
 
-	def get_event_date(self, obj):
-		year = obj.collection_date_year
-		month = obj.collection_date_month
-		day = obj.collection_date_day
+	def get_location(self, obj):
+		gl = GeographicLevel.objects.filter(area__intersects=obj.location).order_by("-rank").first()
+		return MinimalGeographicLevelSerializer(gl).data if gl else None
 
-		if year and month and day:
-			return f"{year}-{month:02}-{day:02}"
-		elif year and month:
-			return f"{year}-{month:02}"
-		elif year:
-			return f"{year}"
-		else:
-			return None
+	class Meta(OccurrenceSerializer.Meta):
+		fields = OccurrenceSerializer.Meta.fields + ["location"]
 
 
 class DownloadOccurrenceSerializer(OccurrenceSerializer):
@@ -115,9 +132,9 @@ class OccurrenceCountByDateSerializer(serializers.Serializer):
 		Returns the appropriate date field name based on the view class.
 		"""
 		if self.view_class.__name__ == "OccurrenceCountByTaxonMonthView":
-			return "collection_date_month"
+			return "month"
 		elif self.view_class.__name__ == "OccurrenceCountByTaxonYearView":
-			return "collection_date_year"
+			return "year"
 		else:
 			return "sources"
 

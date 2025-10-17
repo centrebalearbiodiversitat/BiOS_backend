@@ -13,3 +13,5 @@ gunicorn==22.0.0
 uvicorn-worker==0.2.0
 drf-api-tracking==1.8.4
 openpyxl==3.1.5
+poetry==2.1.2
+tqdm==4.67.1

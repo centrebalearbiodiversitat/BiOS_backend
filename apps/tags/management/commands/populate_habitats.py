@@ -2,11 +2,8 @@ from django.core.management.base import BaseCommand
 from django.db import transaction
 
 from apps.tags.models import Habitat
-from apps.versioning.models import Batch, OriginId, Source
-from common.utils.utils import get_or_create_source
-
-
-IUCN = "IUCN"
+from apps.versioning.models import Batch, OriginId, Source, Basis
+from common.utils.utils import get_or_create_source, is_batch_referenced
 
 HABITATS = [
 	("forest", 1),
@@ -36,11 +33,11 @@ class Command(BaseCommand):
 	def populate_habitat(self, batch):
 		for name, iucn_id in HABITATS:
 			source = get_or_create_source(
-				source_type=Source.DATABASE,
+				source_type=Basis.TRANSLATE_TYPE[Basis.DATABASE],
 				extraction_method=Source.API,
 				data_type=Source.TAXON_DATA,
 				batch=batch,
-				internal_name=IUCN,
+				internal_name="IUCN",
 			)
 			habitat, created = Habitat.objects.get_or_create(
 				name=name,
@@ -59,4 +56,6 @@ class Command(BaseCommand):
 
 	@transaction.atomic
 	def handle(self, *args, **kwargs):
-		self.populate_habitat(Batch.objects.create())
+		batch = Batch.objects.create()
+		self.populate_habitat(batch)
+		is_batch_referenced(batch)

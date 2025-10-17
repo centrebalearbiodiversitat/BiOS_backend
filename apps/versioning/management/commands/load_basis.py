@@ -4,19 +4,25 @@ import traceback
 from django.core.management.base import BaseCommand
 from django.db import transaction
 from apps.versioning.models import Batch, Basis
+from common.utils.utils import is_batch_referenced
+from tqdm import tqdm
 
 
 def populate_basis(line, batch):
 	Basis.objects.update_or_create(
-		internal_name=line.get("internal_name", ""),
+		internal_name__iexact=line.get("internal_name", ""),
+		type=Basis.TRANSLATE_TYPE[line["type"]],
 		defaults={
-			"name": line.get("name", ""),
-			"acronym": line.get("acronym", ""),
-			"url": line.get("url", ""),
-			"description": line.get("description", ""),
-			"citation": line.get("citation", ""),
-			"contact": line.get("contact", ""),
-			"authors": line.get("authors", ""),
+			"internal_name": line.get("internal_name", None),
+			"name": line["name"],
+			"type": Basis.TRANSLATE_TYPE[line["type"]],
+			"acronym": line.get("acronym", None),
+			"url": line.get("url", None),
+			"description": line.get("description", None),
+			"citation": line.get("citation", None),
+			"contact": line.get("contact", None),
+			"authors": line.get("authors", None),
+			"image": line.get("image", None),
 			"batch": batch,
 		},
 	)
@@ -37,8 +43,10 @@ class Command(BaseCommand):
 			batch = Batch.objects.create()
 
 		try:
-			for line in json_file:
+			for line in tqdm(json_file, ncols=50, colour="yellow", smoothing=0, miniters=100, delay=20):
 				populate_basis(line, batch)
 		except Exception as e:
 			print(traceback.format_exc())
 			raise e
+
+		is_batch_referenced(batch)

@@ -26,14 +26,14 @@ class ReferencedModel(models.Model):
 	objects = ReferencedManager()
 
 	batch = models.ForeignKey("versioning.Batch", on_delete=models.CASCADE)
-	sources = models.ManyToManyField("versioning.OriginId")
+	sources = models.ManyToManyField("versioning.OriginId", db_index=True)
 
 	@staticmethod
 	def clean_sources(**kwargs):
 		if kwargs and kwargs["action"] == "post_add":
 			obj = kwargs["instance"]
 			if hasattr(obj, "sources"):
-				sources = [s.source.basis for s in obj.sources.all()]
+				sources = [s.source for s in obj.sources.all()]
 				if len(sources) != len(set(sources)):
 					raise ValidationError(f"Sources must be unique.\n{obj}\n{obj.sources.all()}")
 
@@ -47,7 +47,7 @@ class ReferencedModel(models.Model):
 
 
 m2m_changed.connect(ReferencedModel.clean_sources, sender=ReferencedModel.sources.through)
-pre_delete.connect(ReferencedModel.pre_delete)
+# pre_delete.connect(ReferencedModel.pre_delete)
 
 
 class SynonymManager(models.Manager):
@@ -124,7 +124,9 @@ class SynonymModel(models.Model):
 	unidecode_name = models.CharField(max_length=256, help_text="Unidecode name do not touch", db_index=True)
 	synonyms = models.ManyToManyField("self", blank=True, symmetrical=True)
 	accepted = models.BooleanField(null=False, blank=False)
-	accepted_modifier = models.PositiveSmallIntegerField(choices=ACCEPTED_MODIFIERS_CHOICES, null=True, blank=True, default=None)
+	accepted_modifier = models.PositiveSmallIntegerField(
+		choices=ACCEPTED_MODIFIERS_CHOICES, null=True, blank=True, default=None
+	)
 
 	def readable_accepted_modifier(self):
 		return SynonymModel.ACCEPTED_MODIFIERS_TRANSLATE.get(self.accepted_modifier, "")

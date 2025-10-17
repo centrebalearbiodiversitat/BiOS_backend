@@ -1,22 +1,34 @@
 FROM python:3.10
 ENV PYTHONUNBUFFERED 1
-RUN mkdir /requirements
-ADD ./requirements /requirements
-RUN pip install -r /requirements/versioned.txt
 
-RUN mkdir /code
+# Create directories
+RUN mkdir /requirements /code
 WORKDIR /code
 
-# install yarn
-RUN curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add -
-RUN echo """deb https://dl.yarnpkg.com/debian/ stable main""" > /etc/apt/sources.list.d/yarn.list
+# Copy and install Python requirements
+ADD ./requirements /requirements
+RUN pip install --no-cache-dir -r /requirements/versioned.txt
 
-# install node repo
-RUN #curl -sL https://deb.nodesource.com/setup_13.x | /bin/bash -
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    curl \
+    gnupg \
+    apt-transport-https \
+    ca-certificates \
+    binutils \
+    libproj-dev \
+    gdal-bin \
+    && rm -rf /var/lib/apt/lists/*
 
-RUN apt-get clean
-RUN echo deb http://deb.debian.org/debian testing main contrib non-free >> /etc/apt/sources.list && \
-    apt-get update && \
-    apt-get remove -y binutils && \
-    apt-get autoremove -y
-RUN apt-get install binutils libproj-dev gdal-bin -y
+# Add Yarn repository using new method
+RUN curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg \
+    -o /usr/share/keyrings/yarn-archive-keyring.gpg
+RUN echo "deb [signed-by=/usr/share/keyrings/yarn-archive-keyring.gpg] https://dl.yarnpkg.com/debian stable main" \
+    > /etc/apt/sources.list.d/yarn.list
+
+# Install Yarn
+RUN apt-get update && apt-get install -y yarn \
+    && rm -rf /var/lib/apt/lists/*
+
+# Optional: Node.js repo (if needed)
+# RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - && apt-get install -y nodejs

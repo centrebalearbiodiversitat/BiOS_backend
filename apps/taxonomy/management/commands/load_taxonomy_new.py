@@ -1,13 +1,15 @@
 import csv
 import re
+import sys
 import traceback
 
 from django.core.management.base import BaseCommand
 from django.db import transaction
 
 from apps.taxonomy.models import Authorship, TaxonomicLevel
-from apps.versioning.models import Batch, OriginId, Source
-from common.utils.utils import str_clean_up, get_or_create_source
+from apps.versioning.models import Batch, OriginId, Source, Basis
+from common.utils.utils import str_clean_up, get_or_create_source, is_batch_referenced
+from tqdm import tqdm
 
 KINGDOM = "kingdom"
 PHYLUM = "phylum"
@@ -64,19 +66,27 @@ def create_taxonomic_level(line, parent, batch, idx_name, rank):
 			accepted = False
 			accepted_modifier = TaxonomicLevel.MISAPPLIED
 		else:
-			raise Exception(f'{STATUS} must be either "accepted", "misapplied" or "synonym" but was "{line[STATUS]}"\n{line}')
+			raise Exception(
+				f'{STATUS} must be either "accepted", "misapplied" or "synonym" but was "{line[STATUS]}"\n{line}'
+			)
 
 		if rank in {TaxonomicLevel.SPECIES, TaxonomicLevel.SUBSPECIES, TaxonomicLevel.VARIETY}:
-			if line[ORIGIN_TAXON] != " ".join(filter(lambda x: x, [line[GENUS], line[SPECIES], line[SUBSPECIES], line[VARIETY]])):
+			if line[ORIGIN_TAXON] != " ".join(
+				filter(lambda x: x, [line[GENUS], line[SPECIES], line[SUBSPECIES], line[VARIETY]])
+			):
 				raise Exception(f"Taxonomy mismatch with accepted taxon name.\n{line}")
 		elif line[ORIGIN_TAXON].split()[-1] != line[idx_name]:
 			raise Exception(f"Taxonomy mismatch with accepted taxon name.\n{line}")
 
-		if line[idx_name][0].isupper() and rank in [TaxonomicLevel.SPECIES, TaxonomicLevel.SUBSPECIES, TaxonomicLevel.VARIETY]:
+		if line[idx_name][0].isupper() and rank in [
+			TaxonomicLevel.SPECIES,
+			TaxonomicLevel.SUBSPECIES,
+			TaxonomicLevel.VARIETY,
+		]:
 			raise Exception(f"Epithet cant be upper cased.\n{line}")
 
 		source = get_or_create_source(
-			source_type=Source.TRANSLATE_SOURCE_TYPE[line[SOURCE_TYPE]],
+			source_type=line[SOURCE_TYPE],
 			extraction_method=Source.API,
 			data_type=Source.TAXON,
 			batch=batch,
@@ -105,17 +115,15 @@ def create_taxonomic_level(line, parent, batch, idx_name, rank):
 				"external_id": line[TAXON_ID],
 			},
 		)
-		if new_source:
+		if new_source or os.taxonomiclevel_set.count() == 0:
 			if child.sources.filter(source=os.source, external_id__iexact=os.external_id).exists():
 				raise Exception(f"Origin ID already existing. {os}\n{line}")
 			child.sources.add(os)
-			child.save()
 		elif not child.sources.filter(id=os.id).exists():
 			raise Exception(f"Origin ID already existing. {os}\n{line}")
 
 		if auths:
 			child.authorship.add(*auths)
-			child.save()
 
 		if child.accepted != accepted or child.accepted_modifier != accepted_modifier:
 			raise Exception(f"Trying to change taxonomy level status. {child.readable_rank()}:{child.name}\n{line}")
@@ -130,15 +138,18 @@ def create_taxonomic_level(line, parent, batch, idx_name, rank):
 			accepted_tl = accepted_candidates.first()
 
 			if not accepted_tl:
-				raise Exception(f"{parent} {rank} Accepted taxonomic level not found for {line[ACCEPTED_TAXON]}. Accepted taxon must be inserted first.\n{line}")
+				raise Exception(
+					f"{parent} {rank} Accepted taxonomic level not found for {line[ACCEPTED_TAXON]}. Accepted taxon must be inserted first.\n{line}"
+				)
 
 			accepted_tl.synonyms.add(child)
-			accepted_tl.save()
 	else:
 		child = TaxonomicLevel.objects.filter(parent=parent, rank=rank, name__iexact=line[idx_name])
 
 		if child.count() == 0:
-			raise Exception(f"Higher taxonomy must exist before loading a new taxon parent={parent} rank={TaxonomicLevel.TRANSLATE_RANK[rank]} name={line[idx_name]}\n{line}")
+			raise Exception(
+				f"Higher taxonomy must exist before loading a new taxon parent={parent} rank={TaxonomicLevel.TRANSLATE_RANK[rank]} name={line[idx_name]}\n{line}"
+			)
 		elif child.count() > 1:
 			raise Exception(f"Found {child.count()} possible parent nodes {child} when loading a new taxon\n{line}")
 
@@ -213,7 +224,6 @@ class Command(BaseCommand):
 		parser.add_argument("file", type=str)
 		parser.add_argument("-d", nargs="?", type=str, default=";")
 
-	@transaction.atomic
 	def handle(self, *args, **options):
 		file_name = options["file"]
 		delimiter = options["d"]
@@ -233,10 +243,9 @@ class Command(BaseCommand):
 			)
 
 			with TaxonomicLevel.objects.delay_mptt_updates():
-				for line in csv_file:
+				for line in tqdm(list(csv_file), ncols=50, colour="yellow", smoothing=0, miniters=100, delay=20):
 					parent = biota
 					clean_up_input_line(line)
-
 					try:
 						for level in LEVELS:
 							parent = create_taxonomic_level(line, parent, batch, level, LEVELS_PARAMS[level])
@@ -246,3 +255,5 @@ class Command(BaseCommand):
 
 			if exception:
 				raise Exception("Errors found: Rollback control")
+
+			is_batch_referenced(batch)

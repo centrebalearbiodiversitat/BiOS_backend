@@ -39,6 +39,10 @@ def get_paginated_response(request, queryset, serializer_class, page_size=15):
 	"""
 	paginator = Paginator(queryset, page_size)
 	page = PaginatorFieldForm.get_page(request.GET)
-	serialized_data = serializer_class(paginator.page(page), many=True).data
+	try:
+		items = paginator.page(page)
+	except:
+		items = []
+	serialized_data = serializer_class(items, many=True).data
 
 	return {"total": paginator.count, "pages": paginator.num_pages, "data": serialized_data}

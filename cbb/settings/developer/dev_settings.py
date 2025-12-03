@@ -7,18 +7,18 @@ load_dotenv()
 
 # --- SECURITY CONFIGURATION ---
 # Handle DEBUG boolean from string (case-insensitive to support 'true', 'True')
-DEBUG = str(os.getenv('DEBUG', 'False')).lower() == 'true'
+DEBUG = str(os.getenv("DEBUG", "False")).lower() == "true"
 
 # Load SECRET_KEY from .env (mapped to DJANGO_SECRET_KEY)
-SECRET_KEY = os.getenv('DJANGO_SECRET_KEY')
+SECRET_KEY = os.getenv("DJANGO_SECRET_KEY")
 
 # Raise error if SECRET_KEY is missing to prevent insecure startup
 if not SECRET_KEY:
-    raise ValueError("DJANGO_SECRET_KEY is missing in .env file!")
+	raise ValueError("DJANGO_SECRET_KEY is missing in .env file!")
 
 # --- SITE CONFIGURATION ---
 # Load SITE_URL, defaulting to localhost:8000 if not found
-SITE_URL = os.getenv('SITE_URL', "localhost:8000")
+SITE_URL = os.getenv("SITE_URL", "localhost:8000")
 
 ALLOWED_HOSTS = ["*"]
 
@@ -27,10 +27,10 @@ FULL_SITE_URL = f"{SITE_PREFIX}{SITE_URL}"
 
 # CORS Configuration: Define allowed origins for Cross-Origin Resource Sharing
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",         # Local Next.js frontend
-    "http://127.0.0.1:3000",         # Local IP alternative
-    f"{SITE_PREFIX}{SITE_URL}",      # Dynamic backend URL from env
-    f"{SITE_PREFIX}localhost:8000",  # Explicit fallback for local Django development
+	"http://localhost:3000",  # Local Next.js frontend
+	"http://127.0.0.1:3000",  # Local IP alternative
+	f"{SITE_PREFIX}{SITE_URL}",  # Dynamic backend URL from env
+	f"{SITE_PREFIX}localhost:8000",  # Explicit fallback for local Django development
 ]
 
 # Uncomment to obtain logs of Django processes.

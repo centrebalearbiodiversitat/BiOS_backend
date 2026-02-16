@@ -11,8 +11,6 @@
  #Populate
  echo "Populating basis..."
  python manage.py load_basis data/basis.json
-#  echo "Populating sources..."
-#  python manage.py load_sources data/sources.csv
  echo "Populating tags..."
  python manage.py populate_tags
  echo "Populating habitats..."
@@ -56,7 +54,5 @@ do
   done
 done
 
-# echo "Loading basis..."
-# python manage.py load_basis data/basis.json
 echo "Loading sources..."
 python manage.py load_sources data/sources.csv

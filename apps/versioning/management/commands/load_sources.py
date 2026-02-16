@@ -15,7 +15,7 @@ class Command(BaseCommand):
 	@transaction.atomic
 	def handle(self, *args, **options):
 		csv_file = options["csv_file"]
-		with open(csv_file, "r") as file:
+		with open(csv_file, "r", encoding="utf-8-sig") as file:
 			reader = csv.DictReader(file, delimiter=";")
 			for row in tqdm(reader, ncols=50, colour="yellow", smoothing=0, miniters=100, delay=20):
 				internal_name = row["internal_name"]

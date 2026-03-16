@@ -1,103 +1,126 @@
+# BiOS: Biodiversity Observatory System
+
 [![made-with-python](https://img.shields.io/badge/Made%20with-Python-1f425f.svg)](https://www.python.org/) [![Open Source? Yes!](https://badgen.net/badge/Open%20Source%20%3F/Yes%21/blue?icon=github)](https://github.com/Naereen/badges/)
 
+BiOS is an open-source framework designed for the integration and management of heterogeneous biodiversity data.
 
-# Best practices manual for making changes to the repository :books:
+## Citation
 
-## 1. Local Preparation :arrow_down:
+If you use BiOS in your research, please cite the following article:
 
-**Clone the repository**: If you don't yet have a local copy of the project, clone the repository from GitHub:
+> Roldan, A., Duran, T. G., Far, A. J., Capa, M., Arboleda, E., & Cancellario, T. (2026). BiOS: An Open-Source Framework for the Integration of Heterogeneous Biodiversity Data. _bioRxiv_, 2026-02.
+
+## System Overview
+
+The BiOS framework consists of a PostGIS and Django-based back-end interconnected with a Next.js front-end. The architecture is modular and highly decoupled, providing a robust RESTful API to manage diverse biodiversity data.
+
+The underlying database architecture leverages Django's Object-Relational Mapping (ORM) and is logically divided into six thematic modules: **Taxonomy**, **Occurrences**, **Genetics**, **Tags**, **Geography**, and **Versioning**. These interconnected modules guarantee structural integrity, flexible spatial querying, data standardisation, and strict traceability.
+
+## Quick Installation
+
+To ensure consistency between development and production environments, the BiOS framework relies on Docker containers.
+
+### 1. Deploying the Back-end
+
+Clone the back-end repository and configure your environment variables:
+
+```bash
+git clone https://github.com/centrebalearbiodiversitat/BiOS_backend.git
+cd BiOS_backend
+cp .env_template .env
 ```
-git clone https://github.com/centrebalearbiodiversitat/cbbdb.git
+
+Build the Docker image and launch the services:
+
+```bash
+# For development environments
+sudo docker compose -f docker-compose.yml -f docker-compose.local.yml up --build
+
+# For production environments
+sudo docker compose -f docker-compose.yml up --build
 ```
 
-**Create a new branch**: Before making any changes, create a new branch based on the main development branch ("dev") to isolate your modifications:
+Execute database migrations and create an administrative user:
+
+```bash
+# Open a bash session inside the Django container
+sudo docker compose -f docker-compose.local.yml exec django bash
+
+# Apply migrations
+python manage.py makemigrations
+python manage.py migrate
+
+# Create a superuser
+python manage.py createsuperuser
 ```
-git checkout -b PROJECT-ID
+
+Once running, the API is accessible at `http://localhost:8000/api/v1/`, and the interactive OpenAPI (Swagger) documentation is available at `http://localhost:8000/api/docs/`.
+
+### 2. Standardised Data Ingestion
+
+The framework provides an automated bulk ingestion workflow that ensures data validation and resolves relational constraints. Inside the Django container, execute the following script to load data grouped by geographical data, base catalogs, taxonomy, occurrences, and genetics:
+
+```bash
+sh load_db.sh
 ```
 
-Replace "PROJECT-ID" with the code of the Notion ticket you are working on[^1]. To do this, you should use the name of the project to which the ticket belongs, followed by its ID. For example:
+### 3. Deploying the Front-end
 
-![ETicket example](assets/images/example_ticket.png)
+In a separate terminal, clone the Next.js front-end module and install the required dependencies:
 
-In this case, you should name your branch "BIODUMPY-137."
+```bash
+git clone https://github.com/centrebalearbiodiversitat/BiOS_frontend.git
+cd BiOS_frontend
 
->[!NOTE]
->Please note that the ID numbering of each ticket is not consecutive in relation to its project. In other words, following the previous example, "BIODUMPY-137" does not mean it is the 137th ticket created for the BIODUMPY project, but rather that out of all the tickets created for all projects, the ID number 137 was generated when creating that ticket for this project.
+# Install dependencies
+npm install
 
-
-## 2. Make the Changes 🥚🐣🐥🐓
-
-**Edit the files**: Make the necessary changes to your project files according to the specifications in the Notion ticket[^1].
-
-
-## 3. Commit the Changes :memo:
-
-Add the files: Add the modified files to the Git index:
+# Configure environment
+cp .env.template .env
 ```
+
+Start the development server:
+
+```bash
+npm run dev
+```
+
+The web interface will be accessible at `http://localhost:3000`.
+
+## Contributing Guidelines
+
+### 1. Local Preparation
+
+**Clone the repository**: If you do not yet have a local copy of the project, clone the repository from GitHub:
+
+```bash
+git clone https://github.com/centrebalearbiodiversitat/BiOS_backend.git
+```
+
+**Create a new branch**: Before making any changes, create a new branch based on the main development branch (`dev`) to isolate your modifications:
+
+### 2. Implementation
+
+Make the necessary conceptual or code changes.
+
+### 3. Commit Changes
+
+Add your modified files and write a clear, standard-compliant message describing your changes:
+
+```bash
 git add .
+git commit -m "feat(geography): implement Balearic municipalities"
 ```
 
-**Create the commit**: Create a commit with a clear and concise message describing the changes made:
-```
-git commit -m "feat(geography): Implementation of Balearic municipalities"
-```
+> [!IMPORTANT]
+> To maintain a clean, automated Git history, this project adopts [Semantic Versioning (SemVer)](https://semver.org/) and [Conventional Commits](https://www.conventionalcommits.org/). Commit messages must follow the structure: `type(scope): short message` (e.g., `feat`, `fix`, `docs`, `refactor`).
 
->[!IMPORTANT]
->
->Follow the best practices guide for writing commits :arrow_down:
+### 4. Push to Remote and Create a Pull Request
 
-### Best practices for Commits 🧘‍♀️
+Push your isolated branch to the remote repository:
 
-To maintain a clear and concise Git history, it's recommended to adopt conventions for commit messages. A common practice is to use SemVer conventions (Semantic Versioning), which allow for a clear and automatic classification of changes.
-
-Basic structure of a commit message:
-
-**<font color="BF4458">type</font> <font color="05ADBA">(scope)</font>: <font color="7BB926">short message</font>**
-
-**<font color="BF4458">type</font>** -> Indicates the type of change made. Must be one of the following:
-
-- **<font color="BF4458">feat</font>**: New functionality
-- **<font color="BF4458">fix</font>**: Bug fix
-- **<font color="BF4458">refactor</font>**: Code refactoring (no changes in functionality)
-- **<font color="BF4458">test</font>**: New tests or changes to existing tests
-- **<font color="BF4458">docs</font>**: Documentation changes
-
-**<font color="05ADBA">scope</font>** -> (optional) A more specific scope of the change (e.g. api, database, utils).
-
-**<font color="7BB926">short message</font>** -> A concise description of the change.
-
-Examples:
-```
-feat(taxonomy view): Add the TaxonomyListView endpoint
-
-fix(database): Correct a query error in the occurrences database
-
-docs(readme): Update data loading instructions in genetics
+```bash
+git push origin <branch-name>
 ```
 
-
-## 4. Push to the Remote Branch :arrow_up:
-
-**Push the changes to GitHub**:
-```
-git push origin PROJECT-ID
-```
-
-## 5. Create a Pull Request :shipit:
-
-**Go to GitHub**: Access your repository on GitHub.
-
-**Create a Pull Request**: Find the new branch you just created and click the button to create a pull request.
-
-**Describe the Pull Request**: Provide a clear and concise description of the changes made, link the Notion ticket[^1], and assign the necessary reviewers.
-
-## Best Practices :nerd_face:
-
-- **One branch per ticket**: Create a branch for each ticket to be resolved.
-- **Atomic commits**: Each commit should represent a logical, complete change.
-- **Clear commit messages**: Commit messages should be concise and describe the purpose of the change.
-- **Peer reviews**: Always request a peer review before merging changes.
-- **Keep the Notion board updated**[^1]: Once a pull request is merged, update the status of the corresponding ticket in Notion.
-
-
-[^1]: This action can only be performed by a member of the [**<font color="BF4458">C</font><font color="05ADBA">B</font><font color="7BB926">B</font>**](https://centrebaleardebiodiversitat.uib.es/) or someone invited as a collaborator to the repository. If you do not meet either of these conditions, there is no need to follow this rule, but you should adhere to the rest of the best practices described in the manual :pray:.
+Finally, access GitHub and open a Pull Request against the `dev` branch, providing a concise summary of the implementations and assigning appropriate reviewers.
